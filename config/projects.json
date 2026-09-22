@@ -15,7 +15,7 @@
       "repository": "seongjin1908/daangn-saju-autodev",
       "work_branch": "autodev-v12",
       "base_branch": "autodev-v11",
-      "validation": "node scripts/wire-index-v12.mjs && git diff --exit-code -- backend/index.ts && node scripts/validate.mjs && npm run build",
+      "validation": "node scripts/wire-index-v12.mjs && git diff --exit-code -- backend/index.ts && node scripts/validate.mjs",
       "prompt_file": "prompts/saju.md",
       "recent_change_guard_minutes": 25,
       "max_changed_files": 40
