@@ -1,0 +1,54 @@
+{
+  "projects": [
+    {
+      "alias": "fortune",
+      "repository": "seongjin1908/practical-calculator-factory",
+      "work_branch": "fortune-cloud-autopilot",
+      "base_branch": "fortune-platform",
+      "validation": "npm test && npm run quality && npm run build && npx wrangler deploy --dry-run",
+      "prompt_file": "prompts/fortune.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "saju",
+      "repository": "seongjin1908/daangn-saju-autodev",
+      "work_branch": "autodev-v12",
+      "base_branch": "autodev-v11",
+      "validation": "node scripts/wire-index-v12.mjs && git diff --exit-code -- backend/index.ts && node scripts/validate.mjs && npm run build",
+      "prompt_file": "prompts/saju.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "pricecam",
+      "repository": "seongjin1908/pricecam-autodev",
+      "work_branch": "pricecam-autodev",
+      "base_branch": "main",
+      "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npm run build",
+      "prompt_file": "prompts/pricecam.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "face-lab",
+      "repository": "seongjin1908/face-lab-global",
+      "work_branch": "autodev/p3-lifecycle-policy",
+      "base_branch": "main",
+      "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit && npm run build",
+      "prompt_file": "prompts/face-lab.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "restore-ai",
+      "repository": "seongjin1908/restore-ai-autodev",
+      "work_branch": "autodev/import-validated-restore-ai",
+      "base_branch": "main",
+      "validation": "npm run check",
+      "prompt_file": "prompts/restore-ai.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 35
+    }
+  ]
+}
