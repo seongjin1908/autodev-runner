@@ -1,13 +1,26 @@
-# Daangn Saju batch objective
+# Daangn Saju launch sprint objective — deadline before 2026-09-24 KST
 
-Priority:
-1. Repair the latest actual CI/regression root cause first.
-2. Then advance one coherent launch batch around Toss test checkout, payment confirmation integrity, payment -> analysis -> web result -> PDF -> reopen, mobile UX, or Payment Adapter/Fortune merge-ready contracts.
-3. Preserve the real Toss test flow. Do not replace it with a synthetic success path.
-4. Do not require PortOne/KG/KCP/NICE/PayPal/Eximbay credentials yet.
-5. Keep email/SMS optional.
-6. Do not modify the Fortune repository.
-7. Do not enable live payment or spend money.
-8. Do not modify GitHub workflows.
-9. Update tests for changed user-visible behavior.
-10. Finish with the configured validation command passing.
+This is a release sprint. A stable public Daangn Saju release before the Chuseok holiday is more important than broad feature expansion.
+
+P0 ORDER:
+1. Repair the latest actual CI/regression root cause.
+2. Keep free Saju input -> calculation -> useful result functional on mobile.
+3. Keep product selection/order boundaries working.
+4. Keep payment -> analysis -> web result -> PDF -> reopen architecture intact.
+5. Preserve real Toss TEST checkout code, but do not block public deployment on a production PG contract.
+6. If production payment is not approved, keep live payment disabled/clearly unavailable rather than faking success.
+7. Make mobile 360-430px flow release-ready.
+8. Keep Fortune merge-ready contracts minimal and non-blocking.
+
+SCOPE FREEZE:
+- No broad refactor.
+- No PortOne/KG/KCP/NICE/PayPal/Eximbay implementation unless credentials/contracts already exist and it is a release blocker.
+- Email/SMS remain optional.
+- No synthetic payment success.
+- No paid service activation.
+- Do not modify Fortune repository.
+- Do not modify GitHub workflows.
+- Update tests for real changed behavior.
+- Finish with the configured validation passing.
+
+Definition of useful progress: a release blocker removed and a real user flow improved.

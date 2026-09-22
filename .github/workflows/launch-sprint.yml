@@ -1,34 +1,30 @@
-name: Central Zero-Budget AutoDev
+name: Fortune + Saju Launch Sprint
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/launch-sprint.yml'
+  schedule:
+    - cron: '7,37 * * * *'
   workflow_dispatch:
-    inputs:
-      target:
-        description: Project target
-        required: true
-        default: auto
-        type: choice
-        options:
-          - auto
-          - fortune
-          - saju
-          - pricecam
-          - face-lab
-          - restore-ai
 
 permissions:
   contents: read
 
-concurrency:
-  group: central-zero-budget-autodev
-  cancel-in-progress: false
-
 jobs:
-  develop:
+  launch-batch:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [fortune, saju]
+    concurrency:
+      group: launch-sprint-${{ matrix.target }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
-      TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'auto' }}
+      TARGET: ${{ matrix.target }}
       DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/north-mini-code-free' }}
       DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/deepseek-v4-flash-free' }}
       DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/big-pickle' }}
@@ -44,7 +40,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Select target
+      - name: Select launch target
         id: select
         shell: bash
         run: bash scripts/select_target.sh
@@ -59,20 +55,21 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "AUTODEV_REPO_TOKEN is not configured. No private repository will be touched."
+            echo "AUTODEV_REPO_TOKEN is missing; no private repository will be touched."
           fi
 
-      - name: Clone target work branch
+      - name: Clone isolated launch branch
         if: steps.token.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
           REPOSITORY: ${{ steps.select.outputs.repository }}
           WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
           BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          RECENT_CHANGE_GUARD_MINUTES: '20'
         shell: bash
         run: bash scripts/clone_target.sh
 
-      - name: Execute guarded zero-budget batch
+      - name: Execute launch batch
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
         env:
           ALIAS: ${{ steps.select.outputs.alias }}
@@ -82,7 +79,7 @@ jobs:
         shell: bash
         run: bash scripts/develop_target.sh
 
-      - name: Push validated batch and maintain PR
+      - name: Push validated launch batch and maintain PR
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
         env:
           GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}

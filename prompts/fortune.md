@@ -1,14 +1,25 @@
-# Fortune batch objective
+# Fortune launch sprint objective — deadline before 2026-09-24 KST
 
-Work on Fortune as a real global product, not CI polishing.
+This is a release sprint. Shipping a stable public Fortune release before the Chuseok holiday is more important than broad feature expansion.
 
-Priority:
-1. Repair the current real failure before new features.
-2. Advance a coherent P0 batch: core fortune/saju engine, premium value, mobile UX, payment-ready boundaries, or functional preview.
-3. Avoid tiny hourly commits and CI-only churn.
-4. Preserve the current Fortune architecture and existing behavior unless a test-backed fix requires change.
-5. Keep Daangn Saju as a separate repository; only align stable contracts when useful.
-6. Do not enable paid AI, paid APIs, live payments, production spending, or production deployment.
-7. Do not modify GitHub workflows.
-8. Update or add tests for changed behavior.
-9. Finish with the configured validation command passing.
+P0 ORDER:
+1. Repair the current real CI/build failure and keep it repaired.
+2. Preserve accurate Fortune/Saju core calculations and existing regression coverage.
+3. Ensure the main mobile user flow works at 360-430px.
+4. Ensure free reading -> result -> repeat/reopen flow is functional.
+5. Keep premium/payment boundaries clean, but do not block the public release on a new paid PG contract.
+6. Keep a deployable functional preview/release candidate.
+
+SCOPE FREEZE:
+- No broad refactor.
+- No CI polishing after CI is healthy unless it blocks release.
+- No new speculative modules.
+- No paid AI/API activation.
+- No live payment activation without approved production credentials.
+- No production deployment from this coding worker.
+- Do not modify GitHub workflows.
+- Keep Daangn Saju as a separate repository.
+- Update tests only for real changed behavior.
+- Finish with the configured validation passing.
+
+Definition of useful progress: a user-facing release blocker removed, not a cosmetic commit.
