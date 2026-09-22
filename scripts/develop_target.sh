@@ -20,6 +20,7 @@ set +e
 bash -lc "$VALIDATION" >/tmp/autodev-baseline.log 2>&1
 BASELINE_RC=$?
 set -e
+echo "$BASELINE_RC" > /tmp/autodev-baseline-rc
 echo "Baseline validation completed (exit $BASELINE_RC)."
 
 npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
@@ -97,9 +98,15 @@ else
   npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-reinstall.log 2>&1
 fi
 
-if ! bash -lc "$VALIDATION" >/tmp/autodev-final-validation.log 2>&1; then
+set +e
+bash -lc "$VALIDATION" >/tmp/autodev-final-validation.log 2>&1
+FINAL_RC=$?
+set -e
+echo "$FINAL_RC" > /tmp/autodev-final-rc
+if [[ "$FINAL_RC" -ne 0 ]]; then
   echo "Final validation failed. No private branch push will occur."
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
+  echo "AUTODEV_FAILED=true" >> "$GITHUB_ENV"
   exit 1
 fi
 
@@ -110,8 +117,9 @@ find . -type d -name __pycache__ -prune -exec rm -rf {} + >/dev/null 2>&1 || tru
 find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete >/dev/null 2>&1 || true
 
 if git diff --quiet && git diff --cached --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
-  echo "Validated successfully; no code changes were necessary."
+  echo "Validated successfully; no durable source changes were produced."
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
+  echo "AUTODEV_NO_DURABLE_CHANGE=true" >> "$GITHUB_ENV"
   exit 0
 fi
 

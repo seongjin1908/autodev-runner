@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/launch-sprint.yml'
+      - 'scripts/**'
+      - 'prompts/fortune.md'
+      - 'prompts/saju.md'
+      - 'config/projects.json'
   schedule:
     - cron: '7,37 * * * *'
   workflow_dispatch:
@@ -85,6 +89,17 @@ jobs:
           MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
         shell: bash
         run: bash scripts/develop_target.sh
+
+      - name: Report private launch diagnostics
+        if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
+          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+        shell: bash
+        run: bash scripts/report_target.sh
 
       - name: Push validated launch batch and maintain PR
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
