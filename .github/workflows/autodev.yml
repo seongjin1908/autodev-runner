@@ -62,15 +62,23 @@ jobs:
             echo "AUTODEV_REPO_TOKEN is not configured. No private repository will be touched."
           fi
 
-      - name: Clone target work branch
+      - name: Checkout target work branch
+        if: steps.token.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.select.outputs.repository }}
+          ref: ${{ steps.select.outputs.work_branch }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare collision guard
         if: steps.token.outputs.configured == 'true'
         env:
-          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
-          REPOSITORY: ${{ steps.select.outputs.repository }}
-          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
-          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          RECENT_CHANGE_GUARD_MINUTES: '25'
         shell: bash
-        run: bash scripts/clone_target.sh
+        run: bash scripts/prepare_target.sh
 
       - name: Execute guarded zero-budget batch
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
