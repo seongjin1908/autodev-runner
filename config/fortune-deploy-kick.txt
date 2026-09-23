@@ -1,1 +1,1 @@
-Validate and deploy Fortune preview at head f18f5003018ab07c6e255b1adb563223249ee5dc after VerifiedFacts shadow adapter tests. Keep noindex, premium off, analytics off, ads off.
+Validate and deploy Fortune preview at head 88b12797f2c26be0e3732ce8787a00a3237e779a with shared staging platform core tests. Keep noindex, premium off, analytics off, ads off.
