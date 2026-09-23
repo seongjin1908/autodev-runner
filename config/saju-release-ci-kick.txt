@@ -1,1 +1,1 @@
-Validate Saju shared VerifiedFacts shadow adapter at head e595bd9df163ca6b87f86692cb5464232de304f0; preserve Toss runtime and do not deploy AppDeploy.
+Validate shared staging Product/Attribution/Order/Payment/Result core at Saju head 503d609ed0756125c2b4b95323841e9852261e0e. Preserve Toss runtime; do not deploy AppDeploy.
