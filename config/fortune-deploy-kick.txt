@@ -1,1 +1,1 @@
-Validate latest Fortune product-market catalog and parity fixture batch; keep preview noindex and premium off.\n
+Validate and deploy Fortune preview at head 2b5d8086b25369e453be28e22d31bbe47464a68b with migration lock + DAANGN canary. Keep noindex, premium off, analytics off, ads off.
