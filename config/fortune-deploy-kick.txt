@@ -1,1 +1,1 @@
-Fortune release deploy retriggered after Cloudflare secrets were configured.
+Fortune release deploy retriggered after Korean premium bridge + unified design rollout.
