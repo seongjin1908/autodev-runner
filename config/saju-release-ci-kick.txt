@@ -1,1 +1,1 @@
-Validate latest Saju product-market catalog and parity fixture batch; do not deploy AppDeploy.\n
+Validate Saju migration lock + shared contract + attribution/market gates at head a1fb578201441b509cb5127918e9d3caecddb399; do not deploy AppDeploy.
