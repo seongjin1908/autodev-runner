@@ -1,1 +1,1 @@
-Run strict parity with shared VerifiedFacts shadow outputs. Fortune f18f5003018ab07c6e255b1adb563223249ee5dc; Saju e595bd9df163ca6b87f86692cb5464232de304f0. Fail unapproved divergence.
+Run strict Fortune/Saju parity with locked shared platform core. Fortune 88b12797f2c26be0e3732ce8787a00a3237e779a; Saju 503d609ed0756125c2b4b95323841e9852261e0e. Fail lock drift or unapproved divergence.
