@@ -1,1 +1,1 @@
-Compare latest Fortune and Saju heads after attribution/canary migration batch.\n
+Run expanded 16-vector Fortune/Saju shadow parity after canonical normalization.
