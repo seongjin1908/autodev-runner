@@ -30,7 +30,7 @@ const sajuById = new Map(saju.cases.map(item => [item.id,item]));
 const comparisons = fortune.cases.map(left => {
   const right = sajuById.get(left.id);
   if (!right) return { id:left.id, status:'MISSING_SAJU_CASE', fortune:left, saju:null };
-  const fields = ['pillars','dayMaster','elements'];
+  const fields = ['pillars','dayMaster','principalElements'];
   const differences = fields.filter(field => JSON.stringify(left[field]) !== JSON.stringify(right[field]));
   return { id:left.id, status:differences.length ? 'DIFF' : 'MATCH', differences, fortune:left, saju:right };
 });
