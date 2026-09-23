@@ -1,1 +1,1 @@
-Validate and deploy Fortune preview at head 2b5d8086b25369e453be28e22d31bbe47464a68b with migration lock + DAANGN canary. Keep noindex, premium off, analytics off, ads off.
+Validate and deploy Fortune preview at head 08384b6166e9ca282c059b9edbed7e854ed76234 with strict parity policy. Keep noindex, premium off, analytics off, ads off.
