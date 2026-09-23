@@ -1,0 +1,48 @@
+name: Saju Live Release QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-live-qa.yml'
+      - 'scripts/saju-live-qa.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-live-release-qa
+  cancel-in-progress: true
+
+jobs:
+  live-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout QA harness
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Run live desktop/mobile and Toss checkout smoke
+        env:
+          SAJU_LIVE_URL: https://mvp-91zb78.v2.appdeploy.ai/
+        run: node scripts/saju-live-qa.mjs
+
+      - name: Upload QA screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saju-live-release-qa
+          path: artifacts/saju-live-qa
+          if-no-files-found: warn
+          retention-days: 3
