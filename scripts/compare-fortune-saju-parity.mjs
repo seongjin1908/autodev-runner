@@ -60,6 +60,11 @@ if (!contractMatch) {
   process.exit(1);
 }
 
+const parityPolicy = JSON.parse(read(path.join(fortuneDir,'contracts/saju-parity-policy.v1.json')));
+const approvedDivergences = new Map((parityPolicy.knownDivergences || [])
+  .filter(item => item.status === 'REFERENCE_VALIDATED')
+  .map(item => [item.vectorId, new Set(item.approvedDifferenceFields || [])]));
+
 const fortune = parseExporter(fortuneDir);
 const saju = parseExporter(sajuDir);
 if (fortune.schemaVersion !== 'saju-shadow-parity-v1' || saju.schemaVersion !== 'saju-shadow-parity-v1') {
@@ -72,7 +77,10 @@ const comparisons = fortune.cases.map(left => {
   if (!right) return { id:left.id, status:'MISSING_SAJU_CASE', fortune:left, saju:null };
   const fields = ['pillars','dayMaster','principalElements'];
   const differences = fields.filter(field => JSON.stringify(left[field]) !== JSON.stringify(right[field]));
-  return { id:left.id, status:differences.length ? 'DIFF' : 'MATCH', differences, fortune:left, saju:right };
+  if (!differences.length) return { id:left.id, status:'MATCH', differences, fortune:left, saju:right };
+  const approved = approvedDivergences.get(left.id);
+  const approvedExact = approved && differences.length === approved.size && differences.every(field => approved.has(field));
+  return { id:left.id, status:approvedExact ? 'KNOWN_DIFF' : 'UNEXPECTED_DIFF', differences, fortune:left, saju:right };
 });
 for (const item of saju.cases) {
   if (!fortune.cases.some(left => left.id === item.id)) comparisons.push({id:item.id,status:'MISSING_FORTUNE_CASE',fortune:null,saju:item});
@@ -89,7 +97,8 @@ const report = {
   sajuHead:process.env.SAJU_HEAD || null,
   caseCount:comparisons.length,
   matchCount:comparisons.filter(x=>x.status==='MATCH').length,
-  diffCount:comparisons.filter(x=>x.status==='DIFF').length,
+  knownDiffCount:comparisons.filter(x=>x.status==='KNOWN_DIFF').length,
+  unexpectedDiffCount:comparisons.filter(x=>x.status==='UNEXPECTED_DIFF').length,
   missingCount:comparisons.filter(x=>x.status.startsWith('MISSING_')).length,
   comparisons
 };
@@ -101,8 +110,9 @@ console.log('FORTUNE_SAJU_SHADOW_PARITY', {
   contractMatch:report.contractMatch,
   caseCount:report.caseCount,
   matchCount:report.matchCount,
-  diffCount:report.diffCount,
+  knownDiffCount:report.knownDiffCount,
+  unexpectedDiffCount:report.unexpectedDiffCount,
   missingCount:report.missingCount
 });
 
-if (!report.migrationLockMatch || !report.contractMatch || report.missingCount > 0) process.exit(1);
+if (!report.migrationLockMatch || !report.contractMatch || report.missingCount > 0 || report.unexpectedDiffCount > 0) process.exit(1);
