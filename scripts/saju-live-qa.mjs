@@ -145,7 +145,7 @@ try {
     await page.goto(baseUrl + '?payment_diag=1', { waitUntil: 'networkidle', timeout: 60000 });
     const text = await page.locator('body').innerText();
     report.diagnostics = { text: text.slice(0, 2500), consoleErrors };
-    for (const expected of ['READY','TEST','test_ck_','LOADED','DISABLED']) {
+    for (const expected of ['READY','TEST','test_gck_','LOADED','DISABLED']) {
       if (!text.includes(expected)) throw new Error('payment diagnostic missing ' + expected + ': ' + text.slice(0, 1200));
     }
     await page.screenshot({ path: outDir + '/payment-diagnostic.png', fullPage: true });
