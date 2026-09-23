@@ -1,1 +1,1 @@
-Validate and deploy Fortune preview at head 08384b6166e9ca282c059b9edbed7e854ed76234 with strict parity policy. Keep noindex, premium off, analytics off, ads off.
+Validate and deploy Fortune preview at head f18f5003018ab07c6e255b1adb563223249ee5dc after VerifiedFacts shadow adapter tests. Keep noindex, premium off, analytics off, ads off.
