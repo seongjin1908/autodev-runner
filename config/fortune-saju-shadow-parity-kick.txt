@@ -1,1 +1,1 @@
-Run expanded 16-vector Fortune/Saju shadow parity after canonical normalization.
+Re-run parity on latest heads including shared product-market catalog.\n

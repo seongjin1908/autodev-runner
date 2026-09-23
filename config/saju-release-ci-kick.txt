@@ -1,1 +1,1 @@
-Validate Saju shared contract + normalized attribution + staging market policy; do not deploy AppDeploy.\n
+Validate latest Saju product-market catalog and parity fixture batch; do not deploy AppDeploy.\n

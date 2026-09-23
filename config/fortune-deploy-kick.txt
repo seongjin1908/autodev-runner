@@ -1,1 +1,1 @@
-Validate Fortune shared contract + noindex /ko/daangn canary surface; keep premium/indexing/ads/analytics off.\n
+Validate latest Fortune product-market catalog and parity fixture batch; keep preview noindex and premium off.\n
