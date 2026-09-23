@@ -1,1 +1,1 @@
-Fortune release deploy retriggered after Korean premium bridge + unified design rollout.
+Fortune release baseline validation for integration migration; validate current fortune-cloud-autopilot without enabling premium, analytics, ads, or indexing.
