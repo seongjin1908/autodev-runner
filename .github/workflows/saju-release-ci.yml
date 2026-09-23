@@ -1,0 +1,74 @@
+name: Saju Release CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-release-ci.yml'
+      - 'config/saju-release-ci-kick.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-release-ci
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout CI control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check private repository token
+        id: token
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "$REPO_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::error::AUTODEV_REPO_TOKEN is missing"
+            exit 1
+          fi
+
+      - name: Checkout Saju release branch
+        if: steps.token.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: autodev-v12
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: target
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify generated backend wiring
+        working-directory: target
+        run: |
+          node scripts/wire-index-v12.mjs
+          git diff --exit-code -- backend/index.ts
+
+      - name: Validate release invariants
+        working-directory: target
+        run: node scripts/validate.mjs
+
+      - name: Build release bundle
+        working-directory: target
+        run: npm run build
