@@ -1,1 +1,1 @@
-Run strict Fortune/Saju shadow parity. Fortune head 08384b6166e9ca282c059b9edbed7e854ed76234; Saju head 99b1bb03a61036cf54cdae6a17fccb88bc995100. Fail any unapproved divergence.
+Run strict parity with shared VerifiedFacts shadow outputs. Fortune f18f5003018ab07c6e255b1adb563223249ee5dc; Saju e595bd9df163ca6b87f86692cb5464232de304f0. Fail unapproved divergence.
