@@ -1,1 +1,1 @@
-Re-run parity on latest heads including shared product-market catalog.\n
+Run Fortune/Saju shadow parity with migration lock. Fortune head 2b5d8086b25369e453be28e22d31bbe47464a68b; Saju head a1fb578201441b509cb5127918e9d3caecddb399.
