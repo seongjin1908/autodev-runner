@@ -5,8 +5,48 @@ import { execFileSync } from 'node:child_process';
 
 const [fortuneDir='fortune', sajuDir='saju'] = process.argv.slice(2);
 const read = p => fs.readFileSync(p,'utf8');
+const readBuffer = p => fs.readFileSync(p);
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
+const gitBlobSha = value => crypto.createHash('sha1').update('blob ' + value.length + '\0').update(value).digest('hex');
 const parseExporter = cwd => JSON.parse(execFileSync(process.execPath,['scripts/saju-shadow-parity-export.mjs'],{cwd,encoding:'utf8'}));
+
+const fortuneLock = JSON.parse(read(path.join(fortuneDir,'contracts/migration-lock.v1.json')));
+const sajuLock = JSON.parse(read(path.join(sajuDir,'contracts/migration-lock.v1.json')));
+const lockDefinitionMatch = JSON.stringify(fortuneLock) === JSON.stringify(sajuLock);
+if (!lockDefinitionMatch) {
+  console.error('MIGRATION_LOCK_DEFINITION_MISMATCH');
+  process.exit(1);
+}
+if (fortuneLock.schemaVersion !== 'fortune-saju-migration-lock-v1') {
+  console.error('MIGRATION_LOCK_SCHEMA_MISMATCH',fortuneLock.schemaVersion);
+  process.exit(1);
+}
+
+const lockedFiles = Object.entries(fortuneLock.files || {});
+const lockChecks = lockedFiles.map(([relativePath,expected]) => {
+  const fortuneBytes = readBuffer(path.join(fortuneDir,relativePath));
+  const sajuBytes = readBuffer(path.join(sajuDir,relativePath));
+  const fortuneSha = gitBlobSha(fortuneBytes);
+  const sajuSha = gitBlobSha(sajuBytes);
+  return {
+    path:relativePath,
+    expected,
+    fortuneSha,
+    sajuSha,
+    byteIdentical:fortuneBytes.equals(sajuBytes),
+    fortuneMatchesLock:fortuneSha === expected,
+    sajuMatchesLock:sajuSha === expected
+  };
+});
+const migrationLockMatch = lockChecks.every(item =>
+  item.byteIdentical && item.fortuneMatchesLock && item.sajuMatchesLock
+);
+if (!migrationLockMatch) {
+  console.error('MIGRATION_LOCK_CONTENT_MISMATCH',lockChecks.filter(item =>
+    !item.byteIdentical || !item.fortuneMatchesLock || !item.sajuMatchesLock
+  ));
+  process.exit(1);
+}
 
 const fortuneContract = read(path.join(fortuneDir,'contracts/fortune-platform.v1.schema.json'));
 const sajuContract = read(path.join(sajuDir,'contracts/fortune-platform.v1.schema.json'));
@@ -41,6 +81,8 @@ for (const item of saju.cases) {
 const report = {
   schemaVersion:'fortune-saju-shadow-parity-report-v1',
   generatedAt:new Date().toISOString(),
+  migrationLockMatch,
+  lockChecks,
   contractSha256:digest(fortuneContract),
   contractMatch,
   fortuneHead:process.env.FORTUNE_HEAD || null,
@@ -55,6 +97,7 @@ const report = {
 fs.mkdirSync('artifacts',{recursive:true});
 fs.writeFileSync('artifacts/fortune-saju-shadow-parity.json',JSON.stringify(report,null,2)+'\n');
 console.log('FORTUNE_SAJU_SHADOW_PARITY', {
+  migrationLockMatch:report.migrationLockMatch,
   contractMatch:report.contractMatch,
   caseCount:report.caseCount,
   matchCount:report.matchCount,
@@ -62,4 +105,4 @@ console.log('FORTUNE_SAJU_SHADOW_PARITY', {
   missingCount:report.missingCount
 });
 
-if (report.missingCount > 0) process.exit(1);
+if (!report.migrationLockMatch || !report.contractMatch || report.missingCount > 0) process.exit(1);
