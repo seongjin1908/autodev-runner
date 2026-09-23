@@ -1,1 +1,1 @@
-Validate Saju migration lock + shared contract + attribution/market gates at head a1fb578201441b509cb5127918e9d3caecddb399; do not deploy AppDeploy.
+Validate Saju migration lock + approved divergence policy at head 99b1bb03a61036cf54cdae6a17fccb88bc995100; do not deploy AppDeploy.
