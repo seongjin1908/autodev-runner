@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [fortune, saju]
+        target: [saju]
     concurrency:
       group: launch-sprint-${{ matrix.target }}
       cancel-in-progress: false
