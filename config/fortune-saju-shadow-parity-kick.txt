@@ -1,1 +1,1 @@
-Initial Fortune/Saju shared-contract and engine shadow-parity run.\n
+Compare latest Fortune and Saju heads after attribution/canary migration batch.\n

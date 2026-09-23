@@ -1,1 +1,1 @@
-Validate latest Saju migration-contract + shadow-exporter batch without changing AppDeploy deployment.\n
+Validate Saju shared contract + normalized attribution + staging market policy; do not deploy AppDeploy.\n
