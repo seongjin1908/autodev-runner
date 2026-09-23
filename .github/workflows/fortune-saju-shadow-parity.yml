@@ -1,0 +1,87 @@
+name: Fortune Saju Shadow Parity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fortune-saju-shadow-parity.yml'
+      - 'scripts/compare-fortune-saju-parity.mjs'
+      - 'config/fortune-saju-shadow-parity-kick.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fortune-saju-shadow-parity
+  cancel-in-progress: true
+
+jobs:
+  shadow-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check private repository token
+        id: token
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$REPO_TOKEN" ]; then
+            echo "::error::AUTODEV_REPO_TOKEN is missing"
+            exit 1
+          fi
+
+      - name: Checkout Fortune
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/practical-calculator-factory
+          ref: fortune-cloud-autopilot
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: fortune
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout Saju
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: autodev-v12
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: saju
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Fortune dependencies
+        working-directory: fortune
+        run: npm install --no-audit --no-fund
+
+      - name: Install Saju dependencies
+        working-directory: saju
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Compare shared contract and shadow engine outputs
+        env:
+          FORTUNE_HEAD: ${{ github.sha }}
+        run: |
+          export FORTUNE_HEAD="$(git -C fortune rev-parse HEAD)"
+          export SAJU_HEAD="$(git -C saju rev-parse HEAD)"
+          node scripts/compare-fortune-saju-parity.mjs fortune saju
+
+      - name: Upload parity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortune-saju-shadow-parity
+          path: artifacts/fortune-saju-shadow-parity.json
+          if-no-files-found: error
