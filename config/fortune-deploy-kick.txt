@@ -1,1 +1,1 @@
-Fortune release baseline validation for integration migration; validate current fortune-cloud-autopilot without enabling premium, analytics, ads, or indexing.
+Validate latest Fortune migration-contract + shadow-exporter batch; preview remains noindex/premium-off.\n
