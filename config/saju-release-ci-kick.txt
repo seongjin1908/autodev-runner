@@ -1,1 +1,1 @@
-Validate compact Saju landing conversion after shared migration lock refresh at head bf62389263c77306bc400d9799036d62812ad0ec. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build.
+Validate compact Saju landing conversion and KR catalog at head 6fbba201b551d18d8f90146ddb28eadb47468b7a. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build.
