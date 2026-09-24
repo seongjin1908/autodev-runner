@@ -1,1 +1,1 @@
-Validate landing trust feature bundle at Saju head 684ae357fa991c7d2a004ebb4d21d01d53a3997b. Run wiring, validation (including landing trust audit + TypeScript typecheck), and production build. Preserve Toss runtime; do not deploy AppDeploy.
+Validate landing trust feature bundle after typecheck fix at Saju head 8388c9dafe8ebde010a0d3787aaf8edcfcc4d8ae. Run wiring, validation, TypeScript typecheck, and production build. Preserve Toss runtime; do not deploy AppDeploy.
