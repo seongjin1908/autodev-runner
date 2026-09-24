@@ -82,8 +82,14 @@ async function fillFreeFlow(page, label) {
   await page.getByRole('button', { name: /무료로 결과 보기/ }).click();
   await page.locator('#free-result').waitFor({ state: 'visible', timeout: 30000 });
   const freeText = await page.locator('#free-result').innerText();
-  for (const expected of ['기본 사주','핵심 성향','강점','주의할 점','재물','일·사업','인연']) {
-    if (!freeText.includes(expected)) throw new Error(label + ': free result missing ' + expected);
+  for (const expected of ['사주에서 특히 중요한 부분','당신의 사주를 한 문장으로 요약하면','강하게 드러나는 부분','현재 주목할 흐름','재물','사업','연애','지금 가장 궁금한 것은 무엇인가요?']) {
+    if (!freeText.includes(expected)) throw new Error(label + ': personalized free result missing ' + expected);
+  }
+  const interestButton = page.getByRole('button', { name: '사업', exact: true });
+  if (await interestButton.count()) {
+    await interestButton.click();
+    const selectedText = await page.locator('.selected-interest-preview').innerText();
+    if (!selectedText.includes('사업에서 먼저 봐야 할 부분')) throw new Error(label + ': interest reorder did not update business preview');
   }
   return freeText;
 }
