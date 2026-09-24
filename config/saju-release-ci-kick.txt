@@ -1,1 +1,1 @@
-Validate final compact Saju landing conversion bundle at head 940ef70c3c043b2eb77b6f8a3c0e3522a0ac1e5b. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build. Preserve Toss payment/result/re-entry behavior.
+Revalidate compact Saju landing conversion after invariant fix at head f0a54f4fef87e69286e3c11689ed5b20ea995a12. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build.
