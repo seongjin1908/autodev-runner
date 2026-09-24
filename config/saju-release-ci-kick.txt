@@ -1,1 +1,1 @@
-Validate deterministic Myeongri derived-facts P0 bundle at Saju head b1ebd13f776f0cd4dbd71a5c4faf543570cfcf64. Run full validation, derived-facts golden fixtures, TypeScript typecheck, production build, and existing payment/result regressions. Do not deploy AppDeploy.
+Revalidate deterministic Myeongri P0 bundle after shadow parity harness fix at Saju head ad0eb29d1e3cbc1bb46f2a820be51af99f441ab4. Run full validation, golden fixtures, shadow parity, TypeScript typecheck, production build and payment/result regressions. Do not deploy AppDeploy.
