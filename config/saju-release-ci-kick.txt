@@ -1,1 +1,1 @@
-Validate shared staging Product/Attribution/Order/Payment/Result core at Saju head 503d609ed0756125c2b4b95323841e9852261e0e. Preserve Toss runtime; do not deploy AppDeploy.
+Validate landing trust feature bundle at Saju head 684ae357fa991c7d2a004ebb4d21d01d53a3997b. Run wiring, validation (including landing trust audit + TypeScript typecheck), and production build. Preserve Toss runtime; do not deploy AppDeploy.
