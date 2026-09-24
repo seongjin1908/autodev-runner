@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 
 const baseUrl = process.env.SAJU_LIVE_URL || 'https://mvp-91zb78.v2.appdeploy.ai/';
+// Myeongri P0 backend smoke: existing free-result, premium checkout and mobile layout must remain stable.
 const outDir = 'artifacts/saju-live-qa';
 await fs.mkdir(outDir, { recursive: true });
 
