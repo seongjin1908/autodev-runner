@@ -1,1 +1,1 @@
-Validate compact Saju landing conversion and KR catalog at head 6fbba201b551d18d8f90146ddb28eadb47468b7a. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build.
+Validate deterministic Myeongri derived-facts P0 bundle at Saju head b1ebd13f776f0cd4dbd71a5c4faf543570cfcf64. Run full validation, derived-facts golden fixtures, TypeScript typecheck, production build, and existing payment/result regressions. Do not deploy AppDeploy.
