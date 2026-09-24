@@ -81,33 +81,67 @@ async function fillFreeFlow(page, label) {
   if (!(await consent.isChecked())) await consent.check();
   await page.getByRole('button', { name: /무료로 결과 보기/ }).click();
   await page.locator('#free-result').waitFor({ state: 'visible', timeout: 30000 });
+
   const freeText = await page.locator('#free-result').innerText();
-  for (const expected of ['사주에서 특히 중요한 부분','당신의 사주를 한 문장으로 요약하면','강하게 드러나는 부분','현재 주목할 흐름','재물','사업','연애','지금 가장 궁금한 것은 무엇인가요?']) {
-    if (!freeText.includes(expected)) throw new Error(label + ': personalized free result missing ' + expected);
+  for (const expected of [
+    '김영희 님 사주에서 지금 가장 중요한 흐름',
+    '당신의 사주를 한 문장으로 보면',
+    '가장 중요한 3가지',
+    '지금 가장 주목할 흐름',
+    '돈·재물',
+    '사업',
+    '연애',
+    '지금 가장 궁금한 것은 무엇인가요?',
+    '내 상세 흐름 확인하기',
+    '5,900원부터 · 1회 결제',
+  ]) {
+    if (!freeText.includes(expected)) throw new Error(label + ': consumer free result missing ' + expected);
   }
-  if (!freeText.includes('아직 공개되지 않은 분석')) throw new Error(label + ': locked paid section inventory missing');
-  if (!freeText.includes('같은 ') || !freeText.includes('일간이라고 모두 이렇게 나타나는 것은 아닙니다')) {
-    throw new Error(label + ': same-day-master distinction missing');
+
+  for (const banned of ['CURRENT FLOW', '시기 계산값 보기']) {
+    if (freeText.includes(banned)) throw new Error(label + ': technical copy leaked: ' + banned);
   }
+
+  const expertTerms = ['원국', '월령', '통근', '투간', 'DRAINING', 'SUPPORTIVE'];
+  const visibleMainCopy = await page.locator('#free-result').evaluate((root) => {
+    const clone = root.cloneNode(true);
+    clone.querySelectorAll('details, .product-choice-panel').forEach((node) => node.remove());
+    return clone.innerText;
+  });
+  for (const term of expertTerms) {
+    if (visibleMainCopy.includes(term)) throw new Error(label + ': expert term visible before evidence: ' + term);
+  }
+
+  if (await page.locator('.product-card').count()) throw new Error(label + ': product comparison visible before primary CTA');
+
   const surprise = page.locator('.surprise-card');
   if (await surprise.count()) {
     const surpriseText = await surprise.innerText();
-    if (!surpriseText.includes('왜 이런 차이가 생기나요?')) throw new Error(label + ': surprise hook missing evidence disclosure');
+    if (!surpriseText.includes('왜 이렇게 나왔나요?')) throw new Error(label + ': surprise hook missing evidence accordion');
   }
+
   const interestButton = page.getByRole('button', { name: '사업', exact: true });
   if (await interestButton.count()) {
     await interestButton.click();
     const selectedText = await page.locator('.selected-interest-preview').innerText();
-    if (!selectedText.includes('사업에서 먼저 봐야 할 부분')) throw new Error(label + ': interest reorder did not update business preview');
+    if (!selectedText.includes('사업에서 지금 가장 중요한 질문')) throw new Error(label + ': business interest copy did not update');
     if (!new URL(page.url()).searchParams.get('focus')?.includes('business')) throw new Error(label + ': selected interest not preserved in URL');
-    const firstProduct = await page.locator('.product-card').first().innerText();
-    if (!firstProduct.includes('사업 관심 기준 추천')) throw new Error(label + ': product priority did not follow selected interest');
+  }
+
+  const primaryCta = page.locator('.result-primary-cta');
+  if (await primaryCta.count() !== 1) throw new Error(label + ': free result must show exactly one primary checkout gate');
+  await primaryCta.click();
+  await page.locator('.product-choice-panel').waitFor({ state: 'visible', timeout: 10000 });
+  if (await page.locator('.product-card').count() < 2) throw new Error(label + ': Standard/Premium comparison missing after primary CTA');
+  const productChoiceText = await page.locator('.product-choice-panel').innerText();
+  for (const expected of ['STANDARD', '5,900원', 'PREMIUM', '9,900원', '사업 관심 기준 추천']) {
+    if (!productChoiceText.includes(expected)) throw new Error(label + ': product choice missing ' + expected);
   }
   return freeText;
 }
 
 async function choosePremium(page, label) {
-  const premium = page.locator('.product-card').filter({ hasText: 'Premium 사주' });
+  const premium = page.locator('.product-card').filter({ hasText: '9,900원' });
   await premium.waitFor({ state: 'visible', timeout: 15000 });
   await premium.getByRole('button').click();
   await page.locator('#payment').waitFor({ state: 'visible', timeout: 20000 });
