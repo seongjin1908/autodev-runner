@@ -85,11 +85,23 @@ async function fillFreeFlow(page, label) {
   for (const expected of ['사주에서 특히 중요한 부분','당신의 사주를 한 문장으로 요약하면','강하게 드러나는 부분','현재 주목할 흐름','재물','사업','연애','지금 가장 궁금한 것은 무엇인가요?']) {
     if (!freeText.includes(expected)) throw new Error(label + ': personalized free result missing ' + expected);
   }
+  if (!freeText.includes('아직 공개되지 않은 분석')) throw new Error(label + ': locked paid section inventory missing');
+  if (!freeText.includes('같은 ') || !freeText.includes('일간이라고 모두 이렇게 나타나는 것은 아닙니다')) {
+    throw new Error(label + ': same-day-master distinction missing');
+  }
+  const surprise = page.locator('.surprise-card');
+  if (await surprise.count()) {
+    const surpriseText = await surprise.innerText();
+    if (!surpriseText.includes('왜 이런 차이가 생기나요?')) throw new Error(label + ': surprise hook missing evidence disclosure');
+  }
   const interestButton = page.getByRole('button', { name: '사업', exact: true });
   if (await interestButton.count()) {
     await interestButton.click();
     const selectedText = await page.locator('.selected-interest-preview').innerText();
     if (!selectedText.includes('사업에서 먼저 봐야 할 부분')) throw new Error(label + ': interest reorder did not update business preview');
+    if (!new URL(page.url()).searchParams.get('focus')?.includes('business')) throw new Error(label + ': selected interest not preserved in URL');
+    const firstProduct = await page.locator('.product-card').first().innerText();
+    if (!firstProduct.includes('사업 관심 기준 추천')) throw new Error(label + ': product priority did not follow selected interest');
   }
   return freeText;
 }
