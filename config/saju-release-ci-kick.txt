@@ -1,1 +1,1 @@
-Revalidate deterministic Myeongri P0 bundle after shadow parity harness fix at Saju head ad0eb29d1e3cbc1bb46f2a820be51af99f441ab4. Run full validation, golden fixtures, shadow parity, TypeScript typecheck, production build and payment/result regressions. Do not deploy AppDeploy.
+Revalidate deterministic Myeongri P0 bundle after parity policy harness fix at Saju head 3b4a34eb6e4fc08e4392cf0136ae3416ff662da0. Run full validation, golden fixtures, parity audits, TypeScript typecheck, production build and payment/result regressions. Do not deploy AppDeploy.
