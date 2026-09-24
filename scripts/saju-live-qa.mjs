@@ -87,20 +87,21 @@ async function fillFreeFlow(page, label) {
   return freeText;
 }
 
-async function chooseP003(page, label) {
-  const p003 = page.locator('.product-card').filter({ hasText: '평생 정밀 사주' });
-  await p003.waitFor({ state: 'visible', timeout: 15000 });
-  await p003.getByRole('button').click();
+async function choosePremium(page, label) {
+  const premium = page.locator('.product-card').filter({ hasText: 'Premium 사주' });
+  await premium.waitFor({ state: 'visible', timeout: 15000 });
+  await premium.getByRole('button').click();
   await page.locator('#payment').waitFor({ state: 'visible', timeout: 20000 });
   const paymentText = await page.locator('#payment').innerText();
-  if (!paymentText.includes('29,900원')) throw new Error(label + ': P003 price missing');
+  if (!paymentText.includes('9,900원')) throw new Error(label + ': Premium price missing');
+  if (!paymentText.includes('Toss Payments') || !paymentText.includes('자동구독 없음')) throw new Error(label + ': payment trust copy missing');
   await page.getByLabel('알림 이메일').fill('qa@example.com');
   return paymentText;
 }
 
 async function openTossCheckout(page, context) {
   const beforePages = context.pages().length;
-  const button = page.getByRole('button', { name: /토스 안전결제 시작/ });
+  const button = page.getByRole('button', { name: /Toss Payments로 결제하기/ });
   if (!(await button.isEnabled())) throw new Error('checkout button disabled before request');
   await button.click();
 
@@ -172,7 +173,7 @@ try {
     const result = await collectLayout(page, spec.label + ':result');
     await page.screenshot({ path: outDir + '/' + spec.label + '-result.png', fullPage: true });
 
-    await chooseP003(page, spec.label);
+    await choosePremium(page, spec.label);
     const payment = await collectLayout(page, spec.label + ':payment');
     await page.screenshot({ path: outDir + '/' + spec.label + '-payment.png', fullPage: true });
 
