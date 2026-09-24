@@ -1,1 +1,1 @@
-Revalidate compact Saju landing conversion after invariant fix at head f0a54f4fef87e69286e3c11689ed5b20ea995a12. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build.
+Validate compact Saju landing conversion after shared migration lock refresh at head bf62389263c77306bc400d9799036d62812ad0ec. Run wiring, validation, landing trust audit, TypeScript typecheck, regression suite, and production build.
