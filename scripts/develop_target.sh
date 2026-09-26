@@ -47,25 +47,35 @@ RULES
   cat /tmp/autodev-baseline.log
 } >/tmp/autodev-prompt.txt
 
-PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/north-mini-code-free}"
-SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/deepseek-v4-flash-free}"
-TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/big-pickle}"
+PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/mimo-v2.5-free}"
+SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/longcat-2.0-free}"
+TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/nemotron-3-ultra-free}"
+QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/north-mini-code-free}"
+MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-540}"
 
 : >/tmp/autodev-selected-model
-for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL"; do
-  if timeout 900 opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1; then
+ATTEMPT=0
+for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL"; do
+  ATTEMPT=$((ATTEMPT + 1))
+  echo "Free coding model attempt $ATTEMPT: $model"
+  if timeout "$MODEL_TIMEOUT" opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1; then
     echo "$model" >/tmp/autodev-selected-model
-    echo "Free coding model completed."
+    echo "Free coding model completed: $model"
     break
   else
-    echo "Free model attempt failed; trying fallback."
+    RC=$?
+    echo "Free model attempt failed (exit $RC): $model"
+    echo "---- model log tail ----"
+    tail -n 40 /tmp/autodev-model.log || true
+    echo "---- end model log tail ----"
   fi
 done
 
 if [[ ! -s /tmp/autodev-selected-model ]]; then
-  echo "No free model completed. Paid fallback is disabled."
+  echo "No free model completed. Paid fallback is disabled; next scheduled run will retry."
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
-  exit 0
+  echo "AUTODEV_MODEL_BLOCKED=true" >> "$GITHUB_ENV"
+  exit 1
 fi
 
 python - "$MAX_CHANGED_FILES" <<'PY'
