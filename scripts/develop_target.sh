@@ -53,7 +53,7 @@ TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/big-pickle}"
 
 : >/tmp/autodev-selected-model
 for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL"; do
-  if timeout 1500 opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1; then
+  if timeout 900 opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1; then
     echo "$model" >/tmp/autodev-selected-model
     echo "Free coding model completed."
     break
@@ -92,10 +92,14 @@ PY
 
 git diff --check >/tmp/autodev-diffcheck.log 2>&1
 
-if [[ -f package-lock.json ]]; then
-  npm ci >/tmp/autodev-reinstall.log 2>&1
+if git diff --name-only -- package.json package-lock.json | grep -q .; then
+  if [[ -f package-lock.json ]]; then
+    npm ci >/tmp/autodev-reinstall.log 2>&1
+  else
+    npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-reinstall.log 2>&1
+  fi
 else
-  npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-reinstall.log 2>&1
+  echo "Dependency manifests unchanged; reuse installed dependencies." >/tmp/autodev-reinstall.log
 fi
 
 set +e

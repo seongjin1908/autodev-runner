@@ -10,7 +10,7 @@ on:
       - 'prompts/saju.md'
       - 'config/projects.json'
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '7,27,47 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -76,7 +76,7 @@ jobs:
       - name: Prepare collision guard
         if: steps.token.outputs.configured == 'true'
         env:
-          RECENT_CHANGE_GUARD_MINUTES: '20'
+          RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
         shell: bash
         run: bash scripts/prepare_target.sh
 
