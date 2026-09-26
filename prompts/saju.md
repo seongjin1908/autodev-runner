@@ -1,6 +1,6 @@
 # Saju launch ship mode — current priority
 
-Goal: finish Fortune Atlas / Daangn Saju for real release, then expand into the next verified analysis modules. Work in coherent batches and keep the live payment/result path safe.
+Goal: finish Fortune Atlas / Daangn Saju to revenue-ready production quality first. Do not spend development cycles on 궁합/별자리/이름풀이/관상/손금/타로 until the Saju product is publicly deployable, payment-safe, conversion-tracked, and ready for paid acquisition.
 
 ## Hard release order
 1. Real birth input -> deterministic Saju engine -> free result.
@@ -71,16 +71,23 @@ Goal: finish Fortune Atlas / Daangn Saju for real release, then expand into the 
 - Email/SMS stay optional and must fail closed when unconfigured.
 - No paid API/service activation, live spending, public launch switch, destructive migration, or secret changes.
 
-## Expansion only after the core release checklist is verified
-Build actual analysis modules in this order, each with a real input model, deterministic/traceable logic where applicable, mobile UX, tests, and honest readiness state:
-1. 궁합
-2. 별자리
-3. 이름풀이
-4. 관상
-5. 손금
-6. 타로
+## Revenue-first freeze
+Until the Saju product is ready for real paid acquisition, do not build or polish 궁합/별자리/이름풀이/관상/손금/타로. Those modules may remain documented for later, but they are not current work.
 
-Do not mark a module "이용 가능" until its real engine and result flow are implemented and tested.
+Before any expansion module, Saju must have:
+1. deterministic free result verified,
+2. Standard/Premium report differentiation verified,
+3. PayPal Live overseas payment path + reconciliation/webhook recovery,
+4. PayApp Korea path ready to activate immediately after merchant approval,
+5. payment -> entitlement -> web result -> PDF -> re-entry verified,
+6. mobile 360/390/430 release flow,
+7. P0 blocker 0 and no known P1 release-critical error,
+8. production build/CI green,
+9. deployed smoke test green,
+10. ad attribution events for visit -> free result -> product select -> checkout start -> payment verified -> fulfillment,
+11. landing/result UX optimized for paid conversion without deceptive claims.
+
+Only after the above is true and the owner explicitly switches focus may expansion resume in this order: 궁합 -> 별자리 -> 이름풀이 -> 관상 -> 손금 -> 타로.
 
 ## Definition of useful progress
-A release blocker is removed in real code and the configured validation/build passes. After core release blockers are clear, one expansion module advances from 준비중 -> tested MVP without breaking Saju/payment/PDF/re-entry.
+A Saju release/revenue blocker is removed in real code and the configured validation/build passes. No expansion work counts as useful progress while a Saju release or monetization blocker remains.
