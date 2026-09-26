@@ -29,9 +29,11 @@ jobs:
     timeout-minutes: 55
     env:
       TARGET: ${{ matrix.target }}
-      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/north-mini-code-free' }}
-      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/deepseek-v4-flash-free' }}
-      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/big-pickle' }}
+      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.5-free' }}
+      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.0-free' }}
+      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3-ultra-free' }}
+      DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/north-mini-code-free' }}
+      DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '540' }}
 
     steps:
       - name: Checkout runner control plane
