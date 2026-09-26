@@ -90,18 +90,19 @@ Before any expansion module, Saju must have:
 Only after the above is true and the owner explicitly switches focus may expansion resume in this order: 궁합 -> 별자리 -> 이름풀이 -> 관상 -> 손금 -> 타로.
 
 ## Immediate next autonomous batch
-Do not spend this run re-reviewing whether work is needed. The target branch is behind the verified live product direction and must produce durable source/test changes.
+The live AppDeploy product now has PayPal Live create/capture, browser-close recovery, authoritative reconciliation, recovery webhook handling, Saju-only monetization focus, first-party funnel events, and mobile safe-area CTA polish. Do not redo those items unless the target branch is missing them.
 
 Mandatory next task:
-- Remove stale production assumptions that Toss is the active Korea checkout provider.
-- Preserve existing Toss code only as isolated legacy/test/reference code.
-- Use the existing `packages/global-payment-core` contracts to move the service toward provider-neutral payment orchestration.
-- Encode the current routing policy in testable code: KR/KRW => PayApp pending/disabled until approval; non-KR USD => PayPal Direct policy path.
-- Add or strengthen reconciliation/webhook state handling so ambiguous payment outcomes cannot grant entitlement and can be re-queried safely.
-- Add regression/audit coverage for the routing and reconciliation behavior.
-- Do not require real provider secrets, do not perform live charges, and do not enable a production payment provider.
-- The run must modify at least one durable source file and one relevant test/audit file unless baseline code already proves the exact behavior; if exact behavior already exists, implement the next missing payment-recovery blocker instead.
-- Do not stop after analysis, documentation, generated build output, or status reporting.
+- Bring the target branch fully in line with the current verified live Saju behavior if any drift remains.
+- Finish the 360/390/430 mobile release path: no horizontal overflow, no sticky CTA overlap, product cards readable, payment form usable, completed paid report readable, PDF/re-entry controls reachable.
+- Strengthen non-charge regression coverage for payment -> entitlement -> paid web result -> PDF -> re-entry. Never perform a real PayPal Live charge in automated QA.
+- Verify Standard and Premium are structurally different in both web result and PDF, with Premium containing deeper timing/long-view evidence instead of only longer wording.
+- Verify interrupted PayPal return/browser-close recovery remains idempotent and cannot grant entitlement from an unverified webhook payload.
+- Keep KR checkout disabled while PayApp approval is pending. Do not revive Toss as the live Korea provider.
+- Preserve attribution through landing -> free result -> product selected -> checkout started -> payment verified -> fulfillment completed.
+- Remove or isolate any remaining unfinished cross-sell module exposure from the live Saju customer flow.
+- The run must produce durable source/test changes only when a verified release blocker exists. If all code paths already match, improve regression/audit coverage for the highest-risk release path instead of adding unrelated features.
+- No live charges, no paid API activation, no ad spend, no public launch switch, no secret changes.
 
 ## Definition of useful progress
 A Saju release/revenue blocker is removed in real code and the configured validation/build passes. No expansion work counts as useful progress while a Saju release or monetization blocker remains.
