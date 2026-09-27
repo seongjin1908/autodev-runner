@@ -1,1 +1,1 @@
-Revalidate current Saju release at autodev-v12 head 5bbb8635251a02865f4785781926dcf63911d9e1 after replacing stale Toss-era validator with the canonical release gate plus current deterministic timing, consumer-copy and PDF runtime checks. CI only; no live payment or ad spend.\n
+Revalidate current Saju release at autodev-v12 head c60fadd0b38b1c5a7c7eca18a3401c138609f161 after aligning the bounded-polling release assertion with the current five-argument status flow. Run canonical release gate, deterministic fixtures, PDF smoke and build. No live payment or ad spend.\n
