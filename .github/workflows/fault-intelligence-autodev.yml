@@ -1,0 +1,91 @@
+name: Fault Intelligence Fast AutoDev
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fault-intelligence-fast-autodev
+  cancel-in-progress: false
+
+jobs:
+  develop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      TARGET: fault-intel
+      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/north-mini-code-free' }}
+      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/deepseek-v4-flash-free' }}
+      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/big-pickle' }}
+
+    steps:
+      - name: Checkout runner control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Select Fault Intelligence target
+        id: select
+        shell: bash
+        run: bash scripts/select_target.sh
+
+      - name: Check repository token
+        id: token
+        env:
+          AUTODEV_REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "$AUTODEV_REPO_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "AUTODEV_REPO_TOKEN is not configured."
+          fi
+
+      - name: Checkout target work branch
+        if: steps.token.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.select.outputs.repository }}
+          ref: ${{ steps.select.outputs.work_branch }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare collision guard
+        if: steps.token.outputs.configured == 'true'
+        env:
+          RECENT_CHANGE_GUARD_MINUTES: '5'
+        shell: bash
+        run: bash scripts/prepare_target.sh
+
+      - name: Execute guarded zero-budget batch
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        env:
+          ALIAS: ${{ steps.select.outputs.alias }}
+          VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
+          PROMPT_FILE: ${{ steps.select.outputs.prompt_file }}
+          MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
+        shell: bash
+        run: bash scripts/develop_target.sh
+
+      - name: Push validated batch and maintain PR
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
+          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+        shell: bash
+        run: bash scripts/push_target.sh
