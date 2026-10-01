@@ -49,6 +49,16 @@
       "prompt_file": "prompts/restore-ai.md",
       "recent_change_guard_minutes": 25,
       "max_changed_files": 35
+    },
+    {
+      "alias": "fault-intel",
+      "repository": "seongjin1908/fault-intelligence",
+      "work_branch": "autodev-v1",
+      "base_branch": "main",
+      "validation": "npm run check",
+      "prompt_file": "prompts/fault-intel.md",
+      "recent_change_guard_minutes": 5,
+      "max_changed_files": 40
     }
   ]
 }
