@@ -1,4 +1,5 @@
 name: Saju Annual Outlook Branch CI
+# target-sha: 2d334552b3b7baf253e38b2d0306506e7e7d0791
 
 on:
   push:
