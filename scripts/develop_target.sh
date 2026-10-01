@@ -104,7 +104,7 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
       echo "# Retry feedback"
       echo "The previous coding attempt exited successfully but did not change any durable source or test file."
       echo "Do not stop at analysis, build output, generated dist files, or status text."
-      echo "Implement the highest incomplete Saju revenue/release blocker in real source code and add/update a regression test."
+      echo "Implement the highest incomplete target-specific P0/P1 blocker in real source code and add/update a regression test."
     } >> /tmp/autodev-prompt.txt
   else
     RC=$?
