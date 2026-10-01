@@ -1,0 +1,51 @@
+name: Saju Annual Outlook Branch CI
+
+on:
+  push:
+    branches:
+      - ci/annual-outlook-v1
+    paths:
+      - '.github/workflows/saju-annual-outlook-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout control branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check private repository token
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$REPO_TOKEN" || (echo "::error::AUTODEV_REPO_TOKEN is missing" && exit 1)
+      - name: Checkout annual outlook branch
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: autodev-annual-outlook-v1
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: target
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Validate annual outlook fixtures
+        working-directory: target
+        run: node scripts/annual-outlook-fixtures.mjs
+      - name: Run release validation
+        working-directory: target
+        run: node scripts/validate.mjs
+      - name: Build release bundle
+        working-directory: target
+        run: npm run build
