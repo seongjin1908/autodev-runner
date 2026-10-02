@@ -1,29 +1,26 @@
-# Fault Intelligence batch objective
+# Fault Intelligence cash-first release objective
 
-Primary objective: ship the source-backed V1 quickly without creating low-value mass content.
+Fault Intelligence is the fourth priority. Ship a trustworthy, source-backed searchable V1 before expanding the corpus aggressively.
 
-Priority order:
-1. Repair any real baseline validation failure first.
-2. Work the highest incomplete P0 item in AUTODEV_QUEUE.md.
-3. Complete 2-5 tightly compatible items as one coherent batch when safe.
-4. Heavy-truck J1939/SPN/FMI is first priority, then common passenger-car OBD-II, then Daikin/Goodman/Carrier HVAC.
-5. Never invent fault meanings, applicability, causes, severity, sources, verification dates, traffic, rankings or AdSense status.
-6. Seed/unverified records must stay noindex. Only verified source-backed records may become indexable.
-7. Prefer deterministic schemas, validation, lookup and SEO infrastructure over AI runtime features.
-8. Do not add VIN decode, OCR/photo diagnosis, AI diagnosis chat, repair leads, shopping, accounts, payment, fleet SaaS or mobile apps before P0 release readiness.
-9. Do not enable AdSense. Prepare only a disabled feature-flag/ad-slot architecture after the readiness gate exists.
-10. Do not deploy production and do not auto-merge.
-11. Do not modify GitHub workflows, secrets, credentials or environment files.
-12. Respect source licenses; do not copy proprietary SAE/OEM paid datasets.
-13. Update AUTODEV_STATUS.md only with facts verified by code/tests.
-14. Finish with npm run check passing.
+## P0 order
+1. Repair the current baseline validation failure before any new data or feature work.
+2. If publishable/indexable counts disagree, identify every failing record/gate and restore 100% consistency before adding another record.
+3. Complete the highest incomplete P0 launch item in AUTODEV_QUEUE.md.
+4. Verify source provenance, applicability/model scope, verification dates and noindex/indexable policy.
+5. Only verified source-backed records may be indexable; seed/unverified records stay noindex.
+6. Heavy-truck J1939/SPN/FMI first, then common passenger OBD-II, then Daikin/Goodman/Carrier HVAC — but quality gate comes before corpus growth.
+7. Prepare SEO/internal navigation, mobile/accessibility and disabled monetization slots for launch.
+8. Global-by-market: distinguish language from vehicle/equipment market, model applicability, units, legal/safety copy and source/licensing context.
+9. Never reuse a market-specific fault interpretation as universal without source evidence.
 
+## Scope freeze
+- No VIN decode, OCR/photo diagnosis, AI diagnosis chat, repair leads, shopping, accounts, payment, fleet SaaS or mobile app before V1 readiness.
+- No invented meanings, causes, severity, traffic, rankings, AdSense status or proprietary paid-dataset copying.
+- No AdSense activation, production deploy, paid API, secret change or auto-merge.
+- Do not modify target-repo GitHub workflows.
 
-## Fast-path execution rules
-15. Spend at most 60 seconds inspecting status before editing; if baseline passes, start implementation immediately.
-16. Do not start a dev server, browser session, curl loop, or manual UI QA inside the coding-model run.
-17. Do not create temporary probe files or run exploratory TypeScript experiments outside the real target files.
-18. Bundle 3-7 compatible P0 source/test changes when practical, then run the repository validation once at the end.
-19. If existing result routes import a missing helper/module, repair that shared module/root cause before adding more features.
-20. Prefer direct deterministic edits and regression tests; avoid long analysis/status-only output.
-21. Keep the model run within the time budget: implementation first, validation last, no repeated full builds.
+## Speed rule
+Keep batches small enough to finish within the model time budget. Prefer one verified data/quality problem closed over a large half-finished expansion.
+
+## Definition of useful progress
+The publishable corpus and release gates become more trustworthy and npm run check passes.
