@@ -14,10 +14,15 @@ on:
           - auto
           - fortune
           - saju
-          - pricecam
+          - fortune-design
+          - saju-design
           - face-lab
+          - face-lab-design
           - restore-ai
+          - restore-ai-design
           - fault-intel
+          - fault-intel-design
+          - pricecam
 
 permissions:
   contents: read

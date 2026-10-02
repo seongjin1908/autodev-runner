@@ -28,6 +28,10 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 {
   echo "You are a zero-budget autonomous coding worker."
   echo
+  if [[ "$PROMPT_FILE" == *-design.md ]]; then
+    cat "$ROOT_DIR/prompts/DESIGN_STANDARD_2026.md"
+    echo
+  fi
   cat "$ROOT_DIR/$PROMPT_FILE"
   echo
   cat <<'RULES'
