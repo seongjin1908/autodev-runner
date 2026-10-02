@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after verified Daikin U4 corpus batch
-head-expected: 80939c90c3e2fde6fb162799592b8c377bc85676
+validate fault-intelligence autodev-v1 after HVAC model-variant and Daikin corpus expansion
+head-expected: b033f11bb3ff9f44b80543fe3c16a1730a8660f5
