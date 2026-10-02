@@ -9,11 +9,13 @@ print(base64.b64decode(sys.argv[1]).decode())
 PY
 )"
 
-PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/mimo-v2.5-free}"
-SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/longcat-2.0-free}"
-TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/nemotron-3-ultra-free}"
-QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/north-mini-code-free}"
-MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-540}"
+PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/mimo-v2.6-flash-free}"
+SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/longcat-2.5-preview-free}"
+TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/nemotron-3.5-lightning-free}"
+QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/ling-3.0-flash-fin-free}"
+QUINARY_MODEL="${DDD_FREE_CODE_MODEL_QUINARY:-opencode/laguna-s-2.1-free}"
+SENARY_MODEL="${DDD_FREE_CODE_MODEL_SENARY:-opencode/space-bunny-free}"
+MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-300}"
 TRANSIENT_RETRIES="${DDD_FREE_MODEL_TRANSIENT_RETRIES:-1}"
 
 echo "BATCH_READY=false" >> "$GITHUB_ENV"
@@ -184,7 +186,7 @@ validate_attempt() {
 SELECTED_MODEL=""
 ATTEMPT=0
 
-for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL"; do
+for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL" "$QUINARY_MODEL" "$SENARY_MODEL"; do
   provider_try=0
   while (( provider_try <= TRANSIENT_RETRIES )); do
     provider_try=$((provider_try + 1))

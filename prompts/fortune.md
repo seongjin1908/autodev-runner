@@ -24,3 +24,7 @@ Fortune Atlas / Daangn Saju is the highest-priority revenue product. Treat Fortu
 
 ## Definition of useful progress
 A real release/revenue blocker is removed, regression coverage is strengthened, and configured validation passes. Code volume alone is not progress.
+
+
+## Integrated design rule
+Do not spend a separate automatic lane on cosmetic-only redesign. When the functional P0/P1 work in a batch is safe, improve the touched UI toward a current mobile-first product standard: clear hierarchy, restrained components, deliberate spacing, accessible controls and no generic AI-looking card soup. Preserve existing tested behavior.

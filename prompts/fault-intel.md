@@ -24,3 +24,7 @@ Keep batches small enough to finish within the model time budget. Prefer one ver
 
 ## Definition of useful progress
 The publishable corpus and release gates become more trustworthy and npm run check passes.
+
+
+## Integrated design rule
+Do not spend a separate automatic lane on cosmetic-only redesign. When the functional P0/P1 work in a batch is safe, improve the touched UI toward a current mobile-first product standard: clear hierarchy, restrained components, deliberate spacing, accessible controls and no generic AI-looking card soup. Preserve existing tested behavior.
