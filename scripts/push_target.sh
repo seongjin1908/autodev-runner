@@ -28,3 +28,6 @@ else
 - Production deploy not performed" >/dev/null
   echo "Validated review PR created."
 fi
+
+bash "$ROOT_DIR/scripts/autodev_state.sh" success || true
+echo "AutoDev failure state reset after validated push."
