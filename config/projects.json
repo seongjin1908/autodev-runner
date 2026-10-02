@@ -59,18 +59,78 @@
       "prompt_file": "prompts/fault-intel.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40
+    },
+    {
+      "alias": "fortune-design",
+      "repository": "seongjin1908/practical-calculator-factory",
+      "work_branch": "fortune-cloud-autopilot",
+      "base_branch": "fortune-platform",
+      "validation": "npm test && npm run quality && npm run build && npx wrangler deploy --dry-run",
+      "prompt_file": "prompts/fortune-design.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "saju-design",
+      "repository": "seongjin1908/daangn-saju-autodev",
+      "work_branch": "autodev-v12",
+      "base_branch": "autodev-v11",
+      "validation": "node scripts/release-gate.mjs && npm run build",
+      "prompt_file": "prompts/saju-design.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "face-lab-design",
+      "repository": "seongjin1908/face-lab-global",
+      "work_branch": "autodev/p3-lifecycle-policy",
+      "base_branch": "main",
+      "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit && npm run build",
+      "prompt_file": "prompts/face-lab-design.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
+    },
+    {
+      "alias": "restore-ai-design",
+      "repository": "seongjin1908/restore-ai-autodev",
+      "work_branch": "autodev/import-validated-restore-ai",
+      "base_branch": "main",
+      "validation": "npm run check",
+      "prompt_file": "prompts/restore-ai-design.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 35
+    },
+    {
+      "alias": "fault-intel-design",
+      "repository": "seongjin1908/fault-intelligence",
+      "work_branch": "autodev-v1",
+      "base_branch": "main",
+      "validation": "npm run check",
+      "prompt_file": "prompts/fault-intel-design.md",
+      "recent_change_guard_minutes": 25,
+      "max_changed_files": 40
     }
   ],
   "auto_rotation": [
     "fortune",
     "saju",
+    "fortune-design",
+    "saju",
+    "fortune",
+    "saju-design",
     "fortune",
     "saju",
     "face-lab",
-    "restore-ai",
-    "fault-intel",
+    "face-lab",
+    "face-lab-design",
     "face-lab",
     "restore-ai",
+    "restore-ai",
+    "restore-ai-design",
+    "restore-ai",
+    "fault-intel",
+    "fault-intel",
+    "fault-intel-design",
     "fault-intel"
   ]
 }
