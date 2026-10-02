@@ -49,7 +49,8 @@ jobs:
           required = {
               "alias", "repository", "work_branch", "base_branch",
               "validation", "prompt_file", "recent_change_guard_minutes",
-              "max_changed_files",
+              "max_changed_files", "auto_enabled", "auto_weight",
+              "release_priority", "failure_hold_threshold", "failure_hold_minutes",
           }
 
           aliases = set()
@@ -63,6 +64,12 @@ jobs:
               assert Path(project["prompt_file"]).is_file(), f"{alias}: missing prompt {project['prompt_file']}"
               assert int(project["recent_change_guard_minutes"]) >= 0, f"{alias}: invalid guard"
               assert 1 <= int(project["max_changed_files"]) <= 100, f"{alias}: invalid file limit"
+              assert int(project["auto_weight"]) >= 0, f"{alias}: invalid auto weight"
+              assert 0 <= int(project["release_priority"]) <= 100, f"{alias}: invalid release priority"
+              assert 1 <= int(project["failure_hold_threshold"]) <= 10, f"{alias}: invalid failure threshold"
+              assert 5 <= int(project["failure_hold_minutes"]) <= 1440, f"{alias}: invalid failure hold"
+              if project["auto_enabled"]:
+                  assert int(project["auto_weight"]) > 0, f"{alias}: enabled target needs positive auto weight"
 
           rotation = cfg.get("auto_rotation", [])
           unknown = sorted(set(rotation) - aliases)
@@ -70,3 +77,23 @@ jobs:
           assert rotation, "auto_rotation must not be empty"
           print(f"Validated {len(projects)} targets and {len(rotation)} rotation slots.")
           PY
+
+      - name: Dry-run target selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >/tmp/aliases.txt
+          import json
+          cfg=json.load(open('config/projects.json'))
+          for p in cfg['projects']:
+              print(p['alias'])
+          PY
+          while IFS= read -r alias; do
+            : > /tmp/github-output
+            TARGET="$alias" GITHUB_OUTPUT=/tmp/github-output bash scripts/select_target.sh >/dev/null
+            grep -q '^repository=' /tmp/github-output
+            grep -q '^failure_hold_threshold=' /tmp/github-output
+          done < /tmp/aliases.txt
+          : > /tmp/github-output
+          TARGET=auto GITHUB_OUTPUT=/tmp/github-output bash scripts/select_target.sh >/dev/null
+          grep -q '^alias=' /tmp/github-output

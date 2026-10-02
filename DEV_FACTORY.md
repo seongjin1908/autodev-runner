@@ -47,3 +47,23 @@ Ask the user only when an external service requires an account-owned action that
 
 ## Current active lanes
 See `config/projects.json`. Product repositories keep their own source and PR history; this runner stores only orchestration logic.
+
+
+## Recovery loop
+1. Every model attempt starts from the exact original `START_SHA`.
+2. Transient provider/server failures may retry the same free model once.
+3. A model's durable changes are guarded and validated immediately.
+4. Validation failure discards that model's entire attempt before the next model starts.
+5. Only a validated batch can be committed and pushed.
+6. A validated push resets the project's consecutive-failure counter.
+
+## Automatic failure hold
+- Failure state is stored in a single `AutoDev state` comment on the target PR.
+- The same GitHub Actions run ID cannot increment the failure counter twice.
+- After the configured consecutive-failure threshold, model execution is temporarily held.
+- Fortune/Saju use a shorter hold because they are launch-critical; other products use a longer default hold.
+- A successful validated push clears the hold automatically.
+
+## Release-priority scheduling
+Automatic target selection uses `auto_weight` and `release_priority` from `config/projects.json`.
+Higher-weight launch-near products receive more development slots while lower-priority products continue to receive periodic slots.
