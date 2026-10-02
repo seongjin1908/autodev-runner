@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after evidence-reference hardening
-head-expected: 171b4c948a04e245051d231f677b49b78a616ad2
+validate fault-intelligence autodev-v1 after Goodman verified furnace batch
+head-expected: 6a0fe92ecd863fcee1e180e53cc87f4bcd5524b8
