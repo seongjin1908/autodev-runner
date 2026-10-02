@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after truck platform scoping and Ford launch-cluster expansion
-head-expected: fa33deaa6c0ced7ad08d24a0471a9ab88d65eb02
+validate fault-intelligence autodev-v1 after verified browse links and expanded corpus
+head-expected: 551a797a24ac28511bde4de265e3aa4c44fcc4ce
