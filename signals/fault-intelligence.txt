@@ -1,1 +1,2 @@
-initial validation signal
+validate fault-intelligence autodev-v1 after direct P0 batch
+head-expected: ff213e3688fcd2be53b366d3a088fea4bedb5e49
