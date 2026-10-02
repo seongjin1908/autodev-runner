@@ -9,12 +9,25 @@ print(base64.b64decode(sys.argv[1]).decode())
 PY
 )"
 
-# Dependency install and all target code execute without the cross-repository token.
-if [[ -f package-lock.json ]]; then
-  npm ci >/tmp/autodev-install.log 2>&1
-else
-  npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-install.log 2>&1
-fi
+PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/mimo-v2.5-free}"
+SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/longcat-2.0-free}"
+TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/nemotron-3-ultra-free}"
+QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/north-mini-code-free}"
+MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-540}"
+TRANSIENT_RETRIES="${DDD_FREE_MODEL_TRANSIENT_RETRIES:-1}"
+
+echo "BATCH_READY=false" >> "$GITHUB_ENV"
+echo "AUTODEV_RUN_STATUS=running" >> "$GITHUB_ENV"
+
+install_baseline_dependencies() {
+  if [[ -f package-lock.json ]]; then
+    npm ci >/tmp/autodev-install.log 2>&1
+  elif [[ -f package.json ]]; then
+    npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-install.log 2>&1
+  fi
+}
+
+install_baseline_dependencies
 
 set +e
 bash -lc "$VALIDATION" >/tmp/autodev-baseline.log 2>&1
@@ -49,17 +62,12 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 - Do not auto-merge.
 - Do not fabricate passing tests, live integration success, analytics, prices, or progress.
 - Keep the batch small enough to review and large enough to create real user value.
+- A failed previous attempt has been rolled back. Work from the clean repository state currently on disk.
 RULES
   echo
   echo "# Baseline validation output"
   cat /tmp/autodev-baseline.log
 } >/tmp/autodev-prompt.txt
-
-PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/mimo-v2.5-free}"
-SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/longcat-2.0-free}"
-TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/nemotron-3-ultra-free}"
-QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/north-mini-code-free}"
-MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-540}"
 
 has_durable_changes() {
   python - <<'PY'
@@ -85,72 +93,25 @@ sys.exit(0 if durable else 1)
 PY
 }
 
-reset_generated_artifacts() {
-  rm -rf node_modules dist coverage .astro
-  find . -type d -name __pycache__ -prune -exec rm -rf {} + >/dev/null 2>&1 || true
-  find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete >/dev/null 2>&1 || true
-  git restore --worktree --staged -- dist coverage .astro 2>/dev/null || true
+manifest_changed() {
+  git status --porcelain -- package.json package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock | grep -q .
 }
 
-: >/tmp/autodev-selected-model
-ATTEMPT=0
-for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL"; do
-  ATTEMPT=$((ATTEMPT + 1))
-  echo "Free coding model attempt $ATTEMPT: $model"
-  if timeout "$MODEL_TIMEOUT" opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1; then
-    if DURABLE_PATHS="$(has_durable_changes)"; then
-      echo "$model" >/tmp/autodev-selected-model
-      echo "Free coding model completed with durable source changes: $model"
-      echo "Durable changed paths:"
-      echo "$DURABLE_PATHS"
-      break
-    fi
-    echo "Model exited successfully but produced only generated/build artifacts: $model"
-    reset_generated_artifacts
-    {
-      echo
-      echo "# Retry feedback"
-      echo "The previous coding attempt exited successfully but did not change any durable source or test file."
-      echo "Do not stop at analysis, build output, generated dist files, or status text."
-      echo "Implement the highest incomplete target-specific P0/P1 blocker in real source code and add/update a regression test."
-    } >> /tmp/autodev-prompt.txt
-  else
-    RC=$?
-    echo "Free model attempt failed (exit $RC): $model"
-    echo "---- model log tail ----"
-    tail -n 40 /tmp/autodev-model.log || true
-    echo "---- end model log tail ----"
+restore_attempt_baseline() {
+  local reinstall=false
+  if manifest_changed; then reinstall=true; fi
+  git reset --hard "$START_SHA" >/dev/null
+  git clean -fd -e node_modules/ >/dev/null
+  rm -rf dist coverage .astro
+  find . -type d -name __pycache__ -prune -exec rm -rf {} + >/dev/null 2>&1 || true
+  find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete >/dev/null 2>&1 || true
+  if [[ "$reinstall" == "true" ]]; then
+    install_baseline_dependencies
   fi
-done
+}
 
-if [[ ! -s /tmp/autodev-selected-model ]]; then
-  if DURABLE_PATHS="$(has_durable_changes)"; then
-    echo "All free model processes failed or timed out, but durable source changes remain."
-    echo "Attempting one salvage validation before discarding the batch."
-    set +e
-    bash -lc "$VALIDATION" >/tmp/autodev-salvage-validation.log 2>&1
-    SALVAGE_RC=$?
-    set -e
-    if [[ "$SALVAGE_RC" -eq 0 ]]; then
-      echo "salvaged-free-model" >/tmp/autodev-selected-model
-      echo "Salvage validation passed; preserving durable changes."
-      echo "$DURABLE_PATHS"
-    else
-      echo "Salvage validation failed; no branch push will occur."
-      tail -n 80 /tmp/autodev-salvage-validation.log || true
-      echo "BATCH_READY=false" >> "$GITHUB_ENV"
-      echo "AUTODEV_MODEL_BLOCKED=true" >> "$GITHUB_ENV"
-      exit 1
-    fi
-  else
-    echo "No free model produced durable source changes. Paid fallback is disabled; next scheduled run will retry."
-    echo "BATCH_READY=false" >> "$GITHUB_ENV"
-    echo "AUTODEV_MODEL_BLOCKED=true" >> "$GITHUB_ENV"
-    exit 1
-  fi
-fi
-
-python - "$MAX_CHANGED_FILES" <<'PY'
+guard_changes() {
+  python - "$MAX_CHANGED_FILES" <<'PY'
 import subprocess,sys
 limit=int(sys.argv[1])
 lines=subprocess.check_output(['git','status','--porcelain'], text=True).splitlines()
@@ -159,42 +120,136 @@ for line in lines:
     p=line[3:]
     if ' -> ' in p:
         p=p.split(' -> ',1)[1]
-    paths.append(p)
+    p=p.strip()
+    if p:
+        paths.append(p)
 blocked=[]
 for p in paths:
     low=p.lower()
     if p.startswith('.github/') or p.startswith('.env') or '/.env' in p or low.endswith('.pem') or low.endswith('.key') or 'secret' in low:
         blocked.append(p)
 if blocked:
-    raise SystemExit('Guard blocked sensitive/workflow changes.')
+    print('Guard blocked sensitive/workflow changes: ' + ', '.join(blocked))
+    raise SystemExit(2)
 if len(paths) > limit:
-    raise SystemExit(f'Guard blocked oversized batch: {len(paths)} files > {limit}.')
+    print(f'Guard blocked oversized batch: {len(paths)} files > {limit}.')
+    raise SystemExit(3)
 print(f'Guard passed: {len(paths)} changed files.')
 PY
+}
 
-git diff --check >/tmp/autodev-diffcheck.log 2>&1
+sanitize_tail() {
+  local file="$1"
+  local lines="${2:-100}"
+  if [[ ! -f "$file" ]]; then return 0; fi
+  tail -n "$lines" "$file" |
+    sed -E "s/([A-Z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*)=[^[:space:]]+/\\1=***REDACTED***/g; s/(gh[pousr]_[A-Za-z0-9_]+)/***REDACTED***/g"
+}
 
-if git diff --name-only -- package.json package-lock.json | grep -q .; then
-  if [[ -f package-lock.json ]]; then
-    npm ci >/tmp/autodev-reinstall.log 2>&1
-  else
-    npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-reinstall.log 2>&1
+append_feedback() {
+  local title="$1"
+  local file="$2"
+  {
+    echo
+    echo "# Retry feedback: $title"
+    echo "The previous attempt was discarded and the repository was restored to the original START_SHA."
+    echo "Fix the root cause shown below; do not repeat the same ineffective edit."
+    echo '~~~~'
+    sanitize_tail "$file" 100
+    echo '~~~~'
+  } >> /tmp/autodev-prompt.txt
+}
+
+is_transient_model_error() {
+  local file="$1"
+  grep -Eqi "Unexpected server error|rate.?limit|HTTP[^0-9]*(429|500|502|503|504)|temporar|service unavailable|connection reset|upstream|overloaded" "$file" 2>/dev/null
+}
+
+validate_attempt() {
+  local logfile="$1"
+  if manifest_changed; then
+    if [[ -f package-lock.json ]]; then
+      npm ci >/tmp/autodev-attempt-install.log 2>&1
+    elif [[ -f package.json ]]; then
+      npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-attempt-install.log 2>&1
+    fi
   fi
-else
-  echo "Dependency manifests unchanged; reuse installed dependencies." >/tmp/autodev-reinstall.log
-fi
+  set +e
+  bash -lc "$VALIDATION" >"$logfile" 2>&1
+  local rc=$?
+  set -e
+  return "$rc"
+}
 
-set +e
-bash -lc "$VALIDATION" >/tmp/autodev-final-validation.log 2>&1
-FINAL_RC=$?
-set -e
-echo "$FINAL_RC" > /tmp/autodev-final-rc
-if [[ "$FINAL_RC" -ne 0 ]]; then
-  echo "Final validation failed. No private branch push will occur."
+SELECTED_MODEL=""
+ATTEMPT=0
+
+for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL"; do
+  provider_try=0
+  while (( provider_try <= TRANSIENT_RETRIES )); do
+    provider_try=$((provider_try + 1))
+    ATTEMPT=$((ATTEMPT + 1))
+    restore_attempt_baseline
+    echo "Free coding model attempt $ATTEMPT: $model (provider try $provider_try)"
+
+    set +e
+    timeout "$MODEL_TIMEOUT" opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1
+    MODEL_RC=$?
+    set -e
+
+    if ! DURABLE_PATHS="$(has_durable_changes)"; then
+      if [[ "$MODEL_RC" -ne 0 ]] && is_transient_model_error /tmp/autodev-model.log && (( provider_try <= TRANSIENT_RETRIES )); then
+        echo "Transient provider failure; retrying same model once."
+        sleep 3
+        continue
+      fi
+      append_feedback "model produced no durable source change (exit $MODEL_RC)" /tmp/autodev-model.log
+      break
+    fi
+
+    echo "Durable changed paths:"
+    echo "$DURABLE_PATHS"
+
+    set +e
+    guard_changes >/tmp/autodev-guard.log 2>&1
+    GUARD_RC=$?
+    set -e
+    if [[ "$GUARD_RC" -ne 0 ]]; then
+      append_feedback "change guard rejected the batch" /tmp/autodev-guard.log
+      break
+    fi
+
+    VALIDATION_LOG="/tmp/autodev-attempt-validation-$ATTEMPT.log"
+    if validate_attempt "$VALIDATION_LOG"; then
+      SELECTED_MODEL="$model"
+      if [[ "$MODEL_RC" -ne 0 ]]; then
+        SELECTED_MODEL="salvaged:$model"
+      fi
+      cp "$VALIDATION_LOG" /tmp/autodev-final-validation.log
+      echo "0" > /tmp/autodev-final-rc
+      echo "Validated model batch accepted: $SELECTED_MODEL"
+      break 2
+    fi
+
+    FINAL_RC=$?
+    echo "$FINAL_RC" > /tmp/autodev-final-rc
+    cp "$VALIDATION_LOG" /tmp/autodev-final-validation.log
+    append_feedback "validation failed after model $model" "$VALIDATION_LOG"
+    echo "Validation failed for $model; rolling back before the next model."
+    break
+  done
+done
+
+if [[ -z "$SELECTED_MODEL" ]]; then
+  restore_attempt_baseline
+  echo "All free model attempts were exhausted without a validated batch."
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
-  echo "AUTODEV_FAILED=true" >> "$GITHUB_ENV"
+  echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
+  echo "AUTODEV_FAILURE_REASON=model_pool_exhausted" >> "$GITHUB_ENV"
   exit 1
 fi
+
+echo "$SELECTED_MODEL" >/tmp/autodev-selected-model
 
 git diff --check >/tmp/autodev-final-diffcheck.log 2>&1
 
@@ -206,6 +261,7 @@ if git diff --quiet && git diff --cached --quiet && [[ -z "$(git ls-files --othe
   echo "Validated successfully; no durable source changes were produced."
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
   echo "AUTODEV_NO_DURABLE_CHANGE=true" >> "$GITHUB_ENV"
+  echo "AUTODEV_RUN_STATUS=no_change" >> "$GITHUB_ENV"
   exit 0
 fi
 
@@ -213,5 +269,8 @@ git config user.name "central-autodev-runner"
 git config user.email "central-autodev-runner@users.noreply.github.com"
 git add -A
 git commit -m "autodev: complete $ALIAS batch" >/tmp/autodev-commit.log 2>&1
+
 echo "BATCH_READY=true" >> "$GITHUB_ENV"
+echo "AUTODEV_RUN_STATUS=success" >> "$GITHUB_ENV"
+echo "AUTODEV_FAILURE_REASON=none" >> "$GITHUB_ENV"
 echo "Validated batch is ready for guarded push."
