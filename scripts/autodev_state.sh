@@ -73,13 +73,16 @@ PY
 }
 
 write_env() {
+  local active=false
+  if hold_active; then active=true; fi
+  {
+    echo "AUTODEV_FAILURE_COUNT=$FAILURE_COUNT"
+    echo "AUTODEV_HOLD_UNTIL=$HOLD_UNTIL"
+    echo "AUTODEV_STATE_PR_NUMBER=$PR_NUMBER"
+    echo "AUTODEV_HOLD_ACTIVE=$active"
+  } > /tmp/autodev-state.env
   if [[ -n "${GITHUB_ENV:-}" ]]; then
-    {
-      echo "AUTODEV_FAILURE_COUNT=$FAILURE_COUNT"
-      echo "AUTODEV_HOLD_UNTIL=$HOLD_UNTIL"
-      echo "AUTODEV_STATE_PR_NUMBER=$PR_NUMBER"
-      if hold_active; then echo "AUTODEV_HOLD_ACTIVE=true"; else echo "AUTODEV_HOLD_ACTIVE=false"; fi
-    } >> "$GITHUB_ENV"
+    cat /tmp/autodev-state.env >> "$GITHUB_ENV"
   fi
 }
 
