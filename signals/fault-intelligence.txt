@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after Ford OBD-II batch and shared record renderer
-head-expected: 56ab642e8c95aa8165eeddc07460f86b6efb7423
+validate fault-intelligence autodev-v1 after truck platform scoping and Ford launch-cluster expansion
+head-expected: fa33deaa6c0ced7ad08d24a0471a9ab88d65eb02
