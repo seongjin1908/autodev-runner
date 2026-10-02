@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after 135-record large truck corpus expansion
-head-expected: 65853b3ccf7e29f95b6685163e3d79e7dd0786b2
+validate fault-intelligence autodev-v1 after 144-record truck and HVAC expansion
+head-expected: 7b015a9172146ce6a4b1a578c767326b688f9daf
