@@ -229,14 +229,14 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
       echo "0" > /tmp/autodev-final-rc
       echo "Validated model batch accepted: $SELECTED_MODEL"
       break 2
+    else
+      FINAL_RC=$?
+      echo "$FINAL_RC" > /tmp/autodev-final-rc
+      cp "$VALIDATION_LOG" /tmp/autodev-final-validation.log
+      append_feedback "validation failed after model $model" "$VALIDATION_LOG"
+      echo "Validation failed for $model; rolling back before the next model."
+      break
     fi
-
-    FINAL_RC=$?
-    echo "$FINAL_RC" > /tmp/autodev-final-rc
-    cp "$VALIDATION_LOG" /tmp/autodev-final-validation.log
-    append_feedback "validation failed after model $model" "$VALIDATION_LOG"
-    echo "Validation failed for $model; rolling back before the next model."
-    break
   done
 done
 
