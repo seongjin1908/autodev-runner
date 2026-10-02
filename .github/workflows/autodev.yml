@@ -42,6 +42,7 @@ jobs:
       DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3-ultra-free' }}
       DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/north-mini-code-free' }}
       DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '540' }}
+      DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '1' }}
 
     steps:
       - name: Checkout runner control plane
@@ -83,10 +84,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Prepare collision guard
+      - name: Prepare collision and failure-hold guard
         if: steps.token.outputs.configured == 'true'
         env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
+          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
           RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
+          FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
+          FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
         shell: bash
         run: bash scripts/prepare_target.sh
 
@@ -97,6 +104,7 @@ jobs:
           VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
           PROMPT_FILE: ${{ steps.select.outputs.prompt_file }}
           MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
+          DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ env.DDD_FREE_MODEL_TRANSIENT_RETRIES }}
         shell: bash
         run: bash scripts/develop_target.sh
 
@@ -108,6 +116,8 @@ jobs:
           WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
           BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
           ALIAS: ${{ steps.select.outputs.alias }}
+          FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
+          FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
         shell: bash
         run: bash scripts/report_target.sh
 
