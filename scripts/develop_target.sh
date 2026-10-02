@@ -116,10 +116,30 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
 done
 
 if [[ ! -s /tmp/autodev-selected-model ]]; then
-  echo "No free model produced durable source changes. Paid fallback is disabled; next scheduled run will retry."
-  echo "BATCH_READY=false" >> "$GITHUB_ENV"
-  echo "AUTODEV_MODEL_BLOCKED=true" >> "$GITHUB_ENV"
-  exit 1
+  if DURABLE_PATHS="$(has_durable_changes)"; then
+    echo "All free model processes failed or timed out, but durable source changes remain."
+    echo "Attempting one salvage validation before discarding the batch."
+    set +e
+    bash -lc "$VALIDATION" >/tmp/autodev-salvage-validation.log 2>&1
+    SALVAGE_RC=$?
+    set -e
+    if [[ "$SALVAGE_RC" -eq 0 ]]; then
+      echo "salvaged-free-model" >/tmp/autodev-selected-model
+      echo "Salvage validation passed; preserving durable changes."
+      echo "$DURABLE_PATHS"
+    else
+      echo "Salvage validation failed; no branch push will occur."
+      tail -n 80 /tmp/autodev-salvage-validation.log || true
+      echo "BATCH_READY=false" >> "$GITHUB_ENV"
+      echo "AUTODEV_MODEL_BLOCKED=true" >> "$GITHUB_ENV"
+      exit 1
+    fi
+  else
+    echo "No free model produced durable source changes. Paid fallback is disabled; next scheduled run will retry."
+    echo "BATCH_READY=false" >> "$GITHUB_ENV"
+    echo "AUTODEV_MODEL_BLOCKED=true" >> "$GITHUB_ENV"
+    exit 1
+  fi
 fi
 
 python - "$MAX_CHANGED_FILES" <<'PY'
