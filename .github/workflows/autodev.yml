@@ -15,6 +15,7 @@ on:
           - pricecam
           - face-lab
           - restore-ai
+          - fault-intel
 
 permissions:
   contents: read
@@ -76,7 +77,7 @@ jobs:
       - name: Prepare collision guard
         if: steps.token.outputs.configured == 'true'
         env:
-          RECENT_CHANGE_GUARD_MINUTES: '25'
+          RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
         shell: bash
         run: bash scripts/prepare_target.sh
 
