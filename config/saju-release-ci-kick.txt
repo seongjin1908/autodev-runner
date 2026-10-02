@@ -1,1 +1,1 @@
-kick: 2026-10-03-payapp-p0-runtime-safe-v1
+kick: 2026-10-03-payapp-p0-runtime-safe-v2
