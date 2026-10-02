@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after expanded Daikin verified corpus
-head-expected: 8fe833e0029dbb1bff5e810ae739add9bbed7c73
+validate fault-intelligence autodev-v1 after evidence-reference hardening
+head-expected: 171b4c948a04e245051d231f677b49b78a616ad2
