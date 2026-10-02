@@ -29,11 +29,13 @@ jobs:
     timeout-minutes: 55
     env:
       TARGET: ${{ matrix.target }}
-      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.5-free' }}
-      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.0-free' }}
-      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3-ultra-free' }}
-      DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/north-mini-code-free' }}
-      DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '540' }}
+      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.6-flash-free' }}
+      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
+      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}
+      DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/ling-3.0-flash-fin-free' }}
+      DDD_FREE_CODE_MODEL_QUINARY: ${{ vars.DDD_FREE_CODE_MODEL_QUINARY || 'opencode/laguna-s-2.1-free' }}
+      DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/space-bunny-free' }}
+      DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '300' }}
       DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '1' }}
 
     steps:
