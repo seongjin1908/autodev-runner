@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after Goodman verified furnace batch
-head-expected: 6a0fe92ecd863fcee1e180e53cc87f4bcd5524b8
+validate fault-intelligence autodev-v1 after Carrier verified high-wall batch
+head-expected: d0e99d741d74bcf12279ac4988c66803cfa03f24
