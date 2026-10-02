@@ -17,7 +17,7 @@
       "base_branch": "autodev-v11",
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju.md",
-      "recent_change_guard_minutes": 0,
+      "recent_change_guard_minutes": 15,
       "max_changed_files": 40
     },
     {

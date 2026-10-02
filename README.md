@@ -23,7 +23,7 @@ Central zero-budget development runner for private projects.
 5. Keep all product repositories private.
 
 ## Targets
-The runner rotates through the currently active development branches for Fortune, Daangn Saju, PriceCam, FACE LAB, and Restore AI. Target source code stays in those private repositories.
+The runner rotates through the currently active development branches for Fortune, Daangn Saju, PriceCam, FACE LAB, Restore AI, and Fault Intelligence. Target source code stays in those private repositories.
 
 ## Operating policy
 - Failure recovery before new features.
@@ -35,3 +35,10 @@ The runner rotates through the currently active development branches for Fortune
 - No automatic production deploy.
 - No automatic merge.
 - Verified commit/test/PR evidence only.
+
+
+## Control plane
+- `config/projects.json` is the single source of truth for automatic development targets.
+- `DEV_FACTORY.md` defines the operating rules used across projects and chats.
+- Scheduled development workflows share one repository-wide concurrency lock so two runner jobs do not edit a target branch at the same time.
+- Product repositories remain isolated; new projects are not added to automatic rotation until a work branch, base branch, validation command, and prompt are defined.

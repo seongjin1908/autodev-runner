@@ -23,7 +23,7 @@ jobs:
       matrix:
         target: [saju]
     concurrency:
-      group: launch-sprint-${{ matrix.target }}
+      group: central-zero-budget-autodev
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 55
