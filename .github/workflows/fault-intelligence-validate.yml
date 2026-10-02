@@ -1,0 +1,47 @@
+name: Fault Intelligence Validate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'signals/fault-intelligence.txt'
+      - '.github/workflows/fault-intelligence-validate.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fault-intelligence-validate
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/fault-intelligence
+          ref: autodev-v1
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-package-lock --no-audit --no-fund
+          fi
+
+      - name: Validate
+        run: npm run check
