@@ -29,6 +29,28 @@ Preserve and verify all of these before any lower-priority work:
 11. Attribution events for visit -> free result -> product select -> checkout start -> payment verified -> fulfillment.
 12. Keep the shared core ready for international markets without equating locale with market.
 
+
+## Production hardening queue — mandatory before unrelated features
+The canonical hardening tracker is `seongjin1908/daangn-saju-autodev#20`.
+Work the linked issues in this order unless a newly discovered payment/release incident is more severe:
+
+1. #21 Payment state machine, DB-backed idempotency and concurrency safety.
+2. #22 Distributed/shared rate limiting and atomic AI usage counters.
+3. #23 PII separation, encryption/retention/deletion and log redaction.
+4. #24 Deterministic evidence validator and golden Saju regression corpus.
+5. #25 Global birthplace + IANA historical timezone/DST normalization.
+6. #26 Authenticated backup integrity, observability and recovery hardening.
+
+Rules for this queue:
+- A process-local Map/Set may remain as a performance optimization, but must not be the correctness boundary for payment, entitlement, expensive AI limits or duplicate suppression.
+- Order/payment state changes must be safe under duplicate callback + reconciliation + cron races.
+- Do not claim global birth-time precision until historical-timezone fixtures exist and pass.
+- Paid report quality must not be accepted from character counts/PDF size alone; deterministic evidence consistency must be checked.
+- Do not log raw email, phone, birth data or Signature questions in operational exceptions.
+- Backup digest alone is corruption detection, not authenticated provenance; add HMAC/KMS-style authenticity before calling backup tamper-resistant.
+- Finish each slice with executable regression coverage and the configured release gate/build.
+- Do not auto-merge, deploy production, enable a provider, spend money, or run a real-money payment without explicit owner approval.
+
 ## Global architecture rule
 - KR is one market surface, not a forked product engine.
 - Keep market, locale, currency, price, provider, tax/legal copy, consent/privacy, upsell and feature availability separately configurable.
