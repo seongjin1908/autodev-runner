@@ -22,13 +22,13 @@
       "base_branch": "autodev-v11",
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju.md",
-      "recent_change_guard_minutes": 15,
+      "recent_change_guard_minutes": 5,
       "max_changed_files": 40,
       "auto_enabled": true,
       "auto_weight": 6,
       "release_priority": 100,
-      "failure_hold_threshold": 3,
-      "failure_hold_minutes": 60
+      "failure_hold_threshold": 4,
+      "failure_hold_minutes": 20
     },
     {
       "alias": "pricecam",
