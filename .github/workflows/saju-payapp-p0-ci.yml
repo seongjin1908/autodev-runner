@@ -1,0 +1,94 @@
+name: Saju PayApp P0 CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-payapp-p0-ci.yml'
+      - 'config/saju-payapp-p0-kick.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-payapp-p0-ci
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check private repository token
+        id: token
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          test -n "$REPO_TOKEN"
+
+      - name: Checkout Saju branch
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: autodev-v12
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: target
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Verify generated backend wiring
+        working-directory: target
+        run: |
+          node scripts/wire-index-v12.mjs
+          git diff --exit-code -- backend/index.ts
+
+      - name: Verify PayApp P0 invariants
+        working-directory: target
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const frontend = fs.readFileSync('src/App.tsx', 'utf8');
+          const backend = fs.readFileSync('backend/index.ts', 'utf8');
+          const tests = JSON.parse(fs.readFileSync('tests/tests.json', 'utf8'));
+          const required = [
+            [frontend.includes("refreshStatus(restored, true, true, 0, 0)"), 'reload resumes payment polling'],
+            [frontend.includes("messageEvent.origin !== 'https://fortune-payapp-relay-production.up.railway.app'"), 'trusted relay origin guard'],
+            [backend.includes("constantTimeTextEqual(payload.linkkey, config.linkKey)"), 'PayApp linkkey validation'],
+            [backend.includes("constantTimeTextEqual(payload.linkval, config.linkValue)"), 'PayApp linkval validation'],
+            [backend.includes("generateAdminPreviewAnalysis(") && backend.includes("order.product.code === 'P001'"), 'runtime-safe Standard analysis'],
+            [backend.includes("if (order.product.code !== 'P001') return;"), 'Standard attempts PDF in same worker'],
+            [!backend.includes("order.payAppLastState === '4' &&\n        order.payAppLastFeedbackAt"), 'no pay-state-only entitlement bypass'],
+            [tests.some(t => JSON.stringify(t).includes('linkkey')), 'tests cover strict PayApp verification'],
+          ];
+          const failed = required.filter(([ok]) => !ok).map(([, name]) => name);
+          if (failed.length) {
+            console.error('P0 invariant failures:', failed);
+            process.exit(1);
+          }
+          console.log('SAJU_PAYAPP_P0_INVARIANTS_OK');
+          NODE
+
+      - name: Typecheck
+        working-directory: target
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: target
+        run: npm run build
