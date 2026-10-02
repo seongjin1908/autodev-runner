@@ -1,6 +1,6 @@
 Saju release CI kick
 
 Target: seongjin1908/daangn-saju-autodev@autodev-v12
-Reason: verify trusted PayApp relay origin plus refreshed bounded polling and Premium release gates
-Expected target head: 069bc628e7c946bfd9884d72eb96b10f5794f4f4
-Requested: 2026-10-02T14:26Z
+Reason: verify PayApp trusted origin, bounded polling, Premium quality gate, and router-native HTTP 200 SUCCESS feedback
+Expected target head: 9ee0a130aa6938133fac5e1f3213e8001c4bf49d
+Requested: 2026-10-02T14:28Z
