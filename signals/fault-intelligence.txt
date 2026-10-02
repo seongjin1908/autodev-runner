@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after Ford oxygen-sensor corpus expansion
-head-expected: 7ce1f1badee75e491915da1992025c1f80eece79
+validate fault-intelligence autodev-v1 after 64-record large corpus batch and strict publishability gate
+head-expected: ef1111633fafb2611df875f6a9000d5150342856
