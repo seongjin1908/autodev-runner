@@ -1,1 +1,6 @@
-Revalidate Fortune Atlas conversion/revenue optimization batch at autodev-v12 head a0555bf36aa3d3f92a0a30ca2ccbb4ebdbe0bc2e after aligning multiline funnel-event release assertions. Verify P0 safeguards, full conversion funnel events/admin rates, simplified opportunity hero, value paywall, paid first-look timeline/top3, DEEP paid AI, strict TypeScript, deterministic fixtures, PDF smoke and production build. No live payment or ad spend.
+Saju release CI kick
+
+Target: seongjin1908/daangn-saju-autodev@autodev-v12
+Reason: verify PayApp trusted-relay-origin hotfix and refreshed release-gate invariants
+Expected target head: fba54e7adc53aff5ddee45d67ad15a376ac1d421
+Requested: 2026-10-02T14:21Z
