@@ -60,5 +60,17 @@
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40
     }
+  ],
+  "auto_rotation": [
+    "fortune",
+    "saju",
+    "fortune",
+    "saju",
+    "face-lab",
+    "restore-ai",
+    "fault-intel",
+    "face-lab",
+    "restore-ai",
+    "fault-intel"
   ]
 }
