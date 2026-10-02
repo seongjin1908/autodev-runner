@@ -4,16 +4,13 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG="$ROOT_DIR/config/projects.json"
 TARGET="${TARGET:-auto}"
 
-COUNT="$(python - "$CONFIG" <<'PY'
-import json,sys
-print(len(json.load(open(sys.argv[1], encoding='utf-8'))['projects']))
-PY
-)"
 if [[ "$TARGET" == "auto" ]]; then
-  INDEX="$((10#$(date -u +%H) % COUNT))"
-  TARGET="$(python - "$CONFIG" "$INDEX" <<'PY'
+  EPOCH_HOUR="$(( $(date -u +%s) / 3600 ))"
+  TARGET="$(python - "$CONFIG" "$EPOCH_HOUR" <<'PY'
 import json,sys
-print(json.load(open(sys.argv[1], encoding='utf-8'))['projects'][int(sys.argv[2])]['alias'])
+cfg=json.load(open(sys.argv[1], encoding='utf-8'))
+rotation=cfg.get('auto_rotation') or [p['alias'] for p in cfg['projects']]
+print(rotation[int(sys.argv[2]) % len(rotation)])
 PY
 )"
 fi

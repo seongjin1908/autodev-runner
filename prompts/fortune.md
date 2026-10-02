@@ -1,25 +1,26 @@
-# Fortune launch sprint objective — deadline before 2026-09-24 KST
+# Fortune Atlas cash-first release objective
 
-This is a release sprint. Shipping a stable public Fortune release before the Chuseok holiday is more important than broad feature expansion.
+Fortune Atlas / Daangn Saju is the highest-priority revenue product. Treat Fortune Atlas as the shared platform core with market-specific KR/Daangn and global surfaces. Do not build unrelated expansion modules while any release/revenue blocker remains.
 
-P0 ORDER:
-1. Repair the current real CI/build failure and keep it repaired.
-2. Preserve accurate Fortune/Saju core calculations and existing regression coverage.
-3. Ensure the main mobile user flow works at 360-430px.
-4. Ensure free reading -> result -> repeat/reopen flow is functional.
-5. Keep premium/payment boundaries clean, but do not block the public release on a new paid PG contract.
-6. Keep a deployable functional preview/release candidate.
+## P0 order
+1. Repair failing CI/release audits and keep them green.
+2. Preserve deterministic Saju/Myeongri calculations and regression coverage.
+3. Complete the real customer path: birth input -> free result -> product choice -> payment -> entitlement -> paid web result -> PDF -> reopen/recovery.
+4. Korea: PayApp path must be verified from current code/provider evidence; do not assume approval or readiness.
+5. Overseas: provider-neutral payment core with PayPal path where configured, exact server-side order/product/currency/amount/idempotency verification, and no automated real charges.
+6. Make mobile 360/390/430 usable with no horizontal overflow, CTA overlap, unreadable product cards, or inaccessible paid-result/PDF controls.
+7. Keep WEB/PDF parity from the same verified order snapshot.
+8. Preserve attribution from landing -> free result -> product select -> checkout -> verified payment -> fulfillment.
+9. Keep market and locale separate. KR/US/JP/TW/ES/BR/GLOBAL may have different price, currency, provider, legal copy, consent, upsell and availability.
+10. Unsupported markets or providers must fail closed.
 
-SCOPE FREEZE:
+## Scope freeze
 - No broad refactor.
-- No CI polishing after CI is healthy unless it blocks release.
-- No new speculative modules.
-- No paid AI/API activation.
-- No live payment activation without approved production credentials.
-- No production deployment from this coding worker.
-- Do not modify GitHub workflows.
-- Keep Daangn Saju as a separate repository.
-- Update tests only for real changed behavior.
-- Finish with the configured validation passing.
+- No 궁합/별자리/이름풀이/관상/손금/타로 while core Saju release blockers remain.
+- No cosmetic-only batch while a functional blocker exists.
+- No fake payment success, synthetic entitlement, live-charge automated QA, paid AI/API activation, secret changes, production deploy or auto-merge.
+- Do not modify target-repo GitHub workflows.
+- Do not duplicate logic between KR and global surfaces when a shared core can safely serve both.
 
-Definition of useful progress: a user-facing release blocker removed, not a cosmetic commit.
+## Definition of useful progress
+A real release/revenue blocker is removed, regression coverage is strengthened, and configured validation passes. Code volume alone is not progress.
