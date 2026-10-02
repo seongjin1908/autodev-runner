@@ -34,6 +34,10 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 # Global execution rules
 - Work only inside the checked-out target repository.
 - If baseline validation failed, fix the actual root cause before adding features.
+- Security and release integrity come before feature expansion: repair auth, authorization, payment, secrets, input validation, privacy/data exposure, idempotency, abuse/rate limits, and failing CI before adding lower-priority features.
+- Build for global markets without assuming language equals market. Keep locale, market, currency, tax/payment/provider, legal copy, consent, data-retention/data-residency, and feature availability separately configurable where the product can expand internationally.
+- Never silently enable a country, payment rail, regulated workflow, or personal-data use merely because a translation exists.
+- Preserve a safe fallback for unsupported markets and fail closed for money, identity, access, regulated, or privacy-sensitive operations.
 - Make a coherent batch, not a cosmetic one-line change.
 - Prefer existing architecture, helpers, tests, and deterministic code.
 - Do not modify .github workflows, secrets, credential files, or environment files.
