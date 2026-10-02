@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after direct P0 batch
-head-expected: ff213e3688fcd2be53b366d3a088fea4bedb5e49
+validate fault-intelligence autodev-v1 after verified Daikin U4 corpus batch
+head-expected: 80939c90c3e2fde6fb162799592b8c377bc85676
