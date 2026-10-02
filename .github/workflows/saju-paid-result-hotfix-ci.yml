@@ -1,0 +1,73 @@
+name: Saju Paid Result Hotfix CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-paid-result-hotfix-ci.yml'
+      - 'config/saju-paid-result-hotfix-kick.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-paid-result-hotfix-ci
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout Saju hotfix branch
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: autodev-v12
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: target
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify paid-result recovery contract
+        working-directory: target
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const backend = fs.readFileSync('backend/index.ts','utf8');
+          const required = [
+            "order.status === 'PAYMENT_VERIFIED' && order.processingStage === 'QUEUED'",
+            "order.status === 'PROCESSING' && order.processingStage === 'PDF_RENDERING' && Boolean(order.analysis)",
+            "await processFulfillmentJob(recoveryJobId)",
+            "active-browser fulfillment advance failed",
+            "if (order.processingStage === 'ANALYZING')",
+          ];
+          const missing = required.filter(token => !backend.includes(token));
+          if (missing.length) {
+            console.error('HOTFIX_CONTRACT_MISSING', missing);
+            process.exit(1);
+          }
+          const start = backend.indexOf('const mayAdvanceFromStatus');
+          const end = backend.indexOf("return json({", start);
+          const recovery = backend.slice(start, end);
+          if (recovery.includes("order.processingStage === 'ANALYZING' &&")) {
+            console.error('HOTFIX_UNSAFE_ANALYZING_ADVANCE');
+            process.exit(1);
+          }
+          console.log('SAJU_PAID_RESULT_RECOVERY_CONTRACT_OK');
+          NODE
+      - name: TypeScript check
+        working-directory: target
+        run: npx --no-install tsc --noEmit
+      - name: Build release bundle
+        working-directory: target
+        run: npm run build
