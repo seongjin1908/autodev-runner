@@ -22,3 +22,7 @@ FACE LAB is the second priority after Saju. Stop broad feature expansion until t
 
 ## Definition of useful progress
 A launch, privacy, conversion or monetization blocker is removed and typecheck/build/tests pass.
+
+
+## Integrated design rule
+Do not spend a separate automatic lane on cosmetic-only redesign. When the functional P0/P1 work in a batch is safe, improve the touched UI toward a current mobile-first product standard: clear hierarchy, restrained components, deliberate spacing, accessible controls and no generic AI-looking card soup. Preserve existing tested behavior.
