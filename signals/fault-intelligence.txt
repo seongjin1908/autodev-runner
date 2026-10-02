@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after 95-record large corpus batch
-head-expected: 4ceef85e7805a63b4c19d42784a20e6e0e529639
+validate fault-intelligence autodev-v1 after 116-record corpus expansion
+head-expected: 18d5a683ba3df8e08fce2fe81450bc4e94e297d2
