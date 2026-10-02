@@ -8,7 +8,12 @@
       "validation": "npm test && npm run quality && npm run build && npx wrangler deploy --dry-run",
       "prompt_file": "prompts/fortune.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 6,
+      "release_priority": 100,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 60
     },
     {
       "alias": "saju",
@@ -18,7 +23,12 @@
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju.md",
       "recent_change_guard_minutes": 15,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 6,
+      "release_priority": 100,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 60
     },
     {
       "alias": "pricecam",
@@ -28,7 +38,12 @@
       "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npm run build",
       "prompt_file": "prompts/pricecam.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 20,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "face-lab",
@@ -38,7 +53,12 @@
       "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit && npm run build",
       "prompt_file": "prompts/face-lab.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 4,
+      "release_priority": 80,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "restore-ai",
@@ -48,7 +68,12 @@
       "validation": "npm run check",
       "prompt_file": "prompts/restore-ai.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 35
+      "max_changed_files": 35,
+      "auto_enabled": true,
+      "auto_weight": 4,
+      "release_priority": 75,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "fault-intel",
@@ -58,7 +83,12 @@
       "validation": "npm run check",
       "prompt_file": "prompts/fault-intel.md",
       "recent_change_guard_minutes": 5,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 3,
+      "release_priority": 70,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "fortune-design",
@@ -68,7 +98,12 @@
       "validation": "npm test && npm run quality && npm run build && npx wrangler deploy --dry-run",
       "prompt_file": "prompts/fortune-design.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 2,
+      "release_priority": 85,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "saju-design",
@@ -78,7 +113,12 @@
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju-design.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 2,
+      "release_priority": 85,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "face-lab-design",
@@ -88,7 +128,12 @@
       "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit && npm run build",
       "prompt_file": "prompts/face-lab-design.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 65,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "restore-ai-design",
@@ -98,7 +143,12 @@
       "validation": "npm run check",
       "prompt_file": "prompts/restore-ai-design.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 35
+      "max_changed_files": 35,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 60,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     },
     {
       "alias": "fault-intel-design",
@@ -108,7 +158,12 @@
       "validation": "npm run check",
       "prompt_file": "prompts/fault-intel-design.md",
       "recent_change_guard_minutes": 25,
-      "max_changed_files": 40
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 55,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120
     }
   ],
   "auto_rotation": [
