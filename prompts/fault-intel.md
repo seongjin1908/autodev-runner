@@ -17,3 +17,13 @@ Priority order:
 12. Respect source licenses; do not copy proprietary SAE/OEM paid datasets.
 13. Update AUTODEV_STATUS.md only with facts verified by code/tests.
 14. Finish with npm run check passing.
+
+
+## Fast-path execution rules
+15. Spend at most 60 seconds inspecting status before editing; if baseline passes, start implementation immediately.
+16. Do not start a dev server, browser session, curl loop, or manual UI QA inside the coding-model run.
+17. Do not create temporary probe files or run exploratory TypeScript experiments outside the real target files.
+18. Bundle 3-7 compatible P0 source/test changes when practical, then run the repository validation once at the end.
+19. If existing result routes import a missing helper/module, repair that shared module/root cause before adding more features.
+20. Prefer direct deterministic edits and regression tests; avoid long analysis/status-only output.
+21. Keep the model run within the time budget: implementation first, validation last, no repeated full builds.
