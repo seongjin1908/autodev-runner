@@ -1,108 +1,37 @@
-# Saju launch ship mode — current priority
+# Daangn Saju / Fortune Atlas KR cash-first ship mode
 
-Goal: finish Fortune Atlas / Daangn Saju to revenue-ready production quality first. Do not spend development cycles on 궁합/별자리/이름풀이/관상/손금/타로 until the Saju product is publicly deployable, payment-safe, conversion-tracked, and ready for paid acquisition.
+Goal: finish the Korea revenue path while preserving compatibility with the shared Fortune Atlas global core.
 
 ## Hard release order
 1. Real birth input -> deterministic Saju engine -> free result.
-2. Deterministic chart/Daeun/LiuNian timing facts -> Standard/Premium paid report.
+2. Standard/Premium/Signature product rules grounded in the current repository configuration.
 3. Product -> order -> provider-neutral payment core.
-4. Korea: PayApp production path only after merchant review/approval is actually complete.
-5. Overseas: PayPal Live create/approve/capture with exact server-side order, product, currency, amount and idempotency verification.
-6. Verified payment -> correct paid result entitlement.
-7. Web result/PDF parity and safe PDF download.
-8. Refresh/browser-close/re-entry recovery without leaking another customer's order.
-9. Payment recovery/webhook handling so a customer closing the browser does not lose a verified purchase.
-10. Mobile 360/390/430 release flow.
-11. Production-path mock/fake/test-only cleanup and payment/security hardening.
-12. Build/validation green.
-13. AppDeploy deployment + non-charge E2E verification.
+4. Verify the current PayApp production/readiness state from source and provider evidence; never assume pending or approved from stale documentation.
+5. Verified provider result -> server-side payment verification -> correct entitlement.
+6. Paid web result -> PDF -> refresh/browser-close/re-entry recovery.
+7. Web/PDF use the same analysis snapshot and cannot leak another customer's order.
+8. Payment return, webhook/reconciliation, retries and idempotency remain safe.
+9. Mobile 360/390/430 end-to-end flow.
+10. P0 release blocker zero; no known P1 release-critical error.
+11. Attribution events for visit -> free result -> product select -> checkout start -> payment verified -> fulfillment.
+12. Keep the shared core ready for international markets without equating locale with market.
 
-## Current locked product decisions
-- P001 Standard Korea normal price: 9,900 KRW.
-- P002 Premium Korea normal price: 19,900 KRW.
-- Overseas launch price currently used on AppDeploy: P001 $7.99 USD, P002 $14.99 USD.
-- Daangn coupon pricing is external promotion logic unless a real tested source-aware coupon path exists.
-- No synthetic payment success, no fake entitlement, no live-charge automated QA.
-- Toss is not the intended Korea production provider now. Keep any existing Toss code only as isolated legacy/test/reference until a verified replacement is complete; do not activate paid Toss production onboarding unless explicitly approved.
-
-## Payment direction
-- Production Korea target: PayApp, approval pending. Until approval, the live Korea checkout must remain clearly disabled/pending instead of routing to another provider.
-- Production overseas target: PayPal Live.
-- Preserve a provider-neutral order/payment domain so PayApp and PayPal do not fork entitlement logic.
-- All amount, order, product, currency, provider event and idempotency checks remain server-side.
-- PayPal Live automated tests may verify OAuth/readiness and code paths but must never complete a real monetary charge.
-- Add/strengthen webhook/reconciliation handling before calling the payment path release-complete.
-- Email and phone are optional before overseas checkout. When PayPal returns a verified payer email, it may be attached to the order for result recovery.
-
-## Current consumer UX decisions
-- Name placeholder: "예: 홍길동".
-- Gender order: 남성 left, 여성 right.
-- Do not use a click-to-open "결과 보는 법" accordion in the free result. Important meaning should be visible inline.
-- The free result should be consumer-language first; raw chart/calculation evidence is secondary.
-- Premium locked questions must be visually obvious, larger, and clearly marked as locked/paid.
-- PDF preview, trust, about and FAQ content belong below the free result, not between input and the result.
-- The page should look professional/modern, but conversion polish must not replace real release blockers.
-- Never imply unfinished modules are already live. Mark them 개발중/준비중 until their engines and tests exist.
-
-## Current architecture to preserve
-- Real calculation is deterministic; AI may explain verified facts only.
-- Production timing flow is wired through timing context/interactions into paid analysis. Preserve and strengthen it; do not replace it with prose-only timing.
-- Different real birth inputs must produce different verified facts and materially different report grounding.
-- If timing evidence is insufficient, fail closed instead of inventing a specific date/event.
-- Standard covers money, work/business, relationship, current flow and near-term flow.
-- Premium must be structurally deeper with longer Daeun/LiuNian context, not merely longer wording.
-- Web and PDF must use the same order fortune/analysis snapshot.
-- Order/token/email boundaries must prevent cross-customer result access.
-
-## AppDeploy rule
-- AppDeploy is available again. Use deployment and non-charge E2E when a batch is ready.
-- Do not repeatedly redeploy cosmetic-only changes while a functional P0 blocker remains.
-- Never use automated QA to make a real PayPal charge or irreversible production transaction.
-
-## Speed rules
-- Inspect the current branch first; do not redo completed work.
-- If baseline validation fails, fix that root cause first.
-- If validation is green, choose the highest incomplete P0 item above and implement a coherent 2-4-file/related-test batch when justified.
-- Prefer production code + regression tests. Do not spend a run on status/docs-only changes while P0 code work remains.
-- Do not rewrite stable architecture just to look busy.
-- Test fixtures/mocks may remain under tests/scripts. Production backend/src must not expose mock/fake/dummy/sample/test-only payment/result substitutes.
-- Normal HTML placeholder attributes are not fake data.
-- Do not modify Fortune repository or target-repo GitHub workflows.
-- Email/SMS stay optional and must fail closed when unconfigured.
-- No paid API/service activation, live spending, public launch switch, destructive migration, or secret changes.
+## Global architecture rule
+- KR is one market surface, not a forked product engine.
+- Keep market, locale, currency, price, provider, tax/legal copy, consent/privacy, upsell and feature availability separately configurable.
+- Overseas payment/report logic belongs in shared/provider-neutral contracts where possible.
+- Do not copy KR-only assumptions into US/JP/TW/ES/BR/GLOBAL.
 
 ## Revenue-first freeze
-Until the Saju product is ready for real paid acquisition, do not build or polish 궁합/별자리/이름풀이/관상/손금/타로. Those modules may remain documented for later, but they are not current work.
+Until the above flow is verified, do not spend runs on new fortune categories, decorative UI, speculative modules or status-only edits.
 
-Before any expansion module, Saju must have:
-1. deterministic free result verified,
-2. Standard/Premium report differentiation verified,
-3. PayPal Live overseas payment path + reconciliation/webhook recovery,
-4. PayApp Korea path ready to activate immediately after merchant approval,
-5. payment -> entitlement -> web result -> PDF -> re-entry verified,
-6. mobile 360/390/430 release flow,
-7. P0 blocker 0 and no known P1 release-critical error,
-8. production build/CI green,
-9. deployed smoke test green,
-10. ad attribution events for visit -> free result -> product select -> checkout start -> payment verified -> fulfillment,
-11. landing/result UX optimized for paid conversion without deceptive claims.
-
-Only after the above is true and the owner explicitly switches focus may expansion resume in this order: 궁합 -> 별자리 -> 이름풀이 -> 관상 -> 손금 -> 타로.
-
-## Immediate next autonomous batch
-The live AppDeploy product now has PayPal Live create/capture, browser-close recovery, authoritative reconciliation, recovery webhook handling, Saju-only monetization focus, first-party funnel events, and mobile safe-area CTA polish. Do not redo those items unless the target branch is missing them.
-
-Mandatory next task:
-- Bring the target branch fully in line with the current verified live Saju behavior if any drift remains.
-- Finish the 360/390/430 mobile release path: no horizontal overflow, no sticky CTA overlap, product cards readable, payment form usable, completed paid report readable, PDF/re-entry controls reachable.
-- Strengthen non-charge regression coverage for payment -> entitlement -> paid web result -> PDF -> re-entry. Never perform a real PayPal Live charge in automated QA.
-- Verify Standard and Premium are structurally different in both web result and PDF, with Premium containing deeper timing/long-view evidence instead of only longer wording.
-- Verify interrupted PayPal return/browser-close recovery remains idempotent and cannot grant entitlement from an unverified webhook payload.
-- Keep KR checkout disabled while PayApp approval is pending. Do not revive Toss as the live Korea provider.
-- Preserve attribution through landing -> free result -> product selected -> checkout started -> payment verified -> fulfillment completed.
-- Remove or isolate any remaining unfinished cross-sell module exposure from the live Saju customer flow.
-- The run must produce durable source/test changes only when a verified release blocker exists. If all code paths already match, improve regression/audit coverage for the highest-risk release path instead of adding unrelated features.
-- No live charges, no paid API activation, no ad spend, no public launch switch, no secret changes.
+## Safety
+- No fake payment success or unverified entitlement.
+- No automated real monetary charge.
+- No paid API/service activation, ad spend, public launch switch, secret changes or auto-merge.
+- Email/SMS remain optional and fail closed when unconfigured.
+- Deterministic calculation facts come first; explanations must not invent unsupported timing/events.
+- Do not modify target-repo GitHub workflows.
 
 ## Definition of useful progress
-A Saju release/revenue blocker is removed in real code and the configured validation/build passes. No expansion work counts as useful progress while a Saju release or monetization blocker remains.
+A Korea release/revenue blocker is removed in source/tests and the configured release gate/build passes.
