@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after HVAC model-variant and Daikin corpus expansion
-head-expected: b033f11bb3ff9f44b80543fe3c16a1730a8660f5
+validate fault-intelligence autodev-v1 after expanded Daikin verified corpus
+head-expected: 8fe833e0029dbb1bff5e810ae739add9bbed7c73
