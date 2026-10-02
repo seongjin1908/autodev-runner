@@ -1,2 +1,2 @@
-validate fault-intelligence autodev-v1 after Carrier verified high-wall batch
-head-expected: d0e99d741d74bcf12279ac4988c66803cfa03f24
+validate fault-intelligence autodev-v1 after Ford OBD-II batch and shared record renderer
+head-expected: 56ab642e8c95aa8165eeddc07460f86b6efb7423
