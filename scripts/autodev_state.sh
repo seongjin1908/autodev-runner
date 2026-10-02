@@ -35,7 +35,7 @@ for c in comments:
     if marker in body:
         state=c
 if not state:
-    print("\t0\tnone\t\tunknown")
+    print("none\t0\tnone\tnone\tunknown")
     raise SystemExit
 body=state.get('body') or ''
 def grab(name, default=''):
@@ -52,9 +52,10 @@ PY
 )"
 
 IFS=$'\t' read -r COMMENT_ID FAILURE_COUNT HOLD_UNTIL LAST_RUN_ID LAST_STATUS <<<"$STATE_TSV"
+if [[ "${COMMENT_ID:-}" == "none" ]]; then COMMENT_ID=""; fi
 FAILURE_COUNT="${FAILURE_COUNT:-0}"
 HOLD_UNTIL="${HOLD_UNTIL:-none}"
-LAST_RUN_ID="${LAST_RUN_ID:-}"
+LAST_RUN_ID="${LAST_RUN_ID:-none}"
 LAST_STATUS="${LAST_STATUS:-unknown}"
 
 hold_active() {
