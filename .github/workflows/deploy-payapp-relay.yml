@@ -48,3 +48,38 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4 deployments status
+
+      - name: Smoke test PayApp relay
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELAY='https://fortune-payapp-relay.fortune-atlas-preview.workers.dev'
+          APP='https://mvp-91zb78.v2.appdeploy.ai'
+
+          curl -fsS "$RELAY/health" | tee /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          grep -q '"mode":"stateless"' /tmp/health.json
+
+          curl -fsS -X POST "$RELAY/register"             -H 'Content-Type: application/json'             --data '{"orderId":"TESTORDER123","relayToken":"abcdefghijklmnopqrstuvwxyz0123456789","orderUuid":"test-order-uuid","mulNo":"123456789","price":"9900"}'             | tee /tmp/register.json
+          grep -q '"registered":true' /tmp/register.json
+
+          curl -fsS "$RELAY/payapp/return?order=TESTORDER123" | tee /tmp/return.html
+          grep -q 'FORTUNE_PAYAPP_RETURN' /tmp/return.html
+          grep -q 'window.opener' /tmp/return.html
+          grep -q 'window.close' /tmp/return.html
+
+          state_code="$(curl -sS -o /tmp/state.json -w '%{http_code}' -X POST "$RELAY/state"             -H 'Content-Type: application/json'             --data '{"orderId":"TESTORDER123","relayToken":"abcdefghijklmnopqrstuvwxyz0123456789"}')"
+          test "$state_code" = '404'
+          grep -q 'STATELESS_RELAY' /tmp/state.json
+
+          curl -fsS -X POST "$RELAY/ack"             -H 'Content-Type: application/json'             --data '{"orderId":"TESTORDER123","relayToken":"abcdefghijklmnopqrstuvwxyz0123456789","paymentEventId":"test-event"}'             | tee /tmp/ack.json
+          grep -q '"ok":true' /tmp/ack.json
+
+          feedback_code="$(curl -sS -o /tmp/feedback.txt -w '%{http_code}' -X POST "$RELAY/payapp/feedback"             -H 'Content-Type: application/x-www-form-urlencoded'             --data 'userid=fake&linkval=fake-secret&var1=TESTORDER123&var2=test-order-uuid&mul_no=123456789&price=9900&pay_state=4&pay_type=1')"
+          test "$feedback_code" = '502'
+          grep -q 'FAIL' /tmp/feedback.txt
+
+          curl -fsS "$APP/api/payapp/status" | tee /tmp/readiness.json
+          grep -q '"provider":"PAYAPP"' /tmp/readiness.json
+          grep -q '"relayReady":true' /tmp/readiness.json
+          grep -q '"enabled":true' /tmp/readiness.json
