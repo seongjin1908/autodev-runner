@@ -1,6 +1,6 @@
 const APP_URL = 'https://mvp-91zb78.v2.appdeploy.ai/';
 const APP_ORIGIN = new URL(APP_URL).origin;
-const INGEST_URL = APP_URL + 'api/payapp/relay-ingest';
+const INGEST_URL = 'https://api-v2.appdeploy.ai/app/mvp-91zb78/api/payapp/relay-ingest';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
