@@ -1,0 +1,119 @@
+name: Saju P0 External AI Repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-p0-external-ai-repair.yml'
+      - 'prompts/saju-p0-external-ai-repair.md'
+      - 'config/saju-p0-external-ai-kick.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-p0-external-ai-repair
+  cancel-in-progress: false
+
+jobs:
+  develop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.6-flash-free' }}
+      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
+      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}
+      DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/ling-3.0-flash-fin-free' }}
+      DDD_FREE_CODE_MODEL_QUINARY: ${{ vars.DDD_FREE_CODE_MODEL_QUINARY || 'opencode/laguna-s-2.1-free' }}
+      DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/space-bunny-free' }}
+      DDD_FREE_MODEL_TIMEOUT_SECONDS: '420'
+      DDD_FREE_MODEL_TRANSIENT_RETRIES: '1'
+
+    steps:
+      - name: Checkout runner control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check repository token
+        id: token
+        env:
+          AUTODEV_REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "$AUTODEV_REPO_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "AUTODEV_REPO_TOKEN is not configured."
+          fi
+
+      - name: Checkout isolated Saju repair branch
+        if: steps.token.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ai/p0-28-fulfillment-phases
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare repair variables
+        if: steps.token.outputs.configured == 'true'
+        shell: bash
+        run: |
+          echo "REPOSITORY=seongjin1908/daangn-saju-autodev" >> "$GITHUB_ENV"
+          echo "WORK_BRANCH=ai/p0-28-fulfillment-phases" >> "$GITHUB_ENV"
+          echo "BASE_BRANCH=autodev-v12" >> "$GITHUB_ENV"
+          echo "ALIAS=saju-p0-28-external-ai" >> "$GITHUB_ENV"
+          echo "PROMPT_FILE=prompts/saju-p0-external-ai-repair.md" >> "$GITHUB_ENV"
+          echo "MAX_CHANGED_FILES=12" >> "$GITHUB_ENV"
+          echo "VALIDATION_B64=$(printf '%s' 'npx tsc --noEmit && npm run build' | base64 -w0)" >> "$GITHUB_ENV"
+
+      - name: Prepare collision guard
+        if: steps.token.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: seongjin1908/daangn-saju-autodev
+          WORK_BRANCH: ai/p0-28-fulfillment-phases
+          BASE_BRANCH: autodev-v12
+          RECENT_CHANGE_GUARD_MINUTES: '0'
+          FAILURE_HOLD_THRESHOLD: '4'
+          FAILURE_HOLD_MINUTES: '20'
+        shell: bash
+        run: bash scripts/prepare_target.sh
+
+      - name: Run free external coding-model pool
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        shell: bash
+        run: bash scripts/develop_target.sh
+
+      - name: Report diagnostics
+        if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: seongjin1908/daangn-saju-autodev
+          WORK_BRANCH: ai/p0-28-fulfillment-phases
+          BASE_BRANCH: autodev-v12
+          ALIAS: saju-p0-28-external-ai
+          FAILURE_HOLD_THRESHOLD: '4'
+          FAILURE_HOLD_MINUTES: '20'
+        shell: bash
+        run: bash scripts/report_target.sh
+
+      - name: Push validated repair and open review PR
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: seongjin1908/daangn-saju-autodev
+          WORK_BRANCH: ai/p0-28-fulfillment-phases
+          BASE_BRANCH: autodev-v12
+          ALIAS: saju-p0-28-external-ai
+        shell: bash
+        run: bash scripts/push_target.sh
