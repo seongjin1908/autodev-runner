@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/saju-release-ci.yml'
       - 'config/saju-release-ci-kick.txt'
+      - 'config/saju-release-ref.txt'
   workflow_dispatch:
 
 permissions:
@@ -39,12 +40,26 @@ jobs:
             exit 1
           fi
 
+      - name: Resolve Saju release ref
+        if: steps.token.outputs.configured == 'true'
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="$(tr -d '\r\n' < config/saju-release-ref.txt)"
+          test -n "$ref"
+          case "$ref" in
+            *[!A-Za-z0-9._/-]*) echo "::error::Invalid release ref: $ref"; exit 1 ;;
+          esac
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "Validating Saju release ref: $ref"
+
       - name: Checkout Saju release branch
         if: steps.token.outputs.configured == 'true'
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: autodev-v12
+          ref: ${{ steps.target.outputs.ref }}
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           fetch-depth: 0
