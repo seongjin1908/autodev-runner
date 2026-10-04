@@ -54,7 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           RELAY='https://fortune-payapp-relay.fortune-atlas-preview.workers.dev'
-          APP='https://mvp-91zb78.v2.appdeploy.ai'
+          APP_API='https://api-v2.appdeploy.ai/app/mvp-91zb78'
 
           curl -fsS "$RELAY/health" | tee /tmp/health.json
           grep -q '"ok":true' /tmp/health.json
@@ -79,7 +79,7 @@ jobs:
           test "$feedback_code" = '502'
           grep -q 'FAIL' /tmp/feedback.txt
 
-          curl -fsS "$APP/api/payapp/status" | tee /tmp/readiness.json
+          curl -fsS "$APP_API/api/payapp/status" | tee /tmp/readiness.json
           grep -q '"provider":"PAYAPP"' /tmp/readiness.json
           grep -q '"relayReady":true' /tmp/readiness.json
           grep -q '"enabled":true' /tmp/readiness.json
