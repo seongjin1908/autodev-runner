@@ -1,6 +1,7 @@
 const APP_URL = 'https://mvp-91zb78.v2.appdeploy.ai/';
 const APP_ORIGIN = new URL(APP_URL).origin;
 const INGEST_URL = 'https://api-v2.appdeploy.ai/app/mvp-91zb78/api/payapp/relay-ingest';
+const LEGACY_RELAY_URL = 'https://fortune-payapp-relay-production.up.railway.app';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -159,10 +160,41 @@ export default {
       }
 
       if (request.method === 'POST' && url.pathname === '/state') {
+        const raw = await request.text();
+        try {
+          const legacy = await fetch(LEGACY_RELAY_URL + '/state', {
+            method: 'POST',
+            headers: { 'Content-Type': request.headers.get('content-type') || 'application/json' },
+            body: raw,
+            redirect: 'manual',
+          });
+          if (legacy.status !== 404) {
+            return new Response(await legacy.text(), {
+              status: legacy.status,
+              headers: {
+                'Content-Type': legacy.headers.get('content-type') || 'application/json; charset=utf-8',
+                'Cache-Control': 'no-store',
+                'X-Content-Type-Options': 'nosniff',
+              },
+            });
+          }
+        } catch {
+          // Legacy state is best-effort only. New payments do not depend on it.
+        }
         return json({ ok: false, error: 'STATELESS_RELAY' }, 404);
       }
 
       if (request.method === 'POST' && url.pathname === '/ack') {
+        const raw = await request.text();
+        try {
+          await fetch(LEGACY_RELAY_URL + '/ack', {
+            method: 'POST',
+            headers: { 'Content-Type': request.headers.get('content-type') || 'application/json' },
+            body: raw,
+          });
+        } catch {
+          // Ack is compatibility-only and must not block the new stateless path.
+        }
         return json({ ok: true, stateless: true });
       }
 
