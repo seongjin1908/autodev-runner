@@ -1,1 +1,2 @@
 kick: 2026-10-03-payapp-paid-result-resume-v1
+canonical-rerun-20261004-01
