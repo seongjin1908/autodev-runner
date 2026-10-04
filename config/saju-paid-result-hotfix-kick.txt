@@ -1,1 +1,1 @@
-kick: 2026-10-03-v1
+kick: 2026-10-04-p002-stale-recovery-v2
