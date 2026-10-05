@@ -7,3 +7,4 @@ recheck-canonical-20261004-20261005
 synthetic-paid-lifecycle-e2e-v2-regex-fix-20261005
 synthetic-v2-gate-contract-alignment-20261005
 synthetic-v2-security-and-budget-20261005
+fortune-keyed-lookup-scoped-budget-payload-20261005
