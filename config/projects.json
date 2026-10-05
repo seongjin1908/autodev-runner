@@ -13,13 +13,15 @@
       "auto_weight": 2,
       "release_priority": 95,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 60
+      "failure_hold_minutes": 60,
+      "max_branch_ahead": 80,
+      "branch_mode": "fixed"
     },
     {
       "alias": "saju",
       "repository": "seongjin1908/daangn-saju-autodev",
-      "work_branch": "autodev-v12",
-      "base_branch": "autodev-v11",
+      "work_branch": "autodev/saju/run-scoped",
+      "base_branch": "autodev-v12",
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju.md",
       "recent_change_guard_minutes": 5,
@@ -28,7 +30,10 @@
       "auto_weight": 0,
       "release_priority": 100,
       "failure_hold_threshold": 4,
-      "failure_hold_minutes": 20
+      "failure_hold_minutes": 20,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "autodev-v12"
     },
     {
       "alias": "pricecam",
@@ -43,12 +48,14 @@
       "auto_weight": 0,
       "release_priority": 20,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 80,
+      "branch_mode": "fixed"
     },
     {
       "alias": "face-lab",
       "repository": "seongjin1908/face-lab-global",
-      "work_branch": "autodev/p3-lifecycle-policy",
+      "work_branch": "autodev/face-lab/run-scoped",
       "base_branch": "main",
       "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit && npm run build",
       "prompt_file": "prompts/face-lab.md",
@@ -58,7 +65,10 @@
       "auto_weight": 4,
       "release_priority": 80,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     },
     {
       "alias": "restore-ai",
@@ -73,12 +83,14 @@
       "auto_weight": 0,
       "release_priority": 75,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 80,
+      "branch_mode": "fixed"
     },
     {
       "alias": "fault-intel",
       "repository": "seongjin1908/fault-intelligence",
-      "work_branch": "autodev-v1",
+      "work_branch": "autodev/fault-intel/run-scoped",
       "base_branch": "main",
       "validation": "npm run check",
       "prompt_file": "prompts/fault-intel.md",
@@ -88,7 +100,10 @@
       "auto_weight": 4,
       "release_priority": 70,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     },
     {
       "alias": "fortune-design",
@@ -103,13 +118,15 @@
       "auto_weight": 0,
       "release_priority": 85,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 80,
+      "branch_mode": "fixed"
     },
     {
       "alias": "saju-design",
       "repository": "seongjin1908/daangn-saju-autodev",
-      "work_branch": "autodev-v12",
-      "base_branch": "autodev-v11",
+      "work_branch": "autodev/saju/run-scoped",
+      "base_branch": "autodev-v12",
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju-design.md",
       "recent_change_guard_minutes": 25,
@@ -118,12 +135,15 @@
       "auto_weight": 0,
       "release_priority": 85,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "autodev-v12"
     },
     {
       "alias": "face-lab-design",
       "repository": "seongjin1908/face-lab-global",
-      "work_branch": "autodev/p3-lifecycle-policy",
+      "work_branch": "autodev/face-lab/run-scoped",
       "base_branch": "main",
       "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit && npm run build",
       "prompt_file": "prompts/face-lab-design.md",
@@ -133,7 +153,10 @@
       "auto_weight": 0,
       "release_priority": 65,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     },
     {
       "alias": "restore-ai-design",
@@ -148,12 +171,14 @@
       "auto_weight": 0,
       "release_priority": 60,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 80,
+      "branch_mode": "fixed"
     },
     {
       "alias": "fault-intel-design",
       "repository": "seongjin1908/fault-intelligence",
-      "work_branch": "autodev-v1",
+      "work_branch": "autodev/fault-intel/run-scoped",
       "base_branch": "main",
       "validation": "npm run check",
       "prompt_file": "prompts/fault-intel-design.md",
@@ -163,7 +188,10 @@
       "auto_weight": 0,
       "release_priority": 55,
       "failure_hold_threshold": 3,
-      "failure_hold_minutes": 120
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     }
   ],
   "auto_rotation": [

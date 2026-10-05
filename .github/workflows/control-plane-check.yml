@@ -51,6 +51,7 @@ jobs:
               "validation", "prompt_file", "recent_change_guard_minutes",
               "max_changed_files", "auto_enabled", "auto_weight",
               "release_priority", "failure_hold_threshold", "failure_hold_minutes",
+              "branch_mode", "max_branch_ahead",
           }
 
           aliases = set()
@@ -61,6 +62,11 @@ jobs:
               assert alias not in aliases, f"duplicate alias: {alias}"
               aliases.add(alias)
               assert project["work_branch"] != project["base_branch"], f"{alias}: work branch equals base branch"
+              assert project["branch_mode"] in {"fixed", "run_scoped"}, f"{alias}: invalid branch mode"
+              assert int(project["max_branch_ahead"]) >= 0, f"{alias}: invalid max branch ahead"
+              if project["branch_mode"] == "run_scoped":
+                  assert project.get("source_branch"), f"{alias}: run-scoped target needs source_branch"
+                  assert project["source_branch"] == project["base_branch"], f"{alias}: source_branch must equal PR base"
               assert Path(project["prompt_file"]).is_file(), f"{alias}: missing prompt {project['prompt_file']}"
               assert int(project["recent_change_guard_minutes"]) >= 0, f"{alias}: invalid guard"
               assert 1 <= int(project["max_changed_files"]) <= 100, f"{alias}: invalid file limit"
@@ -93,6 +99,8 @@ jobs:
             TARGET="$alias" GITHUB_OUTPUT=/tmp/github-output bash scripts/select_target.sh >/dev/null
             grep -q '^repository=' /tmp/github-output
             grep -q '^failure_hold_threshold=' /tmp/github-output
+            grep -q '^checkout_branch=' /tmp/github-output
+            grep -q '^branch_mode=' /tmp/github-output
           done < /tmp/aliases.txt
           : > /tmp/github-output
           TARGET=auto GITHUB_OUTPUT=/tmp/github-output bash scripts/select_target.sh >/dev/null

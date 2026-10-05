@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.select.outputs.repository }}
-          ref: ${{ steps.select.outputs.work_branch }}
+          ref: ${{ steps.select.outputs.checkout_branch }}
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           fetch-depth: 0
@@ -94,6 +94,8 @@ jobs:
           REPOSITORY: ${{ steps.select.outputs.repository }}
           WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
           BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          BRANCH_MODE: ${{ steps.select.outputs.branch_mode }}
+          MAX_BRANCH_AHEAD: ${{ steps.select.outputs.max_branch_ahead }}
           RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
           FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
           FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
