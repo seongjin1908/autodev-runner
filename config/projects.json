@@ -9,8 +9,8 @@
       "prompt_file": "prompts/fortune.md",
       "recent_change_guard_minutes": 25,
       "max_changed_files": 40,
-      "auto_enabled": true,
-      "auto_weight": 2,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 95,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 60,
@@ -38,7 +38,7 @@
     {
       "alias": "pricecam",
       "repository": "seongjin1908/pricecam-autodev",
-      "work_branch": "pricecam-autodev",
+      "work_branch": "autodev/pricecam/run-scoped",
       "base_branch": "main",
       "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npm run build",
       "prompt_file": "prompts/pricecam.md",
@@ -49,8 +49,9 @@
       "release_priority": 20,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
-      "max_branch_ahead": 80,
-      "branch_mode": "fixed"
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     },
     {
       "alias": "face-lab",
@@ -73,8 +74,8 @@
     {
       "alias": "restore-ai",
       "repository": "seongjin1908/restore-ai-autodev",
-      "work_branch": "autodev/import-validated-restore-ai",
-      "base_branch": "main",
+      "work_branch": "autodev/restore-ai/run-scoped",
+      "base_branch": "autodev/import-validated-restore-ai",
       "validation": "npm run check",
       "prompt_file": "prompts/restore-ai.md",
       "recent_change_guard_minutes": 25,
@@ -84,8 +85,9 @@
       "release_priority": 75,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
-      "max_branch_ahead": 80,
-      "branch_mode": "fixed"
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "autodev/import-validated-restore-ai"
     },
     {
       "alias": "fault-intel",
@@ -161,8 +163,8 @@
     {
       "alias": "restore-ai-design",
       "repository": "seongjin1908/restore-ai-autodev",
-      "work_branch": "autodev/import-validated-restore-ai",
-      "base_branch": "main",
+      "work_branch": "autodev/restore-ai/run-scoped",
+      "base_branch": "autodev/import-validated-restore-ai",
       "validation": "npm run check",
       "prompt_file": "prompts/restore-ai-design.md",
       "recent_change_guard_minutes": 25,
@@ -172,8 +174,9 @@
       "release_priority": 60,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
-      "max_branch_ahead": 80,
-      "branch_mode": "fixed"
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "autodev/import-validated-restore-ai"
     },
     {
       "alias": "fault-intel-design",
@@ -195,7 +198,6 @@
     }
   ],
   "auto_rotation": [
-    "fortune",
     "face-lab",
     "face-lab",
     "fault-intel",
