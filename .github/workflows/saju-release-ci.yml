@@ -82,7 +82,9 @@ jobs:
 
       - name: Validate release invariants
         working-directory: target
-        run: node scripts/validate.mjs
+        run: |
+          node scripts/validate.mjs
+          node scripts/release-gate.mjs
 
       - name: Build release bundle
         working-directory: target
