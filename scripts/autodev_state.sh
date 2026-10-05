@@ -24,10 +24,13 @@ if [[ -z "$PR_NUMBER" ]]; then
   exit 0
 fi
 
-COMMENTS_JSON="$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments?per_page=100")"
-STATE_TSV="$(python - "$COMMENTS_JSON" <<'PY'
+COMMENTS_FILE="$(mktemp)"
+trap 'rm -f "$COMMENTS_FILE"' EXIT
+gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments?per_page=100" > "$COMMENTS_FILE"
+STATE_TSV="$(python - "$COMMENTS_FILE" <<'PY'
 import json,re,sys
-comments=json.loads(sys.argv[1] or '[]')
+with open(sys.argv[1], encoding='utf-8') as handle:
+    comments=json.load(handle)
 marker='<!-- autodev-state-v1 -->'
 state=None
 for c in comments:
