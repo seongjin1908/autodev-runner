@@ -2,7 +2,7 @@ name: Central Zero-Budget AutoDev
 
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '17,47 * * * *'
   workflow_dispatch:
     inputs:
       target:
@@ -45,6 +45,7 @@ jobs:
       DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/space-bunny-free' }}
       DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '300' }}
       DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '1' }}
+      AUTODEV_ROTATION_SLOT_SECONDS: '1800'
 
     steps:
       - name: Checkout runner control plane
