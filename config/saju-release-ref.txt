@@ -1,1 +1,1 @@
-hardening/synthetic-paid-lifecycle-e2e-20261005
+autodev-v12
