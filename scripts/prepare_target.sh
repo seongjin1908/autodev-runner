@@ -6,6 +6,9 @@ cd "$ROOT_DIR/target"
 BRANCH_MODE="${BRANCH_MODE:-fixed}"
 MAX_BRANCH_AHEAD="${MAX_BRANCH_AHEAD:-0}"
 
+if [[ -n "${GH_TOKEN:-}" ]]; then
+  gh auth setup-git >/dev/null 2>&1
+fi
 git fetch origin "$BASE_BRANCH" --prune >/dev/null 2>&1
 BASE_REMOTE_SHA="$(git rev-parse "origin/$BASE_BRANCH")"
 CHECKOUT_SHA="$(git rev-parse HEAD)"
