@@ -3,3 +3,4 @@ canonical-rerun-20261004-01
 canonical-rerun-20261004-02
 synthetic-paid-lifecycle-e2e-20261005
 validate-current-v12-20261005
+recheck-canonical-20261004-20261005
