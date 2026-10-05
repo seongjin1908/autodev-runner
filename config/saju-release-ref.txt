@@ -1,1 +1,1 @@
-hardening/release-candidate-v3-20261005
+release/fortune-rc-20261005-v3

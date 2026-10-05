@@ -21,7 +21,7 @@
       "alias": "saju",
       "repository": "seongjin1908/daangn-saju-autodev",
       "work_branch": "autodev/saju/run-scoped",
-      "base_branch": "release/fortune-rc-20261005-v2",
+      "base_branch": "release/fortune-rc-20261005-v3",
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju.md",
       "recent_change_guard_minutes": 5,
@@ -33,7 +33,7 @@
       "failure_hold_minutes": 20,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
-      "source_branch": "release/fortune-rc-20261005-v2"
+      "source_branch": "release/fortune-rc-20261005-v3"
     },
     {
       "alias": "pricecam",
@@ -128,7 +128,7 @@
       "alias": "saju-design",
       "repository": "seongjin1908/daangn-saju-autodev",
       "work_branch": "autodev/saju/run-scoped",
-      "base_branch": "release/fortune-rc-20261005-v2",
+      "base_branch": "release/fortune-rc-20261005-v3",
       "validation": "node scripts/release-gate.mjs && npm run build",
       "prompt_file": "prompts/saju-design.md",
       "recent_change_guard_minutes": 25,
@@ -140,7 +140,7 @@
       "failure_hold_minutes": 120,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
-      "source_branch": "release/fortune-rc-20261005-v2"
+      "source_branch": "release/fortune-rc-20261005-v3"
     },
     {
       "alias": "face-lab-design",
