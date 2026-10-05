@@ -1,1 +1,1 @@
-hardening/synthetic-paid-lifecycle-e2e-v2-20261005
+hardening/release-candidate-v3-20261005
