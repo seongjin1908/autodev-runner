@@ -5,8 +5,13 @@ CONFIG="$ROOT_DIR/config/projects.json"
 TARGET="${TARGET:-auto}"
 
 if [[ "$TARGET" == "auto" ]]; then
-  EPOCH_HOUR="$(( $(date -u +%s) / 3600 ))"
-  TARGET="$(python - "$CONFIG" "$EPOCH_HOUR" <<'PY'
+  SLOT_SECONDS="${AUTODEV_ROTATION_SLOT_SECONDS:-3600}"
+  if ! [[ "$SLOT_SECONDS" =~ ^[0-9]+$ ]] || (( SLOT_SECONDS < 300 )); then
+    echo "Invalid AUTODEV_ROTATION_SLOT_SECONDS: $SLOT_SECONDS" >&2
+    exit 2
+  fi
+  EPOCH_SLOT="$(( $(date -u +%s) / SLOT_SECONDS ))"
+  TARGET="$(python - "$CONFIG" "$EPOCH_SLOT" <<'PY'
 import json,sys
 cfg=json.load(open(sys.argv[1], encoding='utf-8'))
 epoch=int(sys.argv[2])
