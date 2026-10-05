@@ -10,7 +10,7 @@ on:
       - 'prompts/saju.md'
       - 'config/projects.json'
   schedule:
-    - cron: '7,27,47 * * * *'
+    - cron: '7 * * * *'
   workflow_dispatch:
 
 permissions:
