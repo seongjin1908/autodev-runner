@@ -8,6 +8,7 @@ on:
       - 'scripts/**'
       - 'prompts/fortune.md'
       - 'prompts/saju.md'
+      - 'prompts/saju-core.md'
       - 'config/projects.json'
   schedule:
     - cron: '7 * * * *'
@@ -21,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [saju]
+        target: [saju-core]
     concurrency:
       group: saju-autodev
       cancel-in-progress: false
