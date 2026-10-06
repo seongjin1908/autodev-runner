@@ -23,6 +23,8 @@ on:
           - fault-intel
           - fault-intel-design
           - pricecam
+          - saju-global
+          - creative-studio
 
 permissions:
   contents: read
