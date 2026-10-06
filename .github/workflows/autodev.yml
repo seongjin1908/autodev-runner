@@ -24,13 +24,14 @@ on:
           - fault-intel-design
           - pricecam
           - saju-global
+          - saju-core
           - creative-studio
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'saju' || inputs.target == 'saju-design') && 'saju-autodev' || 'central-zero-budget-autodev' }}
+  group: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'saju' || inputs.target == 'saju-design' || inputs.target == 'saju-core' || inputs.target == 'saju-global') && 'saju-autodev' || 'central-zero-budget-autodev' }}
   cancel-in-progress: false
 
 jobs:
