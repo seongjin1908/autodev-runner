@@ -63,7 +63,7 @@
       "recent_change_guard_minutes": 25,
       "max_changed_files": 40,
       "auto_enabled": true,
-      "auto_weight": 4,
+      "auto_weight": 2,
       "release_priority": 80,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
@@ -99,7 +99,7 @@
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40,
       "auto_enabled": true,
-      "auto_weight": 4,
+      "auto_weight": 2,
       "release_priority": 70,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
@@ -195,12 +195,48 @@
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "source_branch": "main"
+    },
+    {
+      "alias": "saju-global",
+      "repository": "seongjin1908/daangn-saju-autodev",
+      "work_branch": "autodev/saju-global/run-scoped",
+      "base_branch": "autodev-v12",
+      "validation": "npm run build && npx tsx scripts/free-insight-quality.ts && npx tsx scripts/paid-result-ux-quality.ts",
+      "prompt_file": "prompts/saju-global.md",
+      "recent_change_guard_minutes": 5,
+      "max_changed_files": 40,
+      "auto_enabled": true,
+      "auto_weight": 8,
+      "release_priority": 99,
+      "failure_hold_threshold": 4,
+      "failure_hold_minutes": 20,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "autodev-v12"
+    },
+    {
+      "alias": "creative-studio",
+      "repository": "seongjin1908/creative-growth-studio",
+      "work_branch": "autodev/creative-studio/run-scoped",
+      "base_branch": "main",
+      "validation": "python - <<'PY'\nfrom pathlib import Path\nassert Path('README.md').exists()\nassert Path('AUTODEV_POLICY.md').exists()\nassert Path('autodev/QUEUE.md').exists()\nPY",
+      "prompt_file": "prompts/creative-studio.md",
+      "recent_change_guard_minutes": 5,
+      "max_changed_files": 30,
+      "auto_enabled": true,
+      "auto_weight": 8,
+      "release_priority": 98,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 30,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     }
   ],
   "auto_rotation": [
+    "saju-global",
+    "creative-studio",
     "face-lab",
-    "face-lab",
-    "fault-intel",
     "fault-intel"
   ]
 }
