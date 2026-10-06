@@ -37,6 +37,18 @@ After daily surfaces exist:
 - never expose access tokens in URL query
 - prepare an account abstraction, but do not add external auth unless required
 
+### P0 — First-purchase monetization layer
+After v22 Daily/Weekly/Monthly return surfaces are stable, add the first paid step before Standard:
+- Precision Question x1: 2,900 KRW
+- Keep P001 Standard 9,900 KRW, P002 Premium 19,900 KRW and P004 Signature 79,000 KRW unchanged.
+- Categories: money, business, career/change, relationship/marriage, current decision.
+- Answer contract: direct conclusion, practical timing window, 2-3 plain-language reasons, one caution/decision criterion.
+- Reuse the same deterministic chart/timing snapshot; do not answer with generic AI prose.
+- Add analytics: free_result_view -> precision_question_view -> checkout_start -> purchase -> standard_upgrade.
+- Build product/order/entitlement contracts and UI first. Do not enable live charging from AutoDev.
+- KR web must reuse the existing payment core/provider path only after explicit owner approval.
+- No hidden subscription, no auto-renewal and no misleading urgency.
+
 ### P1 — v23 Contextual Chat foundation
 Do NOT silently activate paid AI usage.
 Build the safe architecture first:
