@@ -1,0 +1,125 @@
+name: Saju Global Fast AutoDev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-global-fast-autodev.yml'
+      - 'prompts/saju-global.md'
+      - 'config/projects.json'
+      - 'scripts/**'
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-autodev
+  cancel-in-progress: false
+
+jobs:
+  develop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      TARGET: saju-global
+      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.6-flash-free' }}
+      DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
+      DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}
+      DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/ling-3.0-flash-fin-free' }}
+      DDD_FREE_CODE_MODEL_QUINARY: ${{ vars.DDD_FREE_CODE_MODEL_QUINARY || 'opencode/laguna-s-2.1-free' }}
+      DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/space-bunny-free' }}
+      DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '300' }}
+      DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '1' }}
+
+    steps:
+      - name: Checkout runner control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Select Global target
+        id: select
+        shell: bash
+        run: bash scripts/select_target.sh
+
+      - name: Check repository token
+        id: token
+        env:
+          AUTODEV_REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "$AUTODEV_REPO_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "AUTODEV_REPO_TOKEN is not configured."
+          fi
+
+      - name: Checkout target work branch
+        if: steps.token.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.select.outputs.repository }}
+          ref: ${{ steps.select.outputs.checkout_branch }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare collision and failure-hold guard
+        if: steps.token.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
+          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          BRANCH_MODE: ${{ steps.select.outputs.branch_mode }}
+          MAX_BRANCH_AHEAD: ${{ steps.select.outputs.max_branch_ahead }}
+          RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
+          FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
+          FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
+        shell: bash
+        run: bash scripts/prepare_target.sh
+
+      - name: Execute guarded Global batch
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        env:
+          ALIAS: ${{ steps.select.outputs.alias }}
+          VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
+          PROMPT_FILE: ${{ steps.select.outputs.prompt_file }}
+          MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
+          DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ env.DDD_FREE_MODEL_TRANSIENT_RETRIES }}
+        shell: bash
+        run: bash scripts/develop_target.sh
+
+      - name: Report diagnostics
+        if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
+          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+          FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
+          FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
+        shell: bash
+        run: bash scripts/report_target.sh
+
+      - name: Push validated batch and maintain PR
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
+          BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+        shell: bash
+        run: bash scripts/push_target.sh
