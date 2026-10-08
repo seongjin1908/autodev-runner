@@ -5,11 +5,13 @@ cd "$ROOT_DIR/target"
 
 # Token exists only in this push/PR step; target build/model code is already finished.
 gh auth setup-git >/dev/null 2>&1
-git fetch origin "$WORK_BRANCH" --prune >/dev/null 2>&1 || true
-REMOTE_SHA="$(git rev-parse "origin/$WORK_BRANCH" 2>/dev/null || true)"
+# A new run-scoped branch normally has no remote ref. Plain `git rev-parse`
+# prints an unresolved ref name to stdout, which previously produced false
+# "remote branch advanced" reports and silently discarded every validated batch.
+REMOTE_SHA="$(git ls-remote --heads origin "refs/heads/$WORK_BRANCH" | awk '{print $1}')"
 if [[ -n "$REMOTE_SHA" && "$REMOTE_SHA" != "$START_SHA" ]]; then
-  echo "Remote branch advanced during the run. Push aborted to prevent collision."
-  exit 0
+  echo "::error::Remote branch advanced during the run. Push aborted to prevent collision."
+  exit 1
 fi
 
 git push origin "HEAD:$WORK_BRANCH" >/dev/null 2>&1
