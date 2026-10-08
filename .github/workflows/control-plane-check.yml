@@ -37,6 +37,10 @@ jobs:
             bash -n "$file"
           done
 
+      - name: Check guarded push for new and advanced remote refs
+        shell: bash
+        run: bash scripts/test_push_target.sh
+
       - name: Validate target registry invariants
         shell: bash
         run: |
