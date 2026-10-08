@@ -3,22 +3,39 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR/target"
 
-# Token exists only in this push/PR step; target build/model code is already finished.
+# Credentials are scoped to the push/PR step, after source validation.
 gh auth setup-git >/dev/null 2>&1
-git fetch origin "$WORK_BRANCH" --prune >/dev/null 2>&1 || true
-REMOTE_SHA="$(git rev-parse "origin/$WORK_BRANCH" 2>/dev/null || true)"
+
+# Resolve the actual remote ref. A missing tracking ref is not a collision.
+REMOTE_REF="refs/heads/$WORK_BRANCH"
+REMOTE_LINE="$(git ls-remote --heads origin "$REMOTE_REF")"
+REMOTE_SHA=""
+if [[ -n "$REMOTE_LINE" ]]; then
+  REMOTE_SHA="${REMOTE_LINE%%$'\t'*}"
+fi
 if [[ -n "$REMOTE_SHA" && "$REMOTE_SHA" != "$START_SHA" ]]; then
-  echo "Remote branch advanced during the run. Push aborted to prevent collision."
-  exit 0
+  echo "Remote work branch changed: expected $START_SHA, found $REMOTE_SHA. Push aborted." >&2
+  exit 1
 fi
 
-git push origin "HEAD:$WORK_BRANCH" >/dev/null 2>&1
+LOCAL_SHA="$(git rev-parse HEAD)"
+git push origin "HEAD:$REMOTE_REF" >/dev/null
+
+# Never report a green job if the validated commit is absent remotely.
+PUSHED_LINE="$(git ls-remote --heads origin "$REMOTE_REF")"
+PUSHED_SHA="${PUSHED_LINE%%$'\t'*}"
+if [[ "$PUSHED_SHA" != "$LOCAL_SHA" ]]; then
+  echo "Push verification failed: expected $LOCAL_SHA, found ${PUSHED_SHA:-<absent>}." >&2
+  exit 1
+fi
 
 existing="$(gh pr list -R "$REPOSITORY" --state open --head "$WORK_BRANCH" --base "$BASE_BRANCH" --json url --jq '.[0].url // empty')"
 if [[ -n "$existing" ]]; then
   echo "Validated batch pushed to existing review PR."
 else
-  gh pr create -R "$REPOSITORY" --base "$BASE_BRANCH" --head "$WORK_BRANCH"     --title "autodev: $ALIAS development batch"     --body "Central zero-budget AutoDev batch.
+  gh pr create -R "$REPOSITORY" --base "$BASE_BRANCH" --head "$WORK_BRANCH" \
+    --title "autodev: $ALIAS development batch" \
+    --body "Central zero-budget AutoDev batch.
 
 - Baseline checked
 - Final validation passed
