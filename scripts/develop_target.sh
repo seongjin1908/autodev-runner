@@ -137,6 +137,9 @@ for p in paths:
         p.startswith('backend/.consumer-') or p.startswith('backend/.generic-')
     ):
         blocked.append(p)
+    # WORLD PATCH edits are scoped to the isolated original-series module.
+    if __import__('os').environ.get('ALIAS','') == 'world-patch' and not p.startswith('brands/world-patch/'):
+        blocked.append(p)
 if blocked:
     print('Guard blocked sensitive/workflow changes: ' + ', '.join(blocked))
     raise SystemExit(2)
