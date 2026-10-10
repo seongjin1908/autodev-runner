@@ -1,9 +1,14 @@
 name: WORLD PATCH Safe AutoDev
 
-# Scheduled editing of shared Creative Studio is paused during repo separation.
-# Restore schedule only after private world-patch-studio is created, migrated,
-# connected to AUTODEV_REPO_TOKEN, and its baseline CI passes.
+# Dedicated private repository: seongjin1908/world-patch-studio.
+# This workflow must never write to the advertising Creative Studio repository.
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/world-patch-autodev.yml'
+  schedule:
+    - cron: '02,32 * * * *'
   workflow_dispatch:
 
 permissions:
