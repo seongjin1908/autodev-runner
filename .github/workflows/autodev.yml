@@ -26,6 +26,7 @@ on:
           - saju-global
           - saju-core
           - creative-studio
+          - second
 
 permissions:
   contents: read
