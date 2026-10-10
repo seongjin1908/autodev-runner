@@ -26,4 +26,9 @@ MOCK_GH_FAIL=true check 10
 WORK_BRANCH="autodev/saju-global/test-1" MOCK_PR_JSON='[{"headRefName":"autodev/saju-core/one"},{"headRefName":"autodev/saju-global/two"},{"headRefName":"autodev/saju-global/three"}]' check 10
 WORK_BRANCH="autodev/face-lab/test-1" MOCK_GH_FAIL=true check 0
 REPOSITORY="example/other" WORK_BRANCH="autodev/saju-core/test-1" MOCK_GH_FAIL=true check 0
+REPOSITORY="seongjin1908/creative-growth-studio" BASE_BRANCH="main" WORK_BRANCH="autodev/creative-studio/test-1"
+MOCK_PR_JSON='[{"headRefName":"autodev/creative-studio/one"}]' check 10
+MOCK_PR_JSON='[]' check 0
+MOCK_GH_FAIL=true check 10
+MAX_PENDING_CREATIVE_PRS=0 check 10
 echo 'PASS: saju backlog hold, empty backlog, remote API failure and other-project bypass'

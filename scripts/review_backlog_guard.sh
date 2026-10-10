@@ -2,18 +2,15 @@
 # Fail closed before any AI/model invocation when reviewed saju changes are backlogged.
 set -euo pipefail
 
-if [[ "${BRANCH_MODE:-}" != "run_scoped" || "${REPOSITORY:-}" != "seongjin1908/daangn-saju-autodev" ]]; then
-  exit 0
-fi
-case "${WORK_BRANCH:-}" in
-  autodev/saju-core/*) lane="saju-core" ;;
-  autodev/saju-global/*) lane="saju-global" ;;
+if [[ "${BRANCH_MODE:-}" != "run_scoped" ]]; then exit 0; fi
+case "${REPOSITORY:-}:${WORK_BRANCH:-}" in
+  seongjin1908/daangn-saju-autodev:autodev/saju-core/*) lane="saju-core"; MAX_PENDING="${MAX_PENDING_SAJU_PRS:-2}" ;;
+  seongjin1908/daangn-saju-autodev:autodev/saju-global/*) lane="saju-global"; MAX_PENDING="${MAX_PENDING_SAJU_PRS:-2}" ;;
+  seongjin1908/creative-growth-studio:autodev/creative-studio/*) lane="creative-studio"; MAX_PENDING="${MAX_PENDING_CREATIVE_PRS:-1}" ;;
   *) exit 0 ;;
 esac
-
-MAX_PENDING="${MAX_PENDING_SAJU_PRS:-2}"
 if ! [[ "$MAX_PENDING" =~ ^[1-9][0-9]*$ ]]; then
-  echo "Invalid MAX_PENDING_SAJU_PRS; no model run permitted." >&2
+  echo "Invalid pending PR limit; no model run permitted." >&2
   exit 10
 fi
 

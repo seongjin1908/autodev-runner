@@ -207,7 +207,9 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     set -e
 
     if ! DURABLE_PATHS="$(has_durable_changes)"; then
-      if [[ "$MODEL_RC" -ne 0 ]] && is_transient_model_error /tmp/autodev-model.log && (( provider_try <= TRANSIENT_RETRIES )); then
+      # A timed-out worker already used its entire budget. Move to the next
+      # provider rather than spending another five minutes on the same stall.
+      if [[ "$MODEL_RC" -ne 0 && "$MODEL_RC" -ne 124 && "$MODEL_RC" -ne 137 ]] && is_transient_model_error /tmp/autodev-model.log && (( provider_try <= TRANSIENT_RETRIES )); then
         echo "Transient provider failure; retrying same model once."
         sleep 3
         continue
