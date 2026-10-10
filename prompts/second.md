@@ -192,7 +192,9 @@ For every supported region, maintain adapters/watchers for:
 - 문화·체육·관광·시설관리 기관
 - 지역 일자리센터
 - 산하기관 and local foundations
-Start with 제주특별자치도, 제주시, 서귀포시 and 제주 산하기관 as the first coverage-quality benchmark.
+Coverage must be nationwide-first from the start. Do not designate 제주 or any single region as the first product market.
+Build and monitor coverage across all 17 시·도 in parallel, then expand adapters through every 시·군·구 and their affiliated institutions.
+Use the same source schema, health checks, deduplication, freshness rules, and UX nationwide.
 
 Tier D — first-party and partner supply
 - employers posting directly to SECOND
