@@ -37,6 +37,10 @@ jobs:
             bash -n "$file"
           done
 
+      - name: Test automatic saju PR backlog fail-closed gate
+        shell: bash
+        run: bash scripts/test_review_backlog_guard.sh
+
       - name: Check guarded push for new and advanced remote refs
         shell: bash
         run: bash scripts/test_push_target.sh

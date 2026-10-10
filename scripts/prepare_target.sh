@@ -20,6 +20,15 @@ if [[ "$BRANCH_MODE" == "run_scoped" ]]; then
     echo "Run-scoped source moved before branch creation; skipping to avoid stale work."
     exit 0
   fi
+  # Review queue guard applies only to saju-core/global; never starts AI when unresolved PRs accumulate.
+  backlog_rc=0
+  bash "$ROOT_DIR/scripts/review_backlog_guard.sh" || backlog_rc=$?
+  if (( backlog_rc != 0 )); then
+    echo "SKIP_TARGET=true" >> "$GITHUB_ENV"
+    echo "AUTODEV_SKIP_REASON=review_backlog_hold" >> "$GITHUB_ENV"
+    echo "Model generation skipped pending consolidation (or safe backlog lookup)." 
+    exit 0
+  fi
   git switch -c "$WORK_BRANCH" >/dev/null
 fi
 
