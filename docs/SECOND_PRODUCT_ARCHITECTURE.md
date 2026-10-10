@@ -138,13 +138,13 @@ SECOND uses a provider-adapter architecture rather than hard-coding one recruitm
 2. Seoul 50+ adapter
 3. JobAlio adapter
 4. NaraIlteo/public-sector adapter
-5. Jeju official-source pack:
-   - 제주특별자치도
-   - 제주시
-   - 서귀포시
-   - 제주 농업기술원/센터
-   - 제주 산하기관/재단/시설기관
-6. Generic local-government board adapter framework for nationwide expansion
+5. Nationwide official-source coverage pack:
+   - all 17 시·도 official recruitment sources
+   - every 시·군·구 recruitment board
+   - regional 농업기술원/농업기술센터
+   - regional 보건소/복지관/중장년지원센터
+   - local facilities corporations, foundations, public hospitals, universities and affiliated institutions
+6. Reusable local-government adapter framework so every region uses the same normalization/health contract
 7. Direct employer/partner feed
 
 ### Source-selection policy
