@@ -249,6 +249,23 @@
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "source_branch": "autodev-v12"
+    },
+    {
+      "alias": "world-patch",
+      "repository": "seongjin1908/creative-growth-studio",
+      "work_branch": "autodev/27-world-patch-animatic",
+      "base_branch": "main",
+      "validation": "python -m unittest discover -s brands/world-patch/tests -v && python brands/world-patch/renderer.py --preview --output /tmp/world-patch-autodev-preview.mp4 && test -s /tmp/world-patch-autodev-preview.mp4",
+      "prompt_file": "prompts/world-patch.md",
+      "recent_change_guard_minutes": 5,
+      "max_changed_files": 12,
+      "auto_enabled": false,
+      "auto_weight": 0,
+      "release_priority": 98,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 60,
+      "max_branch_ahead": 35,
+      "branch_mode": "fixed"
     }
   ],
   "auto_rotation": [
