@@ -2,13 +2,10 @@ name: WORLD PATCH Safe AutoDev
 
 # Dedicated private repository: seongjin1908/world-patch-studio.
 # This workflow must never write to the advertising Creative Studio repository.
+# Paused because AUTODEV_REPO_TOKEN cannot check out the new private
+# world-patch-studio repository (403 write access not granted on run 38058488823).
+# Re-enable cron only after account owner grants this PAT repository access.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/world-patch-autodev.yml'
-  schedule:
-    - cron: '02,32 * * * *'
   workflow_dispatch:
 
 permissions:
