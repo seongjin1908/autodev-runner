@@ -8,7 +8,7 @@ BASE_BRANCH="${BASE_BRANCH:-autodev-v12}"
 OUTPUT="${GITHUB_STEP_SUMMARY:-/tmp/saju-review-queue.md}"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
-if ! gh pr list -R "$REPOSITORY" --state open --base "$BASE_BRANCH" --limit 100 --json number,title,headRefName,mergeable,statusCheckRollup > "$TMP"; then
+if ! gh pr list -R "$REPOSITORY" --state open --base "$BASE_BRANCH" --limit 100 --json number,title,headRefName,mergeable > "$TMP"; then
   echo "Review queue unavailable (GitHub API error); no model run." >> "$OUTPUT"
   exit 0
 fi
@@ -37,7 +37,7 @@ rows=[x for x in items if kind(x)]
 priority={"brand":0,"core":1,"global":2}
 rows.sort(key=lambda x:(priority[kind(x)], 0 if check_summary(x)=="PASS" else 1, x.get("number",0)))
 out=["## UNKIVE review queue — new AI generation held", "",
-     "No auto-merge, no charge, no production deploy. Review verified existing work first.", "",
+     "No auto-merge, no charge, no production deploy. CI requires separate read permission; unknown is NOT a pass.", "",
      "| Lane | PR | CI | Merge readiness |", "|---|---|---|---|"]
 for x in rows:
     number=int(x.get("number",0))
