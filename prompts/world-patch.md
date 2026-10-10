@@ -1,11 +1,11 @@
 # WORLD PATCH zero-budget autonomous coding instructions
 
-Target: dedicated PRIVATE repository seongjin1908/world-patch-studio (to be created and migrated), work branch autodev/1-world-patch-engine. The previous prototype lives in creative-growth-studio PR #28 and is read-only migration provenance. Never update PR #28 or the shared advertising repository.
+Target: dedicated PRIVATE repository seongjin1908/world-patch-studio (created and migrated; baseline PR #2 verified), work branch autodev/1-world-patch-engine. The previous prototype lives in creative-growth-studio PR #28 and is read-only migration provenance. Never update PR #28 or the shared advertising repository.
 
 ## Priority
 Build a release-quality original nonverbal 2D animation production pipeline, starting from the validated P0 geometric animatic. The current render is a technical prototype, not a polished release asset.
 Advance in order, one coherent vertical slice per run:
-1. Move fixed HERO-001 geometry and palette into one canonical rig and add identity tests.
+1. Integrate the existing `hero.py` fixed HERO-001 canonical rig into `renderer.py`; remove the duplicate robot draw path and add pixel/identity regression tests.
 2. Add reusable anticipation, contact, impact, recoil and settle motion curves with visual tests.
 3. Distinct shot-specific staging following the episode JSON timeline, preventing repetitive movement.
 4. Original/licensed Foley and explicit audio mix controls.
