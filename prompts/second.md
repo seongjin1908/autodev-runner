@@ -125,3 +125,101 @@ Every batch must run:
 - any project-specific tests
 
 Prioritize broken critical flows over new features. Work in coherent batches. Do not change deployment workflows, secrets, or production payment settings.
+
+
+## Non-negotiable simplicity — "3 taps to value"
+SECOND must be easier than a normal job board. If a new user needs a tutorial, long signup, resume upload, or multi-page form before seeing value, the flow is wrong.
+
+### Guest-first onboarding
+The first useful result must be reachable without account creation.
+Ask only three high-signal questions:
+1. 어디에서 하고 싶어요? — current region / other region / nationwide
+2. 월 얼마 정도 더 벌고 싶어요? — 50 / 100 / 200 / 300만원+
+3. 어떤 방식이 좋아요? — 가볍게 / 경력활용 / 프로젝트 / 작은사업
+
+Then immediately show: "오늘 나에게 맞는 기회 N개".
+Do not ask age, education, full work history, certifications, detailed resume, family status, or identity verification before first results unless a specific listing legally requires it.
+
+### Progressive disclosure
+- Browse anonymously.
+- Ask for login/verification only when the user saves across devices, applies/inquires, posts a listing, or enables alerts.
+- Hide advanced filters under "더 자세히 찾기".
+- One primary action per screen.
+- No more than 4 bottom navigation items during P0.
+- Every opportunity card must answer, without opening detail: what is it, where, roughly how much, how much time, why it fits, and whether money is required upfront.
+- Replace jargon with plain Korean. A user should understand each screen in under 5 seconds.
+- Preserve dignity: large readable UI, but never visually label the user as elderly.
+
+## Nationwide source coverage — not Work24-only
+SECOND must behave as a source aggregation and normalization layer, not as a thin Work24 skin.
+
+### Source registry
+Maintain a versioned source registry with:
+- source_id
+- provider_name
+- source_type
+- region
+- official/partner status
+- acquisition_method: api / rss / public_html / manual / partner_feed
+- source_url
+- allowed_refresh_interval
+- terms_or_robots_reviewed_at
+- last_success_at
+- last_item_seen_at
+- health_status
+- parser_version
+
+### Priority source families
+Tier A — official structured feeds/APIs
+- 고용24 Open API
+- 서울시50플러스 OPEN API/CSV and equivalent regional middle-aged employment programs when available
+- other central/local government open-data feeds that explicitly allow reuse
+
+Tier B — official public-sector recruitment portals
+- 잡알리오 public-institution recruitment
+- 나라일터 central/local public-sector recruitment
+- 지방공기업/지방출자·출연기관 recruitment sources
+- public hospitals, universities, foundations, facilities corporations and other public institutions
+
+Tier C — local-government and affiliated websites
+For every supported region, maintain adapters/watchers for:
+- 광역시·도청
+- 시청·군청·구청
+- 읍면동/사업소 where recruitment is posted separately
+- 농업기술원/농업기술센터
+- 보건소
+- 복지관/50+센터/중장년지원센터
+- 문화·체육·관광·시설관리 기관
+- 지역 일자리센터
+- 산하기관 and local foundations
+Start with 제주특별자치도, 제주시, 서귀포시 and 제주 산하기관 as the first coverage-quality benchmark.
+
+Tier D — first-party and partner supply
+- employers posting directly to SECOND
+- chambers, associations, cooperatives, dealer networks, franchise/agency recruitment partners
+- local projects and short-term tasks
+
+### Commercial job boards
+Do not scrape commercial sites such as major private job boards without an allowed API, feed, partnership, or explicit permission. Where appropriate, link users to the original source rather than copying restricted content.
+
+### Public HTML ingestion rules
+When an official site has no API/feed:
+- respect robots.txt, terms, rate limits and server load
+- fetch only public pages needed for recruitment discovery
+- store normalized facts and source URL, not unnecessary copied page bodies
+- preserve original provider and direct source link
+- detect expiry/closure
+- deduplicate against the same listing syndicated elsewhere
+- alert internally when parser health drops
+- never bypass login, CAPTCHA, paywall, access controls or anti-bot protections
+
+### Coverage quality
+The system must expose source health metrics:
+- active source count by region
+- last successful refresh
+- freshness lag
+- parser failure count
+- duplicate rate
+- expired listing rate
+- % of listings with compensation/time/location parsed
+Do not claim "전국 전체 공고" unless measured coverage supports the claim. Prefer "여러 공식 채용처를 한곳에서 확인" until coverage is proven.
