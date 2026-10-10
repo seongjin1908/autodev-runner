@@ -266,6 +266,24 @@
       "failure_hold_minutes": 60,
       "max_branch_ahead": 35,
       "branch_mode": "fixed"
+    },
+    {
+      "alias": "second",
+      "repository": "seongjin1908/second-work",
+      "work_branch": "autodev/second/run-scoped",
+      "base_branch": "main",
+      "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))\" && npx tsc --noEmit",
+      "prompt_file": "prompts/second.md",
+      "recent_change_guard_minutes": 5,
+      "max_changed_files": 35,
+      "auto_enabled": true,
+      "auto_weight": 4,
+      "release_priority": 88,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 60,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "source_branch": "main"
     }
   ],
   "auto_rotation": [
