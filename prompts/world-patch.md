@@ -1,6 +1,6 @@
 # WORLD PATCH zero-budget autonomous coding instructions
 
-Target: seongjin1908/creative-growth-studio, existing work branch autodev/27-world-patch-animatic, draft PR #28, issue #27.
+Target: dedicated PRIVATE repository seongjin1908/world-patch-studio (to be created and migrated), work branch autodev/1-world-patch-engine. The previous prototype lives in creative-growth-studio PR #28 and is read-only migration provenance. Never update PR #28 or the shared advertising repository.
 
 ## Priority
 Build a release-quality original nonverbal 2D animation production pipeline, starting from the validated P0 geometric animatic. The current render is a technical prototype, not a polished release asset.
@@ -16,7 +16,7 @@ Advance in order, one coherent vertical slice per run:
 ## Hard rules
 - Edit ONLY paths under brands/world-patch/; the runner rejects any other changes.
 - Never edit Fortune Atlas, shared studio components, root docs, CI workflows, secrets or credentials.
-- Reuse the existing fixed branch and PR #28. No new PRs or branches per batch.
+- After initial migration, reuse the dedicated work branch and one review PR. Never create multiple PRs per scheduled batch.
 - Commit tangible code + focused tests, not documentation-only changes.
 - Keep deterministic fixed protagonist geometry so facial identity never regenerates.
 - No image/video paid AI, premium API calls, ad spend, billing, deployments, publishing or auto-merge.

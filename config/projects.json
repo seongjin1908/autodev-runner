@@ -252,8 +252,8 @@
     },
     {
       "alias": "world-patch",
-      "repository": "seongjin1908/creative-growth-studio",
-      "work_branch": "autodev/27-world-patch-animatic",
+      "repository": "seongjin1908/world-patch-studio",
+      "work_branch": "autodev/1-world-patch-engine",
       "base_branch": "main",
       "validation": "python -m unittest discover -s brands/world-patch/tests -v && python brands/world-patch/renderer.py --preview --output /tmp/world-patch-autodev-preview.mp4 && test -s /tmp/world-patch-autodev-preview.mp4",
       "prompt_file": "prompts/world-patch.md",
