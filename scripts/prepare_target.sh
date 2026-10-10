@@ -26,7 +26,10 @@ if [[ "$BRANCH_MODE" == "run_scoped" ]]; then
   if (( backlog_rc != 0 )); then
     echo "SKIP_TARGET=true" >> "$GITHUB_ENV"
     echo "AUTODEV_SKIP_REASON=review_backlog_hold" >> "$GITHUB_ENV"
-    echo "Model generation skipped pending consolidation (or safe backlog lookup)." 
+    echo "Model generation skipped pending consolidation (or safe backlog lookup)."
+    if [[ "$REPOSITORY" == "seongjin1908/daangn-saju-autodev" ]]; then
+      bash "$ROOT_DIR/scripts/saju_review_queue.sh" || echo "Read-only review summary unavailable; model remains blocked."
+    fi
     exit 0
   fi
   git switch -c "$WORK_BRANCH" >/dev/null
