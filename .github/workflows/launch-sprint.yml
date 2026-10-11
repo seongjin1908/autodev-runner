@@ -87,6 +87,7 @@ jobs:
           WORK_BRANCH: ${{ steps.select.outputs.work_branch }}
           BASE_BRANCH: ${{ steps.select.outputs.base_branch }}
           BRANCH_MODE: ${{ steps.select.outputs.branch_mode }}
+          MAX_PENDING_SAJU_PRS: '1'
           MAX_BRANCH_AHEAD: ${{ steps.select.outputs.max_branch_ahead }}
           RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
           FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
