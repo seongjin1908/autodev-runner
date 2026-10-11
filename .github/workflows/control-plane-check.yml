@@ -45,6 +45,10 @@ jobs:
         shell: bash
         run: bash scripts/test_saju_review_queue.sh
 
+      - name: Test current UNKIVE release lane and hourly isolation
+        shell: bash
+        run: bash scripts/test_unkive_release_lane.sh
+
       - name: Check guarded push for new and advanced remote refs
         shell: bash
         run: bash scripts/test_push_target.sh
