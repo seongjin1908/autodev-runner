@@ -1,6 +1,10 @@
 name: Central Zero-Budget AutoDev
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'prompts/cyber-guardian.md'
   schedule:
     - cron: '17,47 * * * *'
   workflow_dispatch:
@@ -27,6 +31,7 @@ on:
           - saju-core
           - creative-studio
           - second
+          - cyber-guardian
 
 permissions:
   contents: read
@@ -40,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
-      TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'auto' }}
+      TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || github.event_name == 'push' && 'cyber-guardian' || 'auto' }}
       DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.6-flash-free' }}
       DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
       DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}
