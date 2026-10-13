@@ -284,6 +284,24 @@
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "source_branch": "main"
+    },
+    {
+      "alias": "cyber-guardian",
+      "repository": "seongjin1908/cyber-guardian-ai",
+      "work_branch": "autodev/cyber-guardian/run-scoped",
+      "base_branch": "main",
+      "source_branch": "main",
+      "validation": "node --check guardian.js && node --check guard-policy.js && node --check gateway/runtime.js && node --check gateway/server.js && node --test tests/*.test.js",
+      "prompt_file": "prompts/cyber-guardian.md",
+      "recent_change_guard_minutes": 15,
+      "max_changed_files": 8,
+      "auto_enabled": true,
+      "auto_weight": 3,
+      "release_priority": 92,
+      "failure_hold_threshold": 2,
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped"
     }
   ],
   "auto_rotation": [
