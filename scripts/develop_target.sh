@@ -116,7 +116,7 @@ guard_changes() {
   python - "$MAX_CHANGED_FILES" <<'PY'
 import subprocess,sys
 limit=int(sys.argv[1])
-lines=subprocess.check_output(['git','status','--porcelain'], text=True).splitlines()
+lines=subprocess.check_output(['git','status','--porcelain','--untracked-files=all'], text=True).splitlines()
 paths=[]
 for line in lines:
     p=line[3:]
