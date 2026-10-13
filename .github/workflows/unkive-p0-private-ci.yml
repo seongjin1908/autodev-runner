@@ -108,8 +108,6 @@ jobs:
           node scripts/check-unkive-daangn-pricing.mjs
           node scripts/unkive-daangn-e2e.mjs
           node scripts/check-unkive-backend-recovery.mjs
-          node scripts/unkive-home-e2e.mjs
-          node scripts/unkive-release-e2e.mjs
 
       - name: Paid personalization, question specificity, and mobile browser journey
         working-directory: target
@@ -120,6 +118,8 @@ jobs:
           node scripts/check-unkive-personalization.mjs
           node scripts/unkive-personalization-e2e.mjs
           node scripts/check-unkive-monthly-guidance.mjs
+          node scripts/unkive-home-e2e.mjs
+          node scripts/unkive-release-e2e.mjs
 
       - name: Dream, photo, face, and palm consent regressions
         working-directory: target
