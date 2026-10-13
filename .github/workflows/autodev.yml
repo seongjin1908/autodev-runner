@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'prompts/cyber-guardian.md'
+      - 'scripts/preflight_target_access.sh'
   schedule:
     - cron: '17,47 * * * *'
   workflow_dispatch:
@@ -67,6 +68,10 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Verify private-target preflight behavior offline
+        shell: bash
+        run: bash tests/test_preflight_cyber.sh
+
       - name: Select target
         id: select
         shell: bash
@@ -84,6 +89,16 @@ jobs:
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "AUTODEV_REPO_TOKEN is not configured. No private repository will be touched."
           fi
+
+      - name: Verify Cyber Guardian private source access
+        if: steps.select.outputs.alias == 'cyber-guardian'
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          CHECKOUT_BRANCH: ${{ steps.select.outputs.checkout_branch }}
+        shell: bash
+        run: bash scripts/preflight_target_access.sh
 
       - name: Checkout target work branch
         if: steps.token.outputs.configured == 'true'
