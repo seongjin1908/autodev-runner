@@ -41,6 +41,10 @@ jobs:
         shell: bash
         run: bash scripts/test_review_backlog_guard.sh
 
+      - name: Reject disposable saju probe-only batches before PR creation
+        shell: bash
+        run: bash scripts/test_saju_probe_guard.sh
+
       - name: Test read-only UNKIVE PR consolidation summary
         shell: bash
         run: bash scripts/test_saju_review_queue.sh
