@@ -7,6 +7,7 @@ case "${REPOSITORY:-}:${WORK_BRANCH:-}" in
   seongjin1908/daangn-saju-autodev:autodev/saju-core/*) lane="saju-core"; MAX_PENDING="${MAX_PENDING_SAJU_PRS:-2}" ;;
   seongjin1908/daangn-saju-autodev:autodev/saju-global/*) lane="saju-global"; MAX_PENDING="${MAX_PENDING_SAJU_PRS:-2}" ;;
   seongjin1908/creative-growth-studio:autodev/creative-studio/*) lane="creative-studio"; MAX_PENDING="${MAX_PENDING_CREATIVE_PRS:-1}" ;;
+  seongjin1908/cyber-guardian-ai:autodev/cyber-guardian/*) lane="cyber-guardian"; MAX_PENDING="${MAX_PENDING_CYBER_GUARDIAN_PRS:-1}" ;;
   *) exit 0 ;;
 esac
 if ! [[ "$MAX_PENDING" =~ ^[1-9][0-9]*$ ]]; then
