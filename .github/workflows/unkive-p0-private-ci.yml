@@ -94,3 +94,46 @@ jobs:
       - name: Verify isolated release bundle
         working-directory: target
         run: npx --no-install vite build --config scripts/vite-release-test.mjs
+
+      - name: Install isolated browser test dependencies
+        working-directory: target
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+
+      - name: Payment amount, fulfillment, and purchase journey regressions
+        working-directory: target
+        run: |
+          node scripts/check-unkive-calculation.mjs
+          node scripts/check-unkive-daangn-pricing.mjs
+          node scripts/unkive-daangn-e2e.mjs
+          node scripts/check-unkive-backend-recovery.mjs
+          node scripts/unkive-home-e2e.mjs
+          node scripts/unkive-release-e2e.mjs
+
+      - name: Paid personalization, question specificity, and mobile browser journey
+        working-directory: target
+        run: |
+          node scripts/check-unkive-focus-qna.mjs
+          node scripts/unkive-business-result-e2e.mjs
+          node scripts/check-unkive-paid-ai-context.mjs
+          node scripts/check-unkive-personalization.mjs
+          node scripts/unkive-personalization-e2e.mjs
+          node scripts/check-unkive-monthly-guidance.mjs
+
+      - name: Dream, photo, face, and palm consent regressions
+        working-directory: target
+        run: |
+          node scripts/check-unkive-dream.mjs
+          node scripts/unkive-dream-e2e.mjs
+          node scripts/unkive-photo-e2e.mjs
+          node scripts/check-unkive-face.mjs
+          node scripts/unkive-face-e2e.mjs
+          node scripts/check-unkive-palm.mjs
+          node scripts/unkive-palm-e2e.mjs
+
+      - name: Inspect actual PDF font coverage and visual geometry
+        working-directory: target
+        run: |
+          python -m pip install PyMuPDF==1.26.5
+          python scripts/check-unkive-pdf-layout.py
