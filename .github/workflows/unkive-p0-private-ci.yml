@@ -1,0 +1,96 @@
+name: UNKIVE P0 private source verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/unkive-p0-private-ci.yml'
+      - 'config/unkive-p0-ci-ref.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unkive-p0-private-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout runner control plane
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate immutable target SHA
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="$(tr -d '\r\n' < config/unkive-p0-ci-ref.txt)"
+          if ! [[ "$ref" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::P0 verification requires a pinned 40-character commit SHA."
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "Validating immutable UNKIVE source ref: $ref"
+
+      - name: Check private repository access
+        shell: bash
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          if [ -z "$REPO_TOKEN" ]; then
+            echo "::error::Private checkout credential not configured."
+            exit 1
+          fi
+
+      - name: Checkout UNKIVE private commit read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ steps.target.outputs.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install existing project dependencies (no lifecycle hooks)
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+
+      - name: Verify production contract and TypeScript
+        working-directory: target
+        run: |
+          node scripts/production-contract-check.mjs
+          npx --no-install tsc --noEmit
+
+      - name: Verify backend bundle
+        working-directory: target
+        run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
+
+      - name: Verify paid PDF grapheme integrity and measured pagination
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          node scripts/check-unkive-paged-text.mjs
+          node scripts/check-unkive-flow-unicode.mjs
+          node scripts/check-unkive-evidence-density.mjs
+          node scripts/check-unkive-pdf.mjs
+
+      - name: Verify order recovery, notifications, and paid report quality without providers
+        working-directory: target
+        run: |
+          node scripts/check-unkive-delivery.mjs
+          node scripts/check-unkive-alimtalk.mjs
+          node scripts/check-unkive-paid-quality.mjs
+
+      - name: Verify isolated release bundle
+        working-directory: target
+        run: npx --no-install vite build --config scripts/vite-release-test.mjs
