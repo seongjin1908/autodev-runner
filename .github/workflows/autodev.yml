@@ -68,6 +68,10 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Verify private-target preflight behavior offline
+        shell: bash
+        run: bash tests/test_preflight_cyber.sh
+
       - name: Select target
         id: select
         shell: bash
