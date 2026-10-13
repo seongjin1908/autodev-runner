@@ -16,7 +16,7 @@ assert source.count('guard_changes() {') == 1
 section = source.split('guard_changes() {', 1)[1].split('\n}\n\nsanitize_tail()', 1)[0]
 marker = 'python - "$MAX_CHANGED_FILES" <<\'PY\'\n'
 assert marker in section, 'could not locate active guard code'
-guard_code = section.split(marker, 1)[1].split('\nPY\n', 1)[0]
+guard_code = section.split(marker, 1)[1].rsplit('\nPY', 1)[0]
 
 with tempfile.TemporaryDirectory(prefix='saju-guard-test-') as temporary:
     root = pathlib.Path(temporary)
