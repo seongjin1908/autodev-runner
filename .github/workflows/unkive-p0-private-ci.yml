@@ -86,8 +86,7 @@ jobs:
         working-directory: target
         run: |
           node scripts/check-unkive-content-review.mjs
-          npx --no-install esbuild scripts/unkive-offline-editorial-benchmark.ts --bundle --platform=node --format=cjs --outfile=release-test-results/offline-editorial-benchmark.cjs
-          node release-test-results/offline-editorial-benchmark.cjs
+          node scripts/check-unkive-offline-editorial-benchmark.mjs
 
       - name: Verify free chart grounding and eight-interest editorial quality
         working-directory: target
