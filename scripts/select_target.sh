@@ -85,6 +85,8 @@ projects=json.load(open(cfg, encoding='utf-8'))['projects']
 p=next((x for x in projects if x['alias']==target), None)
 if not p:
     raise SystemExit(f'Unknown target: {target}')
+if p.get('development_status') == 'hold':
+    raise SystemExit(f"Target is on HOLD: {target} ({p.get('hold_reason','no reason provided')})")
 branch_mode=p.get('branch_mode','fixed')
 configured_work=p['work_branch']
 checkout_branch=configured_work
