@@ -28,13 +28,7 @@ jobs:
             echo "::error::AUTODEV_REPO_TOKEN is not configured."
             exit 1
           fi
-          python - <<'PY' > /tmp/enabled-targets.tsv
-import json
-cfg=json.load(open('config/projects.json',encoding='utf-8'))
-for p in cfg['projects']:
-    if p.get('auto_enabled'):
-        print(f"{p['alias']}\t{p['repository']}\t{p.get('source_branch') or p.get('base_branch') or 'main'}")
-PY
+          python -c 'import json; cfg=json.load(open("config/projects.json",encoding="utf-8")); [print("{}\\t{}\\t{}".format(p["alias"],p["repository"],p.get("source_branch") or p.get("base_branch") or "main")) for p in cfg["projects"] if p.get("auto_enabled")]' > /tmp/enabled-targets.tsv
           inaccessible=0
           {
             echo "## Portfolio target access"
