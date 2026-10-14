@@ -81,6 +81,7 @@ jobs:
           mkdir -p release-test-results
           node scripts/check-unkive-paid-quality.mjs
           node scripts/check-unkive-personalization.mjs
+          node scripts/check-unkive-paid-ai-context.mjs
 
       - name: Verify free chart grounding and eight-interest editorial quality
         working-directory: target
@@ -126,7 +127,6 @@ jobs:
         run: |
           node scripts/check-unkive-focus-qna.mjs
           node scripts/unkive-business-result-e2e.mjs
-          node scripts/check-unkive-paid-ai-context.mjs
           node scripts/check-unkive-personalization.mjs
           node scripts/unkive-personalization-e2e.mjs
           node scripts/check-unkive-monthly-guidance.mjs
