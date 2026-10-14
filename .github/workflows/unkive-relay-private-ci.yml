@@ -1,0 +1,61 @@
+{
+  "name": "UNKIVE relay isolated PostgreSQL verification",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "verify": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 10,
+      "services": {
+        "postgres": {
+          "image": "postgres:16",
+          "env": {
+            "POSTGRES_USER": "postgres",
+            "POSTGRES_PASSWORD": "synthetic-test-only",
+            "POSTGRES_DB": "relay_test"
+          },
+          "ports": [
+            "5432:5432"
+          ],
+          "options": "--health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10"
+        }
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "repository": "seongjin1908/daangn-saju-autodev",
+            "ref": "e2bd1d3835985d60390a1e4eec944a02db76b6e3",
+            "token": "${{ secrets.AUTODEV_REPO_TOKEN }}",
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Syntax and pure return/authentication/locking checks",
+          "run": "node --check payapp-relay/server.mjs\nnpm test --prefix payapp-relay"
+        },
+        {
+          "name": "Install only existing relay dependencies for real server test",
+          "run": "npm install --prefix payapp-relay --no-package-lock --ignore-scripts --no-audit --no-fund"
+        },
+        {
+          "name": "Actual HTTP and isolated PostgreSQL concurrency",
+          "env": {
+            "PAYAPP_TEST_DATABASE_URL": "postgresql://postgres:synthetic-test-only@127.0.0.1:5432/relay_test"
+          },
+          "run": "npm run test:integration --prefix payapp-relay"
+        }
+      ]
+    }
+  }
+}
