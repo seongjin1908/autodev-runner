@@ -331,13 +331,15 @@
       "prompt_file": "prompts/jjin.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 20,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 52,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
-      "branch_mode": "run_scoped"
+      "branch_mode": "run_scoped",
+      "development_status": "hold",
+      "hold_reason": "user_requested_stop_2026-10-14"
     },
     {
       "alias": "ddd-revenue",
@@ -403,13 +405,15 @@
       "prompt_file": "prompts/motion-grid.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 20,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 36,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
-      "branch_mode": "run_scoped"
+      "branch_mode": "run_scoped",
+      "development_status": "hold",
+      "hold_reason": "user_requested_stop_2026-10-14"
     },
     {
       "alias": "tradepilot",
@@ -421,13 +425,15 @@
       "prompt_file": "prompts/tradepilot.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 16,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 25,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
-      "branch_mode": "run_scoped"
+      "branch_mode": "run_scoped",
+      "development_status": "hold",
+      "hold_reason": "user_requested_stop_2026-10-14"
     }
   ],
   "auto_rotation": [
