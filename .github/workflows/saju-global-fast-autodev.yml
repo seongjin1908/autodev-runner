@@ -1,13 +1,6 @@
 name: Saju Global Fast AutoDev
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/saju-global-fast-autodev.yml'
-      - 'prompts/saju-global.md'
-      - 'config/projects.json'
-      - 'scripts/**'
   schedule:
     - cron: '37 * * * *'
   workflow_dispatch:
