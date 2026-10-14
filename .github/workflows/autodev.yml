@@ -84,6 +84,8 @@ jobs:
 
       - name: Select target
         id: select
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
         shell: bash
         run: bash scripts/select_target.sh
 
