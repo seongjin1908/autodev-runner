@@ -36,6 +36,13 @@ on:
           - second
           - cyber-guardian
           - world-patch
+          - todaypick
+          - jjin
+          - ddd-revenue
+          - ddd-rfq
+          - fundos
+          - motion-grid
+          - tradepilot
 
 permissions:
   contents: read

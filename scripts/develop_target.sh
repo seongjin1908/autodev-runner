@@ -22,10 +22,17 @@ echo "BATCH_READY=false" >> "$GITHUB_ENV"
 echo "AUTODEV_RUN_STATUS=running" >> "$GITHUB_ENV"
 
 install_baseline_dependencies() {
-  if [[ -f package-lock.json ]]; then
-    npm ci >/tmp/autodev-install.log 2>&1
+  : > /tmp/autodev-install.log
+  if [[ -f pnpm-lock.yaml ]]; then
+    corepack enable >>/tmp/autodev-install.log 2>&1
+    pnpm install --frozen-lockfile >>/tmp/autodev-install.log 2>&1
+  elif [[ -f package-lock.json ]]; then
+    npm ci >>/tmp/autodev-install.log 2>&1
   elif [[ -f package.json ]]; then
-    npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-install.log 2>&1
+    npm install --no-package-lock --no-audit --no-fund >>/tmp/autodev-install.log 2>&1
+  fi
+  if [[ -f requirements.txt ]]; then
+    python -m pip install -r requirements.txt >>/tmp/autodev-install.log 2>&1
   fi
 }
 
@@ -109,7 +116,7 @@ PY
 }
 
 manifest_changed() {
-  git status --porcelain -- package.json package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock | grep -q .
+  git status --porcelain -- package.json package-lock.json npm-shrinkwrap.json pnpm-lock.yaml yarn.lock requirements.txt pyproject.toml poetry.lock | grep -q .
 }
 
 restore_attempt_baseline() {
