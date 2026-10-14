@@ -112,7 +112,8 @@ jobs:
           import json
           cfg=json.load(open('config/projects.json'))
           for p in cfg['projects']:
-              print(p['alias'])
+              if p.get('development_status') != 'hold':
+                  print(p['alias'])
           PY
           while IFS= read -r alias; do
             : > /tmp/github-output
@@ -122,6 +123,23 @@ jobs:
             grep -q '^checkout_branch=' /tmp/github-output
             grep -q '^branch_mode=' /tmp/github-output
           done < /tmp/aliases.txt
+
+          python - <<'PY' >/tmp/held-aliases.txt
+          import json
+          cfg=json.load(open('config/projects.json'))
+          for p in cfg['projects']:
+              if p.get('development_status') == 'hold':
+                  print(p['alias'])
+          PY
+          while IFS= read -r alias; do
+            : > /tmp/github-output
+            if TARGET="$alias" GITHUB_OUTPUT=/tmp/github-output bash scripts/select_target.sh >/tmp/held-selection.log 2>&1; then
+              echo "Held target unexpectedly selectable: $alias"
+              exit 1
+            fi
+            grep -q 'Target is on HOLD:' /tmp/held-selection.log
+          done < /tmp/held-aliases.txt
+
           : > /tmp/github-output
           TARGET=auto GITHUB_OUTPUT=/tmp/github-output bash scripts/select_target.sh >/dev/null
           grep -q '^alias=' /tmp/github-output
