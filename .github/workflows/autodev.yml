@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
-      TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || github.event_name == 'push' && 'cyber-guardian' || 'auto' }}
+      TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'auto' }}
       DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.6-flash-free' }}
       DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
       DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}
@@ -94,7 +94,9 @@ jobs:
           fi
 
       - name: Verify Cyber Guardian private source access
+        id: cyber_access
         if: steps.select.outputs.alias == 'cyber-guardian'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
           ALIAS: ${{ steps.select.outputs.alias }}
@@ -103,8 +105,16 @@ jobs:
         shell: bash
         run: bash scripts/preflight_target_access.sh
 
+      - name: Hold Cyber Guardian when repository permission is unavailable
+        if: steps.select.outputs.alias == 'cyber-guardian' && steps.cyber_access.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "SKIP_TARGET=true" >> "$GITHUB_ENV"
+          echo "AUTODEV_SKIP_REASON=private_repo_permission" >> "$GITHUB_ENV"
+          echo "::warning::Cyber Guardian AutoDev is safely held until AUTODEV_REPO_TOKEN includes the new private repository. Other projects continue normally."
+
       - name: Checkout target work branch
-        if: steps.token.outputs.configured == 'true'
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.select.outputs.repository }}
@@ -115,7 +125,7 @@ jobs:
           persist-credentials: false
 
       - name: Prepare collision and failure-hold guard
-        if: steps.token.outputs.configured == 'true'
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
         env:
           GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
           REPOSITORY: ${{ steps.select.outputs.repository }}
