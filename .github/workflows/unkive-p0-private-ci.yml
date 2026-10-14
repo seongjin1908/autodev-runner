@@ -75,6 +75,10 @@ jobs:
         working-directory: target
         run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
 
+      - name: Verify 192 free charts, ten-god normalization and evidence-specific topics
+        working-directory: target
+        run: node scripts/check-unkive-free-editorial.mjs
+
       - name: Fail fast on paid answer specificity and calculated timing
         working-directory: target
         run: |
