@@ -117,6 +117,10 @@ jobs:
           npm install --no-save --no-package-lock --no-audit --no-fund playwright
           npx playwright install --with-deps chromium
 
+      - name: Verify actual authenticated virtual-account routes and PDF transition
+        working-directory: target
+        run: node scripts/check-unkive-payapp-vbank.mjs
+
       - name: Payment amount, fulfillment, and purchase journey regressions
         working-directory: target
         run: |
