@@ -28,7 +28,7 @@ jobs:
             echo "::error::AUTODEV_REPO_TOKEN is not configured."
             exit 1
           fi
-          python -c 'import json; cfg=json.load(open("config/projects.json",encoding="utf-8")); [print("{}\\t{}\\t{}".format(p["alias"],p["repository"],p.get("source_branch") or p.get("base_branch") or "main")) for p in cfg["projects"] if p.get("auto_enabled")]' > /tmp/enabled-targets.tsv
+          python -c 'import json; cfg=json.load(open("config/projects.json",encoding="utf-8")); [print("{}|{}|{}".format(p["alias"],p["repository"],p.get("source_branch") or p.get("base_branch") or "main")) for p in cfg["projects"] if p.get("auto_enabled")]' > /tmp/enabled-targets.tsv
           inaccessible=0
           {
             echo "## Portfolio target access"
@@ -36,7 +36,7 @@ jobs:
             echo "| Alias | Repository | Source | Access |"
             echo "|---|---|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
-          while IFS=$'\t' read -r alias repository branch; do
+          while IFS='|' read -r alias repository branch; do
             if repo_json="$(gh api "repos/$repository" 2>/dev/null)" &&                push_allowed="$(printf '%s' "$repo_json" | python -c 'import json,sys; print(str(bool(json.load(sys.stdin).get("permissions",{}).get("push"))).lower())')" &&                [ "$push_allowed" = "true" ] &&                gh api "repos/$repository/git/ref/heads/$branch" >/dev/null 2>&1; then
               echo "| $alias | $repository | $branch | READY |" >> "$GITHUB_STEP_SUMMARY"
             else
