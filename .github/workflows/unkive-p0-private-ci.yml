@@ -82,6 +82,11 @@ jobs:
           node scripts/check-unkive-paid-quality.mjs
           node scripts/check-unkive-personalization.mjs
 
+      - name: Verify free chart grounding and eight-interest editorial quality
+        working-directory: target
+        run: node scripts/check-unkive-free-editorial.mjs
+
+
       - name: Verify paid PDF grapheme integrity and measured pagination
         working-directory: target
         run: |
