@@ -98,7 +98,7 @@ jobs:
           node scripts/check-unkive-paged-text.mjs
           node scripts/check-unkive-flow-unicode.mjs
           node scripts/check-unkive-evidence-density.mjs
-          node scripts/check-unkive-pdf.mjs
+          node scripts/check-unkive-pdf.mjs > /tmp/unkive-pdf-ci.log 2>&1 || { tail -c 3000 /tmp/unkive-pdf-ci.log | while IFS= read -r line; do echo "::error::$line"; done; exit 1; }
 
       - name: Verify order recovery, notifications, and paid report quality without providers
         working-directory: target
