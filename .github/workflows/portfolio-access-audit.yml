@@ -1,0 +1,55 @@
+name: Portfolio private target access audit
+
+on:
+  push:
+    paths:
+      - 'config/projects.json'
+      - '.github/workflows/portfolio-access-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Audit every enabled target without exposing credentials
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::AUTODEV_REPO_TOKEN is not configured."
+            exit 1
+          fi
+          python - <<'PY' > /tmp/enabled-targets.tsv
+import json
+cfg=json.load(open('config/projects.json',encoding='utf-8'))
+for p in cfg['projects']:
+    if p.get('auto_enabled'):
+        print(f"{p['alias']}\t{p['repository']}\t{p.get('source_branch') or p.get('base_branch') or 'main'}")
+PY
+          inaccessible=0
+          {
+            echo "## Portfolio target access"
+            echo
+            echo "| Alias | Repository | Source | Access |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          while IFS=$'\t' read -r alias repository branch; do
+            if repo_json="$(gh api "repos/$repository" 2>/dev/null)" &&                push_allowed="$(printf '%s' "$repo_json" | python -c 'import json,sys; print(str(bool(json.load(sys.stdin).get("permissions",{}).get("push"))).lower())')" &&                [ "$push_allowed" = "true" ] &&                gh api "repos/$repository/git/ref/heads/$branch" >/dev/null 2>&1; then
+              echo "| $alias | $repository | $branch | READY |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| $alias | $repository | $branch | HOLD |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::warning::$alias is held because AUTODEV_REPO_TOKEN lacks repository/branch push access."
+              inaccessible=$((inaccessible + 1))
+            fi
+          done < /tmp/enabled-targets.tsv
+          echo "PORTFOLIO_INACCESSIBLE_COUNT=$inaccessible" >> "$GITHUB_ENV"
+          echo "Access audit completed with $inaccessible held target(s)."
