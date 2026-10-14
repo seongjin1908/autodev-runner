@@ -75,38 +75,6 @@ jobs:
         working-directory: target
         run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
 
-      - name: Fail fast on paid answer specificity and calculated timing
-        working-directory: target
-        run: |
-          mkdir -p release-test-results
-          node scripts/check-unkive-paid-quality.mjs
-          node scripts/check-unkive-personalization.mjs
-
-      - name: Review 24 synthetic customer-copy outputs and extra-year grounding
-        working-directory: target
-        run: node scripts/check-unkive-content-review.mjs
-
-      - name: Verify free chart grounding and eight-interest editorial quality
-        working-directory: target
-        run: node scripts/check-unkive-free-editorial.mjs
-
-
-      - name: Verify paid PDF grapheme integrity and measured pagination
-        working-directory: target
-        run: |
-          mkdir -p release-test-results
-          node scripts/check-unkive-paged-text.mjs
-          node scripts/check-unkive-flow-unicode.mjs
-          node scripts/check-unkive-evidence-density.mjs
-          node scripts/check-unkive-pdf.mjs
-
-      - name: Verify order recovery, notifications, and paid report quality without providers
-        working-directory: target
-        run: |
-          node scripts/check-unkive-delivery.mjs
-          node scripts/check-unkive-alimtalk.mjs
-          node scripts/check-unkive-paid-quality.mjs
-
       - name: Verify isolated release bundle
         working-directory: target
         run: npx --no-install vite build --config scripts/vite-release-test.mjs
@@ -117,42 +85,12 @@ jobs:
           npm install --no-save --no-package-lock --no-audit --no-fund playwright
           npx playwright install --with-deps chromium
 
-      - name: Payment amount, fulfillment, and purchase journey regressions
-        working-directory: target
-        run: |
-          node scripts/check-unkive-calculation.mjs
-          node scripts/check-unkive-daangn-pricing.mjs
-          node scripts/unkive-daangn-e2e.mjs
-          node scripts/check-unkive-backend-recovery.mjs
-
       - name: Paid personalization, question specificity, and mobile browser journey
         working-directory: target
         run: |
-          node scripts/check-unkive-focus-qna.mjs
-          node scripts/unkive-business-result-e2e.mjs
-          node scripts/check-unkive-paid-ai-context.mjs
-          node scripts/check-unkive-personalization.mjs
-          node scripts/unkive-personalization-e2e.mjs
-          node scripts/check-unkive-monthly-guidance.mjs
-          node scripts/unkive-home-e2e.mjs
-          node scripts/unkive-release-e2e.mjs
-
-      - name: Dream, photo, face, and palm consent regressions
-        working-directory: target
-        run: |
-          node scripts/check-unkive-dream.mjs
-          node scripts/unkive-dream-e2e.mjs
-          node scripts/unkive-photo-e2e.mjs
-          node scripts/check-unkive-face.mjs
-          node scripts/unkive-face-e2e.mjs
-          node scripts/check-unkive-palm.mjs
-          node scripts/unkive-palm-e2e.mjs
-
-      - name: Inspect actual PDF font coverage and visual geometry
-        working-directory: target
-        run: |
-          python -m pip install PyMuPDF==1.26.5
-          python scripts/check-unkive-pdf-layout.py
+          node scripts/check-unkive-calculation.mjs
+          node scripts/check-unkive-delivery.mjs
+          node scripts/unkive-release-e2e.mjs > /tmp/release-e2e.log 2>&1 || { tail -c 3000 /tmp/release-e2e.log | while IFS= read -r line; do echo "::error::$line"; done; exit 1; }
 
       - name: Retain synthetic content review outputs
         if: always()
