@@ -71,6 +71,19 @@ RULES
   cat /tmp/autodev-baseline.log
 } >/tmp/autodev-prompt.txt
 
+clean_disposable_saju_artifacts() {
+  if [[ "${ALIAS:-}" != saju* ]]; then
+    return 0
+  fi
+  while IFS= read -r -d '' p; do
+    case "$p" in
+      .tmp*|scripts/tmp/*|backend/.consumer-*|backend/.generic-*|probe-*|scripts/probe-*)
+        rm -rf -- "$p"
+        ;;
+    esac
+  done < <(git ls-files --others --exclude-standard -z)
+}
+
 has_durable_changes() {
   python - <<'PY'
 import subprocess,sys
@@ -210,6 +223,8 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     MODEL_RC=$?
     set -e
 
+    clean_disposable_saju_artifacts
+
     if ! DURABLE_PATHS="$(has_durable_changes)"; then
       # A timed-out worker already used its entire budget. Move to the next
       # provider rather than spending another five minutes on the same stall.
@@ -236,6 +251,7 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
 
     VALIDATION_LOG="/tmp/autodev-attempt-validation-$ATTEMPT.log"
     if validate_attempt "$VALIDATION_LOG"; then
+      clean_disposable_saju_artifacts
       SELECTED_MODEL="$model"
       if [[ "$MODEL_RC" -ne 0 ]]; then
         SELECTED_MODEL="salvaged:$model"
@@ -259,9 +275,20 @@ if [[ -z "$SELECTED_MODEL" ]]; then
   restore_attempt_baseline
   echo "All free model attempts were exhausted without a validated batch."
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
-  echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
   echo "AUTODEV_FAILURE_REASON=model_pool_exhausted" >> "$GITHUB_ENV"
-  exit 1
+  if [[ "$BASELINE_RC" -ne 0 ]]; then
+    echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
+    echo "Baseline was already failing, so provider exhaustion remains a hard failure."
+    exit 1
+  fi
+  echo "AUTODEV_RUN_STATUS=provider_unavailable" >> "$GITHUB_ENV"
+  echo "::warning::Free coding providers were unavailable; baseline remains healthy and no source change was accepted."
+  {
+    echo "## Provider unavailable — baseline healthy"
+    echo ""
+    echo "All free coding providers failed or timed out. The target baseline still validates, partial edits were discarded, and no production change was made."
+  } >> "$GITHUB_STEP_SUMMARY"
+  exit 0
 fi
 
 echo "$SELECTED_MODEL" >/tmp/autodev-selected-model
