@@ -1,165 +1,61 @@
-name: UNKIVE P0 private source verification
-
-on:
-  pull_request:
-    paths:
-      - '.github/workflows/unkive-p0-private-ci.yml'
-      - 'config/unkive-p0-ci-ref.txt'
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: unkive-p0-private-ci-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout runner control plane
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Validate immutable target SHA
-        id: target
-        shell: bash
-        run: |
-          set -euo pipefail
-          ref="$(tr -d '\r\n' < config/unkive-p0-ci-ref.txt)"
-          if ! [[ "$ref" =~ ^[a-f0-9]{40}$ ]]; then
-            echo "::error::P0 verification requires a pinned 40-character commit SHA."
-            exit 1
-          fi
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-          echo "Validating immutable UNKIVE source ref: $ref"
-
-      - name: Check private repository access
-        shell: bash
-        env:
-          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
-        run: |
-          if [ -z "$REPO_TOKEN" ]; then
-            echo "::error::Private checkout credential not configured."
-            exit 1
-          fi
-
-      - name: Checkout UNKIVE private commit read-only
-        uses: actions/checkout@v4
-        with:
-          repository: seongjin1908/daangn-saju-autodev
-          ref: ${{ steps.target.outputs.ref }}
-          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
-          path: target
-          persist-credentials: false
-
-      - name: Use Node.js 24
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Install existing project dependencies (no lifecycle hooks)
-        working-directory: target
-        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
-
-      - name: Verify production contract and TypeScript
-        working-directory: target
-        run: |
-          node scripts/production-contract-check.mjs
-          npx --no-install tsc --noEmit
-
-      - name: Verify backend bundle
-        working-directory: target
-        run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
-
-      - name: Fail fast on paid answer specificity and calculated timing
-        working-directory: target
-        run: |
-          mkdir -p release-test-results
-          node scripts/check-unkive-paid-quality.mjs
-          node scripts/check-unkive-personalization.mjs
-
-      - name: Review 24 synthetic customer-copy outputs and extra-year grounding
-        working-directory: target
-        run: node scripts/check-unkive-content-review.mjs
-
-      - name: Verify free chart grounding and eight-interest editorial quality
-        working-directory: target
-        run: node scripts/check-unkive-free-editorial.mjs
-
-
-      - name: Verify paid PDF grapheme integrity and measured pagination
-        working-directory: target
-        run: |
-          mkdir -p release-test-results
-          node scripts/check-unkive-paged-text.mjs
-          node scripts/check-unkive-flow-unicode.mjs
-          node scripts/check-unkive-evidence-density.mjs
-          node scripts/check-unkive-pdf.mjs
-
-      - name: Verify order recovery, notifications, and paid report quality without providers
-        working-directory: target
-        run: |
-          node scripts/check-unkive-delivery.mjs
-          node scripts/check-unkive-alimtalk.mjs
-          node scripts/check-unkive-paid-quality.mjs
-
-      - name: Verify isolated release bundle
-        working-directory: target
-        run: npx --no-install vite build --config scripts/vite-release-test.mjs
-
-      - name: Install isolated browser test dependencies
-        working-directory: target
-        run: |
-          npm install --no-save --no-package-lock --no-audit --no-fund playwright
-          npx playwright install --with-deps chromium
-
-      - name: Payment amount, fulfillment, and purchase journey regressions
-        working-directory: target
-        run: |
-          node scripts/check-unkive-calculation.mjs
-          node scripts/check-unkive-daangn-pricing.mjs
-          node scripts/unkive-daangn-e2e.mjs
-          node scripts/check-unkive-backend-recovery.mjs
-
-      - name: Paid personalization, question specificity, and mobile browser journey
-        working-directory: target
-        run: |
-          node scripts/check-unkive-focus-qna.mjs
-          node scripts/unkive-business-result-e2e.mjs
-          node scripts/check-unkive-paid-ai-context.mjs
-          node scripts/check-unkive-personalization.mjs
-          node scripts/unkive-personalization-e2e.mjs
-          node scripts/check-unkive-monthly-guidance.mjs
-          node scripts/unkive-home-e2e.mjs
-          node scripts/unkive-release-e2e.mjs
-
-      - name: Dream, photo, face, and palm consent regressions
-        working-directory: target
-        run: |
-          node scripts/check-unkive-dream.mjs
-          node scripts/unkive-dream-e2e.mjs
-          node scripts/unkive-photo-e2e.mjs
-          node scripts/check-unkive-face.mjs
-          node scripts/unkive-face-e2e.mjs
-          node scripts/check-unkive-palm.mjs
-          node scripts/unkive-palm-e2e.mjs
-
-      - name: Inspect actual PDF font coverage and visual geometry
-        working-directory: target
-        run: |
-          python -m pip install PyMuPDF==1.26.5
-          python scripts/check-unkive-pdf-layout.py
-
-      - name: Retain synthetic content review outputs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unkive-content-review-24-synthetic
-          retention-days: 7
-          path: |
-            target/release-test-results/content-review.json
-            target/release-test-results/content-review.md
+{
+  "name": "UNKIVE relay isolated PostgreSQL verification",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "verify": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 10,
+      "services": {
+        "postgres": {
+          "image": "postgres:16",
+          "env": {
+            "POSTGRES_USER": "postgres",
+            "POSTGRES_PASSWORD": "synthetic-test-only",
+            "POSTGRES_DB": "relay_test"
+          },
+          "ports": [
+            "5432:5432"
+          ],
+          "options": "--health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10"
+        }
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "repository": "seongjin1908/daangn-saju-autodev",
+            "ref": "e2bd1d3835985d60390a1e4eec944a02db76b6e3",
+            "token": "${{ secrets.AUTODEV_REPO_TOKEN }}",
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Syntax and pure return/authentication/locking checks",
+          "run": "node --check payapp-relay/server.mjs\nnpm test --prefix payapp-relay"
+        },
+        {
+          "name": "Install only existing relay dependencies for real server test",
+          "run": "npm install --prefix payapp-relay --no-package-lock --ignore-scripts --no-audit --no-fund"
+        },
+        {
+          "name": "Actual HTTP and isolated PostgreSQL concurrency",
+          "env": {
+            "PAYAPP_TEST_DATABASE_URL": "postgresql://postgres:synthetic-test-only@127.0.0.1:5432/relay_test"
+          },
+          "run": "npm run test:integration --prefix payapp-relay"
+        }
+      ]
+    }
+  }
+}
