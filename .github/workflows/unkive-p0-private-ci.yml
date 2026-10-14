@@ -82,9 +82,12 @@ jobs:
           node scripts/check-unkive-paid-quality.mjs
           node scripts/check-unkive-personalization.mjs
 
-      - name: Review 24 synthetic customer-copy outputs and extra-year grounding
+      - name: Review synthetic customer copy and cross-profile differentiation
         working-directory: target
-        run: node scripts/check-unkive-content-review.mjs
+        run: |
+          node scripts/check-unkive-content-review.mjs
+          npx --no-install esbuild scripts/unkive-offline-editorial-benchmark.ts --bundle --platform=node --format=cjs --outfile=release-test-results/offline-editorial-benchmark.cjs
+          node release-test-results/offline-editorial-benchmark.cjs
 
       - name: Verify free chart grounding and eight-interest editorial quality
         working-directory: target
