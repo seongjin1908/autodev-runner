@@ -93,9 +93,28 @@ jobs:
             echo "AUTODEV_REPO_TOKEN is not configured. No private repository will be touched."
           fi
 
-      - name: Verify Cyber Guardian private source access
+      - name: Verify selected target repository access
+        id: target_access
+        if: steps.token.outputs.configured == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          REPOSITORY: ${{ steps.select.outputs.repository }}
+          CHECKOUT_BRANCH: ${{ steps.select.outputs.checkout_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          push_allowed="$(gh api "repos/$REPOSITORY" --jq '.permissions.push // false')"
+          gh api "repos/$REPOSITORY/git/ref/heads/$CHECKOUT_BRANCH" --jq .object.sha >/dev/null
+          if [ "$push_allowed" != "true" ]; then
+            echo "::error::AUTODEV_REPO_TOKEN cannot push to $REPOSITORY."
+            exit 15
+          fi
+          echo "Target repository access verified."
+
+      - name: Verify Cyber Guardian allowlist and source contract
         id: cyber_access
-        if: steps.select.outputs.alias == 'cyber-guardian'
+        if: steps.select.outputs.alias == 'cyber-guardian' && steps.target_access.outcome == 'success'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
@@ -105,16 +124,16 @@ jobs:
         shell: bash
         run: bash scripts/preflight_target_access.sh
 
-      - name: Hold Cyber Guardian when repository permission is unavailable
-        if: steps.select.outputs.alias == 'cyber-guardian' && steps.cyber_access.outcome == 'failure'
+      - name: Hold inaccessible private target without stopping the portfolio
+        if: steps.token.outputs.configured == 'true' && (steps.target_access.outcome == 'failure' || (steps.select.outputs.alias == 'cyber-guardian' && steps.cyber_access.outcome == 'failure'))
         shell: bash
         run: |
           echo "SKIP_TARGET=true" >> "$GITHUB_ENV"
           echo "AUTODEV_SKIP_REASON=private_repo_permission" >> "$GITHUB_ENV"
-          echo "::warning::Cyber Guardian AutoDev is safely held until AUTODEV_REPO_TOKEN includes the new private repository. Other projects continue normally."
+          echo "::warning::Selected target is safely held because repository access is unavailable. Other projects continue normally."
 
       - name: Checkout target work branch
-        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        if: steps.token.outputs.configured == 'true' && steps.target_access.outcome == 'success' && env.SKIP_TARGET != 'true'
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.select.outputs.repository }}
