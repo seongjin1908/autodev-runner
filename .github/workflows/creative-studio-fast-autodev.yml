@@ -1,13 +1,6 @@
 name: Creative Studio Fast AutoDev
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/creative-studio-fast-autodev.yml'
-      - 'prompts/creative-studio.md'
-      - 'config/projects.json'
-      - 'scripts/**'
   schedule:
     - cron: '12,42 * * * *'
   workflow_dispatch:
