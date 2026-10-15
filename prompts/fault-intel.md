@@ -28,3 +28,10 @@ The publishable corpus and release gates become more trustworthy and npm run che
 
 ## Integrated design rule
 Do not spend a separate automatic lane on cosmetic-only redesign. When the functional P0/P1 work in a batch is safe, improve the touched UI toward a current mobile-first product standard: clear hierarchy, restrained components, deliberate spacing, accessible controls and no generic AI-looking card soup. Preserve existing tested behavior.
+
+## Finish-mode execution
+- Inspect current corpus/release queue before editing and do not duplicate an already-open fix.
+- Pick exactly ONE V1 release blocker and close it completely in the batch.
+- Prefer CI/release-gate consistency, provenance correctness, and publishable-record integrity over new corpus volume.
+- No docs-only, TODO-only, speculative feature, or corpus-expansion batch while a release gate is red.
+- The batch must end with the configured check green and an objectively improved release gate.

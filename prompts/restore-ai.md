@@ -26,3 +26,9 @@ A production-readiness blocker is removed, the guarded E2E path is stronger, and
 
 ## Integrated design rule
 Do not spend a separate automatic lane on cosmetic-only redesign. When the functional P0/P1 work in a batch is safe, improve the touched UI toward a current mobile-first product standard: clear hierarchy, restrained components, deliberate spacing, accessible controls and no generic AI-looking card soup. Preserve existing tested behavior.
+
+## Finish-mode execution
+- Treat the existing validated import branch and open integration PRs as the source of truth. Do not start a parallel restoration implementation.
+- Pick exactly ONE launch blocker and finish it end-to-end: source integration/build -> guarded upload/order/job/result path -> deterministic validation.
+- Integration and failing validation outrank new restoration modes.
+- No docs-only/TODO-only/placeholder-only batch. Every accepted batch must remove a concrete release blocker and include the test/fix needed to prove it.

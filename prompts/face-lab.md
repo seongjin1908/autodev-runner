@@ -26,3 +26,10 @@ A launch, privacy, conversion or monetization blocker is removed and typecheck/b
 
 ## Integrated design rule
 Do not spend a separate automatic lane on cosmetic-only redesign. When the functional P0/P1 work in a batch is safe, improve the touched UI toward a current mobile-first product standard: clear hierarchy, restrained components, deliberate spacing, accessible controls and no generic AI-looking card soup. Preserve existing tested behavior.
+
+## Finish-mode execution
+- Inspect open FACE LAB PRs first. If the same feature already exists in a PR, consolidate/fix it instead of creating a competing implementation.
+- Pick exactly ONE launch blocker and close the full user path in one batch.
+- Current finish order: core photo flow reliability/privacy -> mobile result quality -> monetization-ready lock/upgrade boundary -> legal/privacy pages -> only then new analysis modules.
+- Do not create a docs-only, TODO-only, placeholder-only, or cosmetic-only PR.
+- When changing a user flow, include its type/build/test coverage in the same batch.
