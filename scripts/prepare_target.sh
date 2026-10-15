@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT_DIR/target"
 
 BRANCH_MODE="${BRANCH_MODE:-fixed}"
 MAX_BRANCH_AHEAD="${MAX_BRANCH_AHEAD:-0}"
@@ -12,6 +11,8 @@ if [[ "${EXTERNAL_WORKER_LOCK:-false}" == "true" ]]; then
   echo "Target is owned by external worker: ${EXTERNAL_WORKER_OWNER:-unknown} (${EXTERNAL_WORKER_SCOPE:-unspecified}); scheduled run preserved but source edits are skipped."
   exit 0
 fi
+
+cd "$ROOT_DIR/target"
 
 if [[ -n "${GH_TOKEN:-}" ]]; then
   gh auth setup-git >/dev/null 2>&1
