@@ -127,6 +127,18 @@ jobs:
           node scripts/unkive-daangn-e2e.mjs
           node scripts/check-unkive-backend-recovery.mjs
 
+      - name: Independently compare Korean KST Jieqi with pinned MIT source engines
+        working-directory: target
+        run: |
+          set -euo pipefail
+          compare_dir="$(mktemp -d)"
+          trap 'rm -rf "$compare_dir"' EXIT
+          git clone --quiet https://github.com/yhj1024/manseryeok.git "$compare_dir/manseryeok"
+          git -C "$compare_dir/manseryeok" checkout --quiet fba3253d7305b8b61189bd78318a7a27ed8c9b09
+          git clone --quiet https://github.com/openfate-ai/bazi-engine.git "$compare_dir/openfate"
+          git -C "$compare_dir/openfate" checkout --quiet e608e5445b413592fc21ad2b492a7b4de2ffadc6
+          node scripts/check-unkive-calendar-oss.mjs "$compare_dir/manseryeok" "$compare_dir/openfate"
+
       - name: Paid personalization, question specificity, and mobile browser journey
         working-directory: target
         run: |
