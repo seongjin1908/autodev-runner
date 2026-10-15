@@ -1,0 +1,7 @@
+{
+  "name": "rea-owned-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Synthetic application owned by this project, safe REA trial target",
+  "main": "main.cjs"
+}
