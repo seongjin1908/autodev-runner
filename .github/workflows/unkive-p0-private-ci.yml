@@ -71,6 +71,10 @@ jobs:
           node scripts/production-contract-check.mjs
           npx --no-install tsc --noEmit
 
+      - name: Verify paid-order re-entry identity invalidation and PDF scope
+        working-directory: target
+        run: node scripts/check-unkive-order-resume.mjs
+
       - name: Verify backend bundle
         working-directory: target
         run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
