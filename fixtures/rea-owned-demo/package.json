@@ -1,0 +1,7 @@
+{
+  "name": "rea-owned-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Owned synthetic JavaScript example for testing REA on ephemeral cloud runners",
+  "main": "main.cjs"
+}
