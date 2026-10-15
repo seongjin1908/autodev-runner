@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-10-15",
+  "rea_version": "6.5.0",
+  "codex_workspace_registration": {
+    "status": "verified",
+    "evidence": "REA Codex MCP smoke run 38686940403",
+    "capability": "MCP initialize + tools/list succeeded in isolated GitHub runner"
+  },
+  "cloud_lab": {
+    "status": "verified_owned_fixture_only",
+    "evidence": "REA Cloud Lab run 38684718050"
+  },
+  "evidence_bridge": {
+    "status": "verified_owned_fixture_only",
+    "evidence": "REA Evidence Bridge run 38685781238"
+  },
+  "central_autodev": {
+    "worker": "OpenCode free-model pool",
+    "rea_mcp_used": false,
+    "status": "not_integrated",
+    "rule": "Do not claim REA use unless a verified evidence artifact is explicitly supplied."
+  },
+  "product_codex_workspaces": {
+    "status": "configured",
+    "note": "Active product repositories contain pinned REA MCP registration and task-triggered REA feature-audit skill. Actual invocation must be verified per Codex session."
+  },
+  "competitor_scope": {
+    "allowed": "normally accessible public UI observation; independent requirements",
+    "prohibited": "decompilation, protected source/assets copying, auth bypass, private API extraction"
+  }
+}
