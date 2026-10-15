@@ -34,7 +34,7 @@ jobs:
 
       - name: Install
         working-directory: target
-        run: npm ci
+        run: npm install --no-package-lock --no-audit --no-fund
 
       - name: Verify tests contract
         working-directory: target
