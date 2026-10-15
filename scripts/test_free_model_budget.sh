@@ -11,3 +11,15 @@ if model_attempt_timeout invalid 1 180 90 >/dev/null 2>&1; then exit 1; fi
 if model_attempt_timeout 300 0 180 90 >/dev/null 2>&1; then exit 1; fi
 if model_attempt_timeout 300 2 0 90 >/dev/null 2>&1; then exit 1; fi
 echo "PASS: bounded free-model timeout and fallback cases"
+
+
+# The selected model string must never be evaluated as a shell command when
+# generating a Markdown summary (regression observed in run 38755270586).
+if grep -Fq 'echo "Validated coding model: `' scripts/develop_target.sh; then
+  echo "FAIL: model name is executed through backtick substitution in summary"
+  exit 1
+fi
+grep -Fq "printf 'Validated coding model:" scripts/develop_target.sh || {
+  echo "FAIL: selected model is missing from the summary"
+  exit 1
+}

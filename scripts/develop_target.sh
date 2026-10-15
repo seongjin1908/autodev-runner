@@ -354,7 +354,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     echo '## Free-model development attempts — validated candidate'
     cat "$MODEL_ATTEMPT_REPORT"
     echo
-    echo "Validated coding model: `$SELECTED_MODEL`. Push/PR is a separate release gate."
+    printf 'Validated coding model: `%s`. Push/PR is a separate release gate.\n' "$SELECTED_MODEL"
   } >> "$GITHUB_STEP_SUMMARY"
 fi
 
