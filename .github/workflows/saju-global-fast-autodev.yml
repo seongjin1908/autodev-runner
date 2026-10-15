@@ -79,6 +79,9 @@ jobs:
           RECENT_CHANGE_GUARD_MINUTES: ${{ steps.select.outputs.recent_change_guard_minutes }}
           FAILURE_HOLD_THRESHOLD: ${{ steps.select.outputs.failure_hold_threshold }}
           FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
+          EXTERNAL_WORKER_LOCK: ${{ steps.select.outputs.external_worker_lock }}
+          EXTERNAL_WORKER_OWNER: ${{ steps.select.outputs.external_worker_owner }}
+          EXTERNAL_WORKER_SCOPE: ${{ steps.select.outputs.external_worker_scope }}
         shell: bash
         run: bash scripts/prepare_target.sh
 
