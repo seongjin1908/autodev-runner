@@ -41,6 +41,10 @@ jobs:
         shell: bash
         run: bash scripts/test_rea_worker.sh
 
+      - name: Test validated source production outcome
+        shell: bash
+        run: bash scripts/test_production_gate.sh
+
       - name: Test bounded free coding model attempts
         shell: bash
         run: bash scripts/test_free_model_budget.sh
