@@ -41,6 +41,10 @@ jobs:
         shell: bash
         run: bash scripts/test_rea_worker.sh
 
+      - name: Test bounded free coding model attempts
+        shell: bash
+        run: bash scripts/test_free_model_budget.sh
+
       - name: Test automatic saju PR backlog fail-closed gate
         shell: bash
         run: bash scripts/test_review_backlog_guard.sh
