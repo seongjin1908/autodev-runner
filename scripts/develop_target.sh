@@ -17,6 +17,14 @@ QUINARY_MODEL="${DDD_FREE_CODE_MODEL_QUINARY:-opencode/laguna-s-2.1-free}"
 SENARY_MODEL="${DDD_FREE_CODE_MODEL_SENARY:-opencode/space-bunny-free}"
 MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-300}"
 TRANSIENT_RETRIES="${DDD_FREE_MODEL_TRANSIENT_RETRIES:-0}"
+# Do not spend five minutes on each unresponsive free provider. The first
+# coding model has a longer opportunity; the remaining providers fail over
+# quickly. Explicit lower timeout values continue to take precedence.
+source "$ROOT_DIR/scripts/free_model_budget.sh"
+MODEL_PRIMARY_CAP="${DDD_FREE_MODEL_PRIMARY_TIMEOUT_CAP_SECONDS:-180}"
+MODEL_FALLBACK_CAP="${DDD_FREE_MODEL_FALLBACK_TIMEOUT_CAP_SECONDS:-90}"
+MODEL_ATTEMPT_REPORT="${RUNNER_TEMP:-/tmp}/autodev-model-attempts.md"
+printf '| Free model | Timeout | Exit code | Result |\n|---|---:|---:|---|\n' > "$MODEL_ATTEMPT_REPORT"
 
 echo "BATCH_READY=false" >> "$GITHUB_ENV"
 echo "AUTODEV_RUN_STATUS=running" >> "$GITHUB_ENV"
@@ -242,14 +250,24 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     provider_try=$((provider_try + 1))
     ATTEMPT=$((ATTEMPT + 1))
     restore_attempt_baseline
-    echo "Free coding model attempt $ATTEMPT: $model (provider try $provider_try)"
+    ATTEMPT_TIMEOUT="$(model_attempt_timeout "$MODEL_TIMEOUT" "$ATTEMPT" "$MODEL_PRIMARY_CAP" "$MODEL_FALLBACK_CAP")"
+    echo "Free coding model attempt $ATTEMPT: $model (provider try $provider_try; bounded to ${ATTEMPT_TIMEOUT}s)"
 
     set +e
-    timeout "$MODEL_TIMEOUT" opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1
+    timeout "$ATTEMPT_TIMEOUT" opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1
     MODEL_RC=$?
     set -e
 
     clean_disposable_saju_artifacts
+    # Never include provider's raw response: it could contain sensitive context.
+    if has_durable_changes >/dev/null; then
+      ATTEMPT_RESULT="source edits produced; validation pending"
+    elif [[ "$MODEL_RC" -eq 124 || "$MODEL_RC" -eq 137 ]]; then
+      ATTEMPT_RESULT="timeout; no durable edit"
+    else
+      ATTEMPT_RESULT="no durable edit"
+    fi
+    printf '| `%s` | %ss | %s | %s |\n' "$model" "$ATTEMPT_TIMEOUT" "$MODEL_RC" "$ATTEMPT_RESULT" >> "$MODEL_ATTEMPT_REPORT"
 
     if ! DURABLE_PATHS="$(has_durable_changes)"; then
       # A timed-out worker already used its entire budget. Move to the next
@@ -300,6 +318,14 @@ done
 if [[ -z "$SELECTED_MODEL" ]]; then
   restore_attempt_baseline
   echo "All free model attempts were exhausted without a validated batch."
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+    {
+      echo '## Free-model development attempts — no accepted code change'
+      cat "$MODEL_ATTEMPT_REPORT"
+      echo
+      echo 'Workflow success (with a healthy baseline) does not imply code generation.'
+    } >> "$GITHUB_STEP_SUMMARY"
+  fi
   echo "BATCH_READY=false" >> "$GITHUB_ENV"
   echo "AUTODEV_FAILURE_REASON=model_pool_exhausted" >> "$GITHUB_ENV"
   if [[ "$BASELINE_RC" -ne 0 ]]; then
@@ -318,6 +344,14 @@ if [[ -z "$SELECTED_MODEL" ]]; then
 fi
 
 echo "$SELECTED_MODEL" >/tmp/autodev-selected-model
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+  {
+    echo '## Free-model development attempts — validated candidate'
+    cat "$MODEL_ATTEMPT_REPORT"
+    echo
+    echo "Validated coding model: `$SELECTED_MODEL`. Push/PR is a separate release gate."
+  } >> "$GITHUB_STEP_SUMMARY"
+fi
 
 git diff --check >/tmp/autodev-final-diffcheck.log 2>&1
 
