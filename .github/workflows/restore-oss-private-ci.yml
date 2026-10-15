@@ -1,0 +1,90 @@
+name: Restore AI OSS Private Integration Check
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/restore-oss-private-ci.yml'
+      - 'config/restore-oss-ci-ref.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-oss-private-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout trusted controller
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Require immutable pinned source
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(tr -d '\r\n' < config/restore-oss-ci-ref.txt)"
+          if ! [[ "$sha" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Source must be a pinned immutable 40-character SHA"
+            exit 2
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Require private checkout credential
+        shell: bash
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          if [ -z "$REPO_TOKEN" ]; then
+            echo "::error::The existing read-only checkout credential is unavailable"
+            exit 1
+          fi
+
+      - name: Checkout Restore AI proposed commit
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/restore-ai-autodev
+          ref: ${{ steps.source.outputs.sha }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test OSS adapters without external providers, weights or billing
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/oss_image_cli.py scripts/oss_image_cli_test.py
+          python scripts/oss_image_cli_test.py
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install locked dependencies
+        working-directory: target
+        run: npm ci --no-audit --no-fund
+
+      - name: Full Restore AI baseline with OSS tests
+        working-directory: target
+        run: npm run check
+
+      - name: Report scope
+        if: always()
+        run: |
+          echo "## Restore AI OSS check" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pinned candidate: \`${{ steps.source.outputs.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "No model weights downloaded; no real images, payment provider or production deployment involved." >> "$GITHUB_STEP_SUMMARY"
