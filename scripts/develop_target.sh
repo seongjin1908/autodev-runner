@@ -68,6 +68,11 @@ source "$ROOT_DIR/scripts/prepare_rea_worker.sh"
   fi
   cat "$ROOT_DIR/$PROMPT_FILE"
   echo
+  # Reuse research is scoped to the selected existing target. This reads
+  # reviewed candidate metadata only: never installs packages or downloads
+  # unapproved model weights and never overrides the launch priority.
+  python3 "$ROOT_DIR/scripts/oss_reuse.py" --alias "$ALIAS"
+  echo
   cat <<'RULES'
 # Global execution rules
 - Work only inside the checked-out target repository.
