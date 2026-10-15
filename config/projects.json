@@ -83,7 +83,7 @@
       "alias": "restore-ai",
       "repository": "seongjin1908/restore-ai-autodev",
       "work_branch": "autodev/restore-ai/run-scoped",
-      "base_branch": "autodev/import-validated-restore-ai",
+      "base_branch": "main",
       "validation": "npm run check",
       "prompt_file": "prompts/restore-ai.md",
       "recent_change_guard_minutes": 8,
@@ -95,7 +95,7 @@
       "failure_hold_minutes": 120,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
-      "source_branch": "autodev/import-validated-restore-ai",
+      "source_branch": "main",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker"
     },
