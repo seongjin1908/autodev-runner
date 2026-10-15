@@ -1,0 +1,53 @@
+name: REA Codex MCP smoke (no AI calls)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rea-codex-mcp-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rea-codex-mcp-smoke
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+      REA_VERSION: '6.5.0'
+      npm_config_ignore_scripts: 'true'
+    steps:
+      - name: Set up Node LTS with REA compatible version
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - name: Create ephemeral isolated Codex HOME
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/codex-home"
+          echo "CODEX_HOME=$RUNNER_TEMP/codex-home" >> "$GITHUB_ENV"
+      - name: Install Codex CLI and REA fixed versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/rea-tools" --no-package-lock --no-save --ignore-scripts @openai/codex rea-agents@6.5.0
+          echo "$RUNNER_TEMP/rea-tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Register REA MCP in temporary Codex profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          codex --version
+          codex mcp add rea -- npx -y rea-agents@6.5.0 mcp
+          codex mcp list
+          codex mcp get rea
+          grep -F '[mcp_servers.rea]' "$CODEX_HOME/config.toml"
+          grep -F 'rea-agents@6.5.0' "$CODEX_HOME/config.toml"
+      - name: REA read-only doctor for Codex registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          rea doctor --client codex --json > "$RUNNER_TEMP/doctor.json"
+          node -e 'const fs=require("node:fs"); const d=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); console.log("REA_DOCTOR_JSON_VALID",Object.keys(d).join(","));' "$RUNNER_TEMP/doctor.json"
+          echo "REA_Codex_registration_CHECKED=true" >> "$GITHUB_STEP_SUMMARY"
