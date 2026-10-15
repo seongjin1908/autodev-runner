@@ -1,0 +1,82 @@
+name: REA Cloud Lab (manual, demo only)
+
+# Separate, secret-free smoke check. Never triggered by PRs, branches or cron.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rea-cloud-lab-smoke
+  cancel-in-progress: false
+
+jobs:
+  demo-static-analysis:
+    name: Inspect synthetic owned JavaScript fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      REA_VERSION: "6.5.0"
+      npm_config_ignore_scripts: "true"
+      npm_config_audit: "false"
+      npm_config_fund: "false"
+    steps:
+      - name: Checkout this runner repository read-only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24 (supported by REA)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.11.0"
+
+      - name: Install procps for REA process ownership checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ps >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends procps
+          fi
+          ps -p "$$" >/dev/null
+
+      - name: Review safe fixture presence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f fixtures/rea-owned-demo/main.cjs
+          test -f fixtures/rea-owned-demo/search.cjs
+          node --check fixtures/rea-owned-demo/main.cjs
+          node --check fixtures/rea-owned-demo/search.cjs
+          node --test tests/rea-feature-review.test.mjs
+
+      - name: Install fixed REA CLI in isolated temporary directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rea-cloud-bin"
+          npm install --prefix "$RUNNER_TEMP/rea-cloud-bin" --no-save --no-package-lock --ignore-scripts "rea-agents@${REA_VERSION}"
+          "$RUNNER_TEMP/rea-cloud-bin/node_modules/.bin/rea" --version
+
+      - name: Analyze only the bundled synthetic JavaScript fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rea-cloud-output"
+          "$RUNNER_TEMP/rea-cloud-bin/node_modules/.bin/rea" analyze-javascript-application \
+            "$GITHUB_WORKSPACE/fixtures/rea-owned-demo" --json \
+            > "$RUNNER_TEMP/rea-cloud-output/analysis.json"
+          node -e 'const fs=require("fs"); const p=process.argv[1]; const s=fs.readFileSync(p,"utf8"); JSON.parse(s); if(s.length<20)process.exit(1); console.log("REA_FIXTURE_JSON_VALID",s.length);' \
+            "$RUNNER_TEMP/rea-cloud-output/analysis.json"
+
+      - name: Upload synthetic fixture evidence only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rea-owned-demo-evidence
+          path: ${{ runner.temp }}/rea-cloud-output/analysis.json
+          retention-days: 1
+          if-no-files-found: error
