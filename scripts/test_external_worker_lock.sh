@@ -11,8 +11,11 @@ export GITHUB_ENV="$tmp/env"
 : > "$GITHUB_ENV"
 
 TARGET=saju-core GITHUB_RUN_ID=999 GITHUB_RUN_ATTEMPT=1 bash scripts/select_target.sh >/dev/null
-grep -q '^external_worker_lock=true$' "$GITHUB_OUTPUT"
-grep -q '^external_worker_owner=codex-separate-chat$' "$GITHUB_OUTPUT"
+# User permits parallel development, so the config must not exclusively lock
+# either isolated code lane. The opt-in lock guard remains fail-closed.
+grep -q '^external_worker_lock=false$' "$GITHUB_OUTPUT"
+grep -q '^base_branch=release/unkive-production-1791471961339$' "$GITHUB_OUTPUT"
+grep -q '^checkout_branch=release/unkive-production-1791471961339$' "$GITHUB_OUTPUT"
 
 EXTERNAL_WORKER_LOCK=true \
 EXTERNAL_WORKER_OWNER=codex-separate-chat \
@@ -32,4 +35,4 @@ grep -q '^SKIP_TARGET=true$' "$GITHUB_ENV"
 grep -q '^AUTODEV_SKIP_REASON=external_worker_lock$' "$GITHUB_ENV"
 grep -q 'Target is owned by external worker' /tmp/external-lock.log
 
-echo "PASS: external Codex single-writer lock blocks autonomous UNKIVE edits while preserving schedule entry"
+echo 'PASS: user-authorized parallel UNKIVE lanes; explicit lock remains fail-closed'
