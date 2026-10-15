@@ -71,6 +71,12 @@ jobs:
           node scripts/production-contract-check.mjs
           npx --no-install tsc --noEmit
 
+      - name: Verify privacy-safe competitor preference gate arithmetic (synthetic only)
+        working-directory: target
+        run: |
+          node scripts/unkive-competitor-blind-gate.mjs --self-test
+          node scripts/unkive-competitor-blind-gate.mjs --status | grep -q COMPETITOR_COMPARISON_NOT_EVALUATED
+
       - name: Verify backend bundle
         working-directory: target
         run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
