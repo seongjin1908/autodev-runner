@@ -112,7 +112,10 @@ with open(out,'a',encoding='utf-8') as f:
         'auto_weight','release_priority','external_worker_lock','external_worker_owner',
         'external_worker_scope','rea_codex_workspace','rea_autodev_runtime'
     ]:
-        f.write(f"{k}={values.get(k, '')}\n")
+        value=values.get(k, '')
+        if isinstance(value, bool):
+            value=str(value).lower()
+        f.write(f"{k}={value}\n")
     f.write('validation_b64='+base64.b64encode(p['validation'].encode()).decode()+'\n')
 print(f"Selected target: {p['alias']} (priority={p.get('release_priority',0)}, weight={p.get('auto_weight',1)})")
 PY
