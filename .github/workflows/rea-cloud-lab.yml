@@ -1,0 +1,78 @@
+name: REA Cloud Lab - owned fixture only
+
+# One safe smoke run on bootstrap changes, then manual GitHub Actions runs.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rea-cloud-lab.yml'
+      - 'fixtures/rea-owned-demo/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rea-cloud-lab-fixture
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      npm_config_ignore_scripts: "true"
+      npm_config_audit: "false"
+      npm_config_fund: "false"
+    steps:
+      - name: Checkout owned test fixture (no persisted credentials)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Check isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          command -v ps
+          test -f fixtures/rea-owned-demo/main.cjs
+          test -f fixtures/rea-owned-demo/search.cjs
+          node --check fixtures/rea-owned-demo/main.cjs
+          node --check fixtures/rea-owned-demo/search.cjs
+          node -e "const app = require('./fixtures/rea-owned-demo/main.cjs'); const r=app.getMatchingNotes([{title:'Jeju Brick'},{title:'Other'}], 'jeju'); if(r.length!==1) process.exit(1); console.log('OWNED_FIXTURE_PASS')"
+
+      - name: Install reviewed REA version only into temporary directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rea-cli"
+          npm install --prefix "$RUNNER_TEMP/rea-cli" --no-save --no-package-lock --ignore-scripts rea-agents@6.5.0
+          "$RUNNER_TEMP/rea-cli/node_modules/.bin/rea" --version
+
+      - name: Run REA static analysis on owned local fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rea-results"
+          "$RUNNER_TEMP/rea-cli/node_modules/.bin/rea" analyze-javascript-application \
+            "$GITHUB_WORKSPACE/fixtures/rea-owned-demo" --json \
+            > "$RUNNER_TEMP/rea-results/analysis.json"
+          node -e 'const fs=require("node:fs"); const p=process.argv[1]; const s=fs.readFileSync(p,"utf8"); JSON.parse(s); if(s.length<20) process.exit(1); console.log("REA_JSON_PASS bytes="+s.length)' \
+            "$RUNNER_TEMP/rea-results/analysis.json"
+
+      - name: Upload safe synthetic analysis (1 day retention)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rea-owned-demo-analysis
+          path: ${{ runner.temp }}/rea-results/analysis.json
+          retention-days: 1
+          if-no-files-found: error
