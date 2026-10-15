@@ -53,6 +53,10 @@ jobs:
         shell: bash
         run: bash scripts/test_unkive_release_lane.sh
 
+      - name: Test external Codex single-writer lock
+        shell: bash
+        run: bash scripts/test_external_worker_lock.sh
+
       - name: Check guarded push for new and advanced remote refs
         shell: bash
         run: bash scripts/test_push_target.sh
