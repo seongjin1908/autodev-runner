@@ -47,6 +47,10 @@ echo "Baseline validation completed (exit $BASELINE_RC)."
 
 npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 
+# REA is optional and only enabled after a verified OpenCode MCP handshake.
+# A failed handshake never blocks validated product development.
+source "$ROOT_DIR/scripts/prepare_rea_worker.sh"
+
 {
   echo "You are a zero-budget autonomous coding worker."
   echo
@@ -70,7 +74,7 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 - Do not add paid AI, paid APIs, billing, live production payment, or automatic production deploy.
 - Do not auto-merge.
 - Do not fabricate passing tests, live integration success, analytics, prices, or progress.
-- REA MCP is NOT available to this OpenCode worker unless a verified REA evidence artifact is explicitly supplied to this run. A repository .codex/.agents registration only proves trusted Codex-workspace availability, not this worker's MCP use.
+- REA connection in this worker is controlled by the verified runtime handshake below; a .codex/.agents registration is NOT proof of REA availability or actual tool use.
 - Never claim REA was used from repository configuration alone. Use reviewed REA findings only when their evidence, authorization scope, and reproducible observations are present.
 - Competitor public behavior may inform requirements, but never copy protected source, assets, private APIs, or restricted designs.
 - Finish-mode: choose one highest-impact incomplete release milestone and close it end-to-end before starting another feature family.
@@ -79,6 +83,15 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 - Keep the batch reviewable but large enough to remove a real release blocker in one pass.
 - A failed previous attempt has been rolled back. Work from the clean repository state currently on disk.
 RULES
+  echo
+  echo "# Runtime REA evidence"
+  if [[ "${REA_MCP_CONNECTED:-false}" == "true" ]]; then
+    echo "- OpenCode REA MCP handshake: CONNECTED in this runner. This is NOT proof of a REA analysis invocation."
+    echo "- Use REA only when it materially accelerates a high-priority blocker and only on OWNED or explicitly authorized local software. For competitors inspect public UI behavior without reverse engineering protected implementations."
+    echo "- Do at most one tightly scoped REA analysis per batch. If invoked, report exact owned target, MCP tool, observed evidence and limitations; otherwise say REA was not used."
+  else
+    echo "- REA MCP handshake: UNAVAILABLE in this runner; proceed with normal source-based implementation and tests. Never claim REA use."
+  fi
   echo
   echo "# Baseline validation output"
   cat /tmp/autodev-baseline.log

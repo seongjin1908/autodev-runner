@@ -37,6 +37,10 @@ jobs:
             bash -n "$file"
           done
 
+      - name: Test REA OpenCode MCP handshake and safe fallback
+        shell: bash
+        run: bash scripts/test_rea_worker.sh
+
       - name: Test automatic saju PR backlog fail-closed gate
         shell: bash
         run: bash scripts/test_review_backlog_guard.sh
