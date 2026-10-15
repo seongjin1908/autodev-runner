@@ -1,0 +1,73 @@
+name: Restore AI Pending Release PRs Independent Check
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/restore-pending-release-prs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-pending-release-prs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Restore PR #${{ matrix.pr }} full offline check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pr: 15
+            sha: fc367d7e1d89ca58a6fcbcd4386fb2646ce8e0b7
+          - pr: 16
+            sha: 2b8ae70c0681bd62ff77d712a9f1ef986fb88139
+    steps:
+      - name: Verify source is an immutable commit
+        env:
+          SOURCE_SHA: ${{ matrix.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 2
+
+      - name: Checkout pinned Restore AI PR source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/restore-ai-autodev
+          ref: ${{ matrix.sha }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target
+          fetch-depth: 1
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install locked dependencies
+        working-directory: target
+        run: npm ci --no-audit --no-fund
+
+      - name: Full source validation, security regressions and dry-run build
+        working-directory: target
+        run: npm run check
+
+      - name: Summarize verification boundary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Restore AI PR #${{ matrix.pr }} independent check" >> "$GITHUB_STEP_SUMMARY"
+          echo "Immutable reviewed head: \`${{ matrix.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: seongjin1908/restore-ai-autodev. Full npm check includes typecheck, static/migration checks, regression/security suites, secrets scan and dry-run build." >> "$GITHUB_STEP_SUMMARY"
+          echo "A green check is NOT evidence of Cloudflare production, real payment or external image-model E2E." >> "$GITHUB_STEP_SUMMARY"
