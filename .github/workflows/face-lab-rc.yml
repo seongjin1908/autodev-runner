@@ -1,0 +1,49 @@
+name: FACE LAB release candidate verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/face-lab-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout exact FACE LAB release candidate
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/face-lab-global
+          ref: 14ce70428c9e3b662e4505a8201ac31ce3d6a778
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install
+        working-directory: target
+        run: npm ci
+
+      - name: Verify tests contract
+        working-directory: target
+        run: node -e "JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))"
+
+      - name: Typecheck
+        working-directory: target
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: target
+        run: npm run build
