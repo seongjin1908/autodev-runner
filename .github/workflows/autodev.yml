@@ -194,6 +194,14 @@ jobs:
         shell: bash
         run: bash scripts/report_target.sh
 
+
+      - name: Require validated code production
+        # An unavailable free model is an expected provider failure, not a successful development run.
+        # Do not count deliberate collision/permission HOLD as a development attempt.
+        if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        shell: bash
+        run: bash scripts/require_production_batch.sh
+
       - name: Push validated batch and maintain PR
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
         env:
