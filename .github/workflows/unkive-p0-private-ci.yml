@@ -124,6 +124,8 @@ jobs:
         run: |
           node scripts/check-unkive-calculation.mjs
           node scripts/check-unkive-daangn-pricing.mjs
+          node scripts/check-unkive-payapp-vbank.mjs
+          node scripts/check-unkive-order-resume.mjs
           node scripts/unkive-daangn-e2e.mjs
           node scripts/check-unkive-backend-recovery.mjs
 
