@@ -1,0 +1,126 @@
+name: REA Evidence Bridge (review-only)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rea-evidence-bridge.yml']
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'REA owned-demo smoke workflow run ID'
+        required: true
+        type: string
+        default: '38684718050'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: rea-evidence-bridge-review-only
+  cancel-in-progress: false
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SOURCE_RUN_ID: ${{ inputs.source_run_id || '38684718050' }}
+    steps:
+      - name: Verify selected run id
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]{1,20}$ ]] || exit 1
+      - name: Download REA owned-demo evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: rea-owned-demo-analysis
+          repository: seongjin1908/autodev-runner
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/rea-input
+      - name: Prepare read-only Codex handoff from REAL evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$RUNNER_TEMP/rea-input/analysis.json"
+          test "$(wc -c < "$RUNNER_TEMP/rea-input/analysis.json")" -le 10000000
+          mkdir -p "$RUNNER_TEMP/rea-handoff"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const dir = process.env.RUNNER_TEMP;
+          const runId = process.env.SOURCE_RUN_ID;
+          const data = JSON.parse(fs.readFileSync(path.join(dir, 'rea-input/analysis.json'),'utf8'));
+          const assert = (ok, why) => {if (!ok) throw Error(why);};
+          const digest = data.subject?.digest?.sha256;
+          assert(data.subject?.name === 'rea-owned-demo', 'Unknown subject: not an approved owned fixture');
+          assert(data.provider?.id === 'rea-javascript-application', 'Unrecognized analyzer');
+          assert(data.operation === 'analyze_javascript_application', 'Unrecognized operation');
+          assert(typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest), 'Invalid sha256');
+          assert(data.normalized_result?.root_artifact_sha256 === digest, 'Digest mismatch');
+          assert((data.normalized_result?.integrity_contradictions || []).length === 0, 'Integrity contradictions');
+          const graph = data.normalized_result?.graph;
+          assert(graph?.schema === 'JavaScriptApplicationGraph', 'Unknown graph schema');
+          assert(Array.isArray(graph.nodes) && graph.nodes.length > 0 && graph.nodes.length < 1001, 'Node count invalid');
+          assert(Array.isArray(graph.edges) && graph.edges.length < 3001, 'Edge count invalid');
+          const safePath = p => typeof p === 'string' && p.length > 0 && p.length <= 160 && !p.includes('..') && !p.startsWith('/') && /^[a-zA-Z0-9._/-]+$/.test(p);
+          const modules = [];
+          const entries = [];
+          for (const n of graph.nodes) {
+            for (const obs of Array.isArray(n.observations) ? n.observations.slice(0,30) : []) {
+              const p = obs.properties || {};
+              if (n.kind === 'javascript-module' && p.semantic_role === 'source-module' && safePath(p.path)) modules.push(p.path);
+              if (n.kind === 'electron-main' && safePath(p.resolved_path)) entries.push(p.resolved_path);
+            }
+          }
+          const imports = [];
+          for (const e of graph.edges) {
+            const p = e.properties || {};
+            if (e.relation === 'imports' && p.resolution_status === 'resolved' && safePath(p.resolved_path)) imports.push(p.resolved_path);
+          }
+          const unique = a => [...new Set(a)].sort().slice(0,30);
+          const url = 'https://github.com/seongjin1908/autodev-runner/actions/runs/' + runId;
+          const summary = {
+            contract:'rea-bridge-owned-fixture-v1', source_run_id:runId, source_url:url,
+            subject:'rea-owned-demo', digest, node_count:graph.nodes.length, edge_count:graph.edges.length,
+            entrypoints:unique(entries), modules:unique(modules), import_targets:unique(imports),
+            authorization:'first-party-synthetic-fixture', product_code_modified:false,
+            competitor_app_analyzed:false, implementation_ready:false
+          };
+          const brief = [
+            '# REA evidence review (synthetic owned fixture only)',
+            '', 'Source: ' + url, 'Input sha256: ' + digest,
+            'Nodes: ' + graph.nodes.length + ' / edges: ' + graph.edges.length,
+            '', '## Static file relationships',
+            ...summary.entrypoints.map(p => '- Entrypoint: ' + p),
+            ...summary.modules.map(p => '- Module: ' + p),
+            ...summary.import_targets.map(p => '- Resolved import: ' + p),
+            '', '## Limitations',
+            '- Static relationships do not demonstrate runtime behavior.',
+            '- This fixture is not a competitor app or UNKIVE source.',
+            '- No permission for copying protected software is inferred.',
+            '- No product implementation is justified by this fixture alone.', ''
+          ].join('\n');
+          const codex = [
+            '# Codex review task (not an auto-execution instruction)',
+            'Evidence: ' + url,
+            'Priority: UNKIVE. Inspect current release and open PRs before any feature edits.',
+            'The evidence only validates the REA cloud pipeline on an owned demo.',
+            'Use public competitor UI observation only. Do not decompile, copy source, bypass authentication, or extract third-party data.',
+            'Evaluate report clarity, personalized evidence visibility, purchase-value explanation and PDF/re-entry usability.',
+            'For each real observation record reproducible public-UI evidence, limitations, distinct implementation design and acceptance criteria.',
+            'Only submit an isolated product PR for an actual uncovered gap. No auto-merge, deploy, payment activation, paid AI or secret changes.',
+            'Do not start code changes based on synthetic demo analysis alone.', ''
+          ].join('\n');
+          const dest = path.join(dir,'rea-handoff');
+          fs.writeFileSync(path.join(dest,'evidence-summary.json'),JSON.stringify(summary,null,2)+'\n');
+          fs.writeFileSync(path.join(dest,'evidence-brief.md'),brief);
+          fs.writeFileSync(path.join(dest,'codex-task.md'),codex);
+          console.log('REA_HANDOFF_PASS nodes=' + graph.nodes.length + ' edges=' + graph.edges.length);
+          NODE
+          cat "$RUNNER_TEMP/rea-handoff/evidence-brief.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload evidence and Codex review task (not product source)
+        uses: actions/upload-artifact@v4
+        with:
+          name: rea-codex-handoff-demo
+          path: ${{ runner.temp }}/rea-handoff/
+          retention-days: 7
+          if-no-files-found: error
