@@ -225,3 +225,10 @@ The system must expose source health metrics:
 - expired listing rate
 - % of listings with compensation/time/location parsed
 Do not claim "전국 전체 공고" unless measured coverage supports the claim. Prefer "여러 공식 채용처를 한곳에서 확인" until coverage is proven.
+
+## Finish-mode execution
+- Inspect open SECOND PRs first and consolidate overlapping branches instead of adding another implementation.
+- Pick exactly ONE P0/P1 milestone and finish the complete user path in the batch.
+- Priority: real source normalization/health -> trustworthy opportunity feed -> 3-tap matching -> save/inquiry -> moderation/admin. Do not spread one batch across unrelated feature families.
+- No docs-only, TODO-only, placeholder-only, or fake-listing progress.
+- Every accepted batch must add/repair the deterministic tests for the flow it changes.
