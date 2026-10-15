@@ -16,7 +16,7 @@ QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/ling-3.0-flash-fin-
 QUINARY_MODEL="${DDD_FREE_CODE_MODEL_QUINARY:-opencode/laguna-s-2.1-free}"
 SENARY_MODEL="${DDD_FREE_CODE_MODEL_SENARY:-opencode/space-bunny-free}"
 MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-300}"
-TRANSIENT_RETRIES="${DDD_FREE_MODEL_TRANSIENT_RETRIES:-1}"
+TRANSIENT_RETRIES="${DDD_FREE_MODEL_TRANSIENT_RETRIES:-0}"
 
 echo "BATCH_READY=false" >> "$GITHUB_ENV"
 echo "AUTODEV_RUN_STATUS=running" >> "$GITHUB_ENV"
@@ -73,7 +73,10 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 - REA MCP is NOT available to this OpenCode worker unless a verified REA evidence artifact is explicitly supplied to this run. A repository .codex/.agents registration only proves trusted Codex-workspace availability, not this worker's MCP use.
 - Never claim REA was used from repository configuration alone. Use reviewed REA findings only when their evidence, authorization scope, and reproducible observations are present.
 - Competitor public behavior may inform requirements, but never copy protected source, assets, private APIs, or restricted designs.
-- Keep the batch small enough to review and large enough to create real user value.
+- Finish-mode: choose one highest-impact incomplete release milestone and close it end-to-end before starting another feature family.
+- Inspect current code and open work first; never create a duplicate implementation for a feature already present or already under review.
+- Do not use a docs-only, TODO-only, placeholder-only, mock-only, or cosmetic-only batch as primary progress.
+- Keep the batch reviewable but large enough to remove a real release blocker in one pass.
 - A failed previous attempt has been rolled back. Work from the clean repository state currently on disk.
 RULES
   echo
