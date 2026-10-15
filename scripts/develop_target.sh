@@ -70,6 +70,9 @@ npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
 - Do not add paid AI, paid APIs, billing, live production payment, or automatic production deploy.
 - Do not auto-merge.
 - Do not fabricate passing tests, live integration success, analytics, prices, or progress.
+- REA MCP is NOT available to this OpenCode worker unless a verified REA evidence artifact is explicitly supplied to this run. A repository .codex/.agents registration only proves trusted Codex-workspace availability, not this worker's MCP use.
+- Never claim REA was used from repository configuration alone. Use reviewed REA findings only when their evidence, authorization scope, and reproducible observations are present.
+- Competitor public behavior may inform requirements, but never copy protected source, assets, private APIs, or restricted designs.
 - Keep the batch small enough to review and large enough to create real user value.
 - A failed previous attempt has been rolled back. Work from the clean repository state currently on disk.
 RULES
