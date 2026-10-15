@@ -109,7 +109,8 @@ with open(out,'a',encoding='utf-8') as f:
         'alias','repository','work_branch','checkout_branch','branch_mode','base_branch','prompt_file',
         'max_changed_files','max_branch_ahead','recent_change_guard_minutes',
         'failure_hold_threshold','failure_hold_minutes',
-        'auto_weight','release_priority'
+        'auto_weight','release_priority','external_worker_lock','external_worker_owner',
+        'external_worker_scope','rea_codex_workspace','rea_autodev_runtime'
     ]:
         f.write(f"{k}={values.get(k, '')}\n")
     f.write('validation_b64='+base64.b64encode(p['validation'].encode()).decode()+'\n')
