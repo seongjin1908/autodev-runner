@@ -13,7 +13,7 @@ assert p['branch_mode']=='run_scoped'
 assert p['max_branch_ahead']==0
 assert 'npm test' in p['validation'] and 'npm run build' in p['validation']
 prompt=(r/p['prompt_file']).read_text()
-assert 'PR #3' in prompt and 'private-source' in prompt
+assert 'PR #4' in prompt and 'private-source' in prompt
 wf=(r/'.github/workflows/worklink-free-dispatch.yml').read_text()
 assert 'cron:' in wf and 'target=worklink' in wf
 assert 'actions: write' in wf and 'autodev.yml' in wf
