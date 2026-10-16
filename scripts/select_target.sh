@@ -47,14 +47,14 @@ PY
       break
     fi
 
-    IFS='|' read -r candidate_repo candidate_branch candidate_guard candidate_locked < <(python - "$CONFIG" "$candidate" <<'PY'
+    IFS='|' read -r candidate_repo candidate_branch candidate_guard candidate_locked candidate_mode < <(python - "$CONFIG" "$candidate" <<'PY'
 import json,sys
 cfg,target=sys.argv[1:3]
 p=next((x for x in json.load(open(cfg, encoding='utf-8'))['projects'] if x['alias']==target), None)
 if not p:
     raise SystemExit(f'Unknown target: {target}')
 branch = p['work_branch'] if p.get('branch_mode','fixed') != 'run_scoped' else (p.get('source_branch') or p['base_branch'])
-print(f"{p['repository']}|{branch}|{p.get('recent_change_guard_minutes', 25)}|{str(p.get('external_worker_lock', False)).lower()}")
+print(f"{p['repository']}|{branch}|{p.get('recent_change_guard_minutes', 25)}|{str(p.get('external_worker_lock', False)).lower()}|{p.get('branch_mode', 'fixed')}")
 PY
     )
 
@@ -83,6 +83,15 @@ PY
         now_epoch="$(date -u +%s)"
         if [[ "$last_epoch" =~ ^[0-9]+$ ]] && (( now_epoch - last_epoch < candidate_guard * 60 )); then
           echo "Skipping recently modified automatic target: $candidate ($candidate_guard-minute collision guard)" >&2
+          continue
+        fi
+      fi
+      # A backlogged run-scoped lane cannot accept a new coding batch.
+      # Check with the exact guard used by prepare_target.sh so scheduled
+      # rotation moves to useful work instead of reporting a no-op success.
+      if [[ "$candidate_mode" == "run_scoped" ]]; then
+        if ! REPOSITORY="$candidate_repo" BASE_BRANCH="$candidate_branch" BRANCH_MODE="$candidate_mode" WORK_BRANCH="autodev/$candidate/selection-preflight" bash "$ROOT_DIR/scripts/review_backlog_guard.sh" >/tmp/autodev-selection-backlog.log 2>&1; then
+          echo "Skipping automatic target held by PR review backlog: $candidate" >&2
           continue
         fi
       fi
