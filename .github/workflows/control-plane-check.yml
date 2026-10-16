@@ -79,6 +79,10 @@ jobs:
         shell: bash
         run: bash scripts/test_push_target.sh
 
+      - name: Verify WORKLINK auto-development source and schedule
+        shell: bash
+        run: bash scripts/test_worklink_lane.sh
+
       - name: Validate target registry invariants
         shell: bash
         run: |
