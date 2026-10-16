@@ -478,6 +478,28 @@
       "branch_mode": "run_scoped",
       "development_status": "hold",
       "hold_reason": "user_requested_stop_2026-10-14"
+    },
+    {
+      "alias": "worklink",
+      "repository": "seongjin1908/worklink",
+      "work_branch": "autodev/worklink/run-scoped",
+      "base_branch": "main",
+      "source_branch": "main",
+      "validation": "node -e \"JSON.parse(require('fs').readFileSync('tests/tests.json', 'utf8'))\" && npx tsc --noEmit && npm run build",
+      "prompt_file": "prompts/worklink.md",
+      "recent_change_guard_minutes": 15,
+      "max_changed_files": 25,
+      "auto_enabled": false,
+      "auto_weight": 0,
+      "release_priority": 90,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 120,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "development_status": "hold",
+      "hold_reason": "baseline_git_import_pr_pending_and_runner_token_access_not_verified_2026-10-16",
+      "rea_codex_workspace": "not-verified-for-worklink",
+      "rea_autodev_runtime": "not-used-by-opencode-worker"
     }
   ],
   "auto_rotation": [
