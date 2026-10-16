@@ -130,6 +130,10 @@ jobs:
           print(f"Validated {len(projects)} targets and {len(rotation)} rotation slots.")
           PY
 
+      - name: Test automatic rotation skips recently edited targets
+        shell: bash
+        run: bash scripts/test_recent_rotation.sh
+
       - name: Dry-run target selection
         shell: bash
         run: |

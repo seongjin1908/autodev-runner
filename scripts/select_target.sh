@@ -47,16 +47,25 @@ PY
       break
     fi
 
-    IFS='|' read -r candidate_repo candidate_branch < <(python - "$CONFIG" "$candidate" <<'PY'
+    IFS='|' read -r candidate_repo candidate_branch candidate_guard candidate_locked < <(python - "$CONFIG" "$candidate" <<'PY'
 import json,sys
 cfg,target=sys.argv[1:3]
 p=next((x for x in json.load(open(cfg, encoding='utf-8'))['projects'] if x['alias']==target), None)
 if not p:
     raise SystemExit(f'Unknown target: {target}')
 branch = p['work_branch'] if p.get('branch_mode','fixed') != 'run_scoped' else (p.get('source_branch') or p['base_branch'])
-print(f"{p['repository']}|{branch}")
+print(f"{p['repository']}|{branch}|{p.get('recent_change_guard_minutes', 25)}|{str(p.get('external_worker_lock', False)).lower()}")
 PY
     )
+
+    # Avoid predictable no-op runs: an auto-selected target owned by a
+    # parallel developer, or changed inside its collision-guard window,
+    # should not consume the whole rotation slot. Explicit selections retain
+    # the existing prepare_target.sh single-writer/recency enforcement.
+    if [[ "$candidate_locked" == "true" ]]; then
+      echo "Skipping externally locked automatic target: $candidate" >&2
+      continue
+    fi
 
     set +e
     push_allowed="$(gh api "repos/$candidate_repo" --jq '.permissions.push // false' 2>/dev/null)"
@@ -66,6 +75,17 @@ PY
     set -e
 
     if [[ "$repo_rc" -eq 0 && "$branch_rc" -eq 0 && "$push_allowed" == "true" ]]; then
+      if [[ "$candidate_guard" =~ ^[0-9]+$ ]] && (( candidate_guard > 0 )); then
+        # Source commit timestamp is advisory only. If the API is unavailable
+        # we fall back to the final prepare_target.sh collision guard.
+        last_iso="$(gh api "repos/$candidate_repo/commits/$candidate_branch" --jq '.commit.committer.date // empty' 2>/dev/null || true)"
+        last_epoch="$(date -u -d "$last_iso" +%s 2>/dev/null || true)"
+        now_epoch="$(date -u +%s)"
+        if [[ "$last_epoch" =~ ^[0-9]+$ ]] && (( now_epoch - last_epoch < candidate_guard * 60 )); then
+          echo "Skipping recently modified automatic target: $candidate ($candidate_guard-minute collision guard)" >&2
+          continue
+        fi
+      fi
       SELECTED_TARGET="$candidate"
       break
     fi
