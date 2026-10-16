@@ -246,6 +246,11 @@
     "tradepilot": [
       "ccxt",
       "opa"
+    ],
+    "worklink": [
+      "i18next",
+      "maplibre",
+      "playwright"
     ]
   }
 }
