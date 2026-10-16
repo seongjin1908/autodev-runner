@@ -6,6 +6,9 @@ on:
       - 'config/projects.json'
       - '.github/workflows/portfolio-access-audit.yml'
   workflow_dispatch:
+  # Detect source-access regressions before half-hour coding slots are wasted.
+  schedule:
+    - cron: '37 3 * * *'
 
 permissions:
   contents: read
@@ -47,3 +50,8 @@ jobs:
           done < /tmp/enabled-targets.tsv
           echo "PORTFOLIO_INACCESSIBLE_COUNT=$inaccessible" >> "$GITHUB_ENV"
           echo "Access audit completed with $inaccessible held target(s)."
+          if (( inaccessible > 0 )); then
+            echo "::error::$inaccessible enabled AutoDev target(s) have no verified source branch + push access. Review the HOLD entries in this run's summary and grant only the needed repository access to the existing token."
+            exit 2
+          fi
+          echo "PASS: every enabled automatic target is accessible and writable."
