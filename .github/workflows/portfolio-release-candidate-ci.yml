@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/portfolio-release-candidate-ci.yml'
   workflow_dispatch:
+  # Public central runner regularly validates current private main snapshots
+  # when hosted jobs inside private product repos cannot start.
+  schedule:
+    - cron: '13 3 * * *'
 
 permissions:
   contents: read
@@ -59,9 +63,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ matrix.repo }}
-          ref: ${{ matrix.sha }}
+          # PR/dispatch checks stay pinned; daily scheduled checks resolve the
+          # latest default branch and record its exact checkout commit below.
+          ref: ${{ github.event_name == 'schedule' && 'main' || matrix.sha }}
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
+
+      - name: Record exact checkout commit for reproducibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checked source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
@@ -145,7 +157,7 @@ jobs:
           {
             echo "### ${{ matrix.target }} — immutable private-source checks"
             echo "- Repository: \`${{ matrix.repo }}\`"
-            echo "- Pinned SHA: \`${{ matrix.sha }}\`"
+            echo "- Registry reference SHA (non-scheduled checks): \`${{ matrix.sha }}\`"
             echo "- Build/test result is recorded in job steps; no paid AI or production credentials are provided."
             echo "- This does NOT prove real customer checkout, photo quality, licensing, real-data accuracy or browser E2E."
           } >> "$GITHUB_STEP_SUMMARY"
