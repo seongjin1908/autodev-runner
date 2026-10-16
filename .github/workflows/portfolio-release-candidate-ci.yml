@@ -34,6 +34,15 @@ jobs:
           - target: fault-intel
             repo: seongjin1908/fault-intelligence
             sha: 540227bf74f49a108647a6c389485134db003cc1
+          - target: worklink
+            repo: seongjin1908/worklink
+            sha: f92f1d365d529f011d0a21f7c283b6ee620f343e
+          - target: restore-ai
+            repo: seongjin1908/restore-ai-autodev
+            sha: c68528c04f9fa7be4b981c1eea6e7d8f8c8d24cb
+          - target: cyber-guardian
+            repo: seongjin1908/cyber-guardian-ai
+            sha: 71c148289564a3d73bf1a1a4bfe0d9a2a6c26ab4
 
     steps:
       - name: Require trusted repository token
@@ -61,9 +70,17 @@ jobs:
 
       - name: Install product source dependencies without lifecycle scripts
         shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          if [ -f package-lock.json ]; then
+          if [ "$TARGET" = "cyber-guardian" ]; then
+            echo "Node.js-only defensive tests; no npm install required"
+            exit 0
+          fi
+          if [ "$TARGET" = "restore-ai" ]; then
+            npm ci --no-audit --no-fund
+          elif [ -f package-lock.json ]; then
             npm ci --no-audit --no-fund --ignore-scripts
           else
             npm install --no-package-lock --no-audit --no-fund --ignore-scripts
@@ -95,6 +112,25 @@ jobs:
               ;;
             fault-intel)
               npm run check
+              ;;
+            worklink)
+              npm test
+              npm run typecheck
+              npm run build
+              ;;
+            restore-ai)
+              npm run check
+              ;;
+            cyber-guardian)
+              node --check guardian.js
+              node --check guard-policy.js
+              node --check gateway/runtime.js
+              node --check gateway/server.js
+              node --test tests/*.test.js
+              if grep -nE 'fetch[(]|XMLHttpRequest|WebSocket[(]|node:child_process|node:net|exec[(]|spawn[(]' guardian.js guard-policy.js; then
+                echo "::error::Unexpected active network/process capability in defensive engine"
+                exit 1
+              fi
               ;;
             *)
               echo "::error::Unrecognized launch candidate"
