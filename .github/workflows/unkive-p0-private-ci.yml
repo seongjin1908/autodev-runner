@@ -71,6 +71,10 @@ jobs:
           node scripts/production-contract-check.mjs
           npx --no-install tsc --noEmit
 
+      - name: Verify Premium generation provenance (NO model requests)
+        working-directory: target
+        run: node scripts/check-unkive-analysis-provenance.mjs
+
       - name: Verify backend bundle
         working-directory: target
         run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
