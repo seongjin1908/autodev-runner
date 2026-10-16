@@ -71,6 +71,12 @@ jobs:
           node scripts/production-contract-check.mjs
           npx --no-install tsc --noEmit
 
+      - name: Verify private real-AI output evaluator (fictional self-test only)
+        working-directory: target
+        run: |
+          node scripts/unkive-real-ai-output-audit.mjs --self-test
+          node scripts/unkive-real-ai-output-audit.mjs --status | grep -q REAL_AI_OUTPUT_NOT_EVALUATED
+
       - name: Verify backend bundle
         working-directory: target
         run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
