@@ -19,3 +19,11 @@
 ## Production limitations
 - No real users, payments, SMS, call translation, matching fees or wage custody should be enabled before legal/compliance and technical integration verification.
 - The source-integration check must not alter the existing SECOND, UNKIVE, Cyber Guardian or other product branches.
+
+
+## 2026-10-16 token and baseline validation
+- Fine-grained `AUTODEV_REPO_TOKEN` was updated to include WORKLINK; the publicly hosted central [fixed-head baseline verification](https://github.com/seongjin1908/autodev-runner/actions/runs/38891324159) passed on the second attempt. Its logs show checkout, npm bootstrap, TypeScript, deterministic contracts, production Vite build PASS.
+- Private WORKLINK Actions remains blocked by the GitHub account's spending/billing limit and starts zero steps. This is an infrastructure failure, not a source code test failure.
+- Import PR #1 remains open (merged=false), so **temporary development base is the validated `feature/worklink-appdeploy-import-20261016` branch**, NOT `main`. Work PRs target that branch until the owner merges PR #1 or GitHub private CI is restored. Do not auto-merge or silently switch base.
+- Initial auto-development is enabled with collision gates and strict validation, **not proof that free coding models are available or coding batches are completing**. Confirm by actual Actions commits/PRs.
+- Once a safe authorized merge into `main` is possible, change `base_branch` and `source_branch` back to `main` in a separate reviewed PR after confirming the current source SHA, tests, and work PR ownership.
