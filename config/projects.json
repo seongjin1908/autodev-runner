@@ -497,7 +497,7 @@
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "development_status": "hold",
-      "hold_reason": "private_target_repository_missing_and_source_not_imported_2026-10-16",
+      "hold_reason": "baseline_git_import_pr_pending_and_runner_token_access_not_verified_2026-10-16",
       "rea_codex_workspace": "not-verified-for-worklink",
       "rea_autodev_runtime": "not-used-by-opencode-worker"
     }
