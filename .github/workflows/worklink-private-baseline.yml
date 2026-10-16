@@ -1,0 +1,103 @@
+name: WORKLINK private baseline check
+
+# Execute from public zero-budget control plane without publishing private source.
+# Only audited owner-controlled refs. No untrusted PR code or production effects.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/worklink-private-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worklink-private-baseline
+  cancel-in-progress: false
+
+jobs:
+  verify-private-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Verify access token was configured
+        shell: bash
+        env:
+          TARGET_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          if [ -z "$TARGET_TOKEN" ]; then
+            echo "::error::Central runner token is missing. Configure AUTODEV_REPO_TOKEN for private WORKLINK access."
+            exit 10
+          fi
+          echo "Central token present; target access will be checked by checkout."
+
+      - name: Checkout immutable WORKLINK source (private)
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 893fff663b19ea590fe273fd69818b2dbdacc4ae
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target
+          fetch-depth: 1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check expected immutable PR commit
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "893fff663b19ea590fe273fd69818b2dbdacc4ae"
+          echo "WORKLINK source reference verified."
+
+      - name: Install baseline dependencies
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm install --no-audit --no-fund --no-progress >/tmp/wl-install.log 2>&1; then
+            echo "::error::WORKLINK npm bootstrap failed; no private install logs published."
+            exit 11
+          fi
+          echo "WORKLINK dependency bootstrap succeeded."
+
+      - name: TypeScript check
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm run typecheck >/tmp/wl-ts.log 2>&1; then
+            echo "::error::WORKLINK TypeScript check failed; no private source diagnostics published."
+            exit 12
+          fi
+          echo "TypeScript PASS"
+
+      - name: Run contract checks
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm test >/tmp/wl-test.log 2>&1; then
+            echo "::error::WORKLINK contract check failed; no private test data published."
+            exit 13
+          fi
+          echo "Contract PASS"
+
+      - name: Build application
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm run build >/tmp/wl-build.log 2>&1; then
+            echo "::error::WORKLINK build failed; no proprietary build diagnostics published."
+            exit 14
+          fi
+          echo "Build PASS"
+
+      - name: Confirm baseline evidence
+        shell: bash
+        run: |
+          echo "WORKLINK fixed-head import PR: #1" >> "$GITHUB_STEP_SUMMARY"
+          echo "Read-only private-source bootstrap / TypeScript / deterministic contracts / production build: PASS." >> "$GITHUB_STEP_SUMMARY"
+          echo "No SMS, payments, private user data, or production deployment was attempted." >> "$GITHUB_STEP_SUMMARY"
