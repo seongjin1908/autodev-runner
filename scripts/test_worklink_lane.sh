@@ -8,7 +8,7 @@ cfg=json.loads((r/'config/projects.json').read_text())
 p=next(x for x in cfg['projects'] if x['alias']=='worklink')
 assert p['repository']=='seongjin1908/worklink'
 assert p['auto_enabled'] and p['auto_weight']>0
-assert p['base_branch']==p['source_branch']=='feat/p0-same-origin-client-20261016'
+assert p['base_branch']==p['source_branch']=='main'
 assert p['branch_mode']=='run_scoped'
 assert p['max_branch_ahead']==0
 assert 'npm test' in p['validation'] and 'npm run build' in p['validation']
