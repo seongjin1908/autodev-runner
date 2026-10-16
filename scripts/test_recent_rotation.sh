@@ -8,6 +8,10 @@ trap 'rm -rf "$TEMP"' EXIT
 cat > "$TEMP/gh" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "${1:-}" == pr && "${2:-}" == list ]]; then
+  echo '[]'
+  exit 0
+fi
 [[ "${1:-}" == api ]] || exit 11
 case "${2:-}" in
   repos/*/git/ref/heads/*)
