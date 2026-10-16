@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/worklink
-          ref: 6cdb49c3b799278e8dfc46fad2b5a7afb0a3ac4c
+          ref: 5d3c3a410a2d2fddb4fb01612251bd8fad968fdb
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -58,7 +58,7 @@ jobs:
         working-directory: target
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "6cdb49c3b799278e8dfc46fad2b5a7afb0a3ac4c"
+          test "$(git rev-parse HEAD)" = "5d3c3a410a2d2fddb4fb01612251bd8fad968fdb"
           echo "WORKLINK source reference verified."
 
       - name: Install baseline dependencies
@@ -104,6 +104,6 @@ jobs:
       - name: Confirm baseline evidence
         shell: bash
         run: |
-          echo "WORKLINK immutable follow-up PR #2 on top of source import #1: 6cdb49c3b799278e8dfc46fad2b5a7afb0a3ac4c" >> "$GITHUB_STEP_SUMMARY"
-          echo "Read-only private-source bootstrap / TypeScript / contract and phone/job input tests / Vite production build: PASS." >> "$GITHUB_STEP_SUMMARY"
+          echo "WORKLINK immutable API PR #3 stacked on follow-up PR #2 and source import PR #1: 5d3c3a410a2d2fddb4fb01612251bd8fad968fdb" >> "$GITHUB_STEP_SUMMARY"
+          echo "Read-only private-source bootstrap / TypeScript / contract, phone/job input, two-account SQLite API integration tests / Vite production build: PASS." >> "$GITHUB_STEP_SUMMARY"
           echo "No SMS, payments, private user data, or production deployment was attempted." >> "$GITHUB_STEP_SUMMARY"
