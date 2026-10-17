@@ -173,6 +173,8 @@ jobs:
             target/release-test-results/content-review.md
             target/release-test-results/comprehensive-24-review.json
             target/release-test-results/comprehensive-24-review.md
+            target/release-test-results/comprehensive-signature-web.json
+            target/release-test-results/comprehensive-rendered-*.txt
             target/release-test-results/home-restoration-review.json
             target/release-test-results/launch-free-content-review.md
             target/release-test-results/launch-free-30-samples.json
