@@ -171,3 +171,14 @@ jobs:
           path: |
             target/release-test-results/content-review.json
             target/release-test-results/content-review.md
+            target/release-test-results/comprehensive-24-review.json
+            target/release-test-results/comprehensive-24-review.md
+            target/release-test-results/home-restoration-review.json
+            target/release-test-results/launch-free-content-review.md
+            target/release-test-results/launch-free-30-samples.json
+            target/release-test-results/launch-blockers-browser.json
+            target/release-test-results/launch-layout-*.json
+            target/release-test-results/offline-editorial-samples.json
+            target/release-test-results/P*-natural.pdf
+            target/release-test-results/P*-numeric-cover.pdf
+            target/release-test-results/*.png
