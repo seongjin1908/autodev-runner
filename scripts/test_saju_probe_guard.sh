@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory(prefix='saju-guard-test-') as temporary:
         if run.returncode != expected:
             raise AssertionError(f'{alias}: {path} yielded {run.returncode} instead of {expected}: {run.stdout} {run.stderr}')
 
-    for path in ['probe-tmp.mjs', 'probe-tmp.py', 'scripts/probe-debug.mjs', '.tmp-smoke-v24.ts']:
+    for path in ['probe-tmp.mjs', 'probe-tmp.py', 'scripts/probe-debug.mjs', 'scripts/_probe.ts', 'scripts/probe_diagnostics.ts', '.tmp-smoke-v24.ts']:
         verify(path, 2)
     verify('backend/analysis.ts', 0)
     verify('probe-tmp.mjs', 0, alias='creative-studio')
