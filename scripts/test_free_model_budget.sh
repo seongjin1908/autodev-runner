@@ -23,3 +23,7 @@ grep -Fq "printf 'Validated coding model:" scripts/develop_target.sh || {
   echo "FAIL: selected model is missing from the summary"
   exit 1
 }
+
+# Keep the first code-model default aligned with observed valid free batches.
+grep -Fq 'PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/space-bunny-free}"' scripts/develop_target.sh
+grep -Fq "opencode/space-bunny-free" .github/workflows/autodev.yml
