@@ -172,6 +172,8 @@ jobs:
         run: |
           python -m pip install PyMuPDF==1.26.5
           python scripts/check-unkive-pdf-layout.py
+          node scripts/check-unkive-pdf-matrix.mjs
+          python scripts/check-unkive-pdf-matrix.py
 
       - name: Retain synthetic content review outputs
         if: always()
@@ -194,6 +196,9 @@ jobs:
             target/release-test-results/launch-blockers-browser.json
             target/release-test-results/launch-layout-*.json
             target/release-test-results/offline-editorial-samples.json
+            target/release-test-results/explained-terminology-counterfactual.json
+            target/release-test-results/comprehensive-early-popup.json
+            target/release-test-results/pdf-matrix/
             target/release-test-results/P*-natural.pdf
             target/release-test-results/P*-numeric-cover.pdf
             target/release-test-results/*.png
