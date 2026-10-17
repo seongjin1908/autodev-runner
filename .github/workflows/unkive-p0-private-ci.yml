@@ -136,14 +136,25 @@ jobs:
       - name: Paid personalization, question specificity, and mobile browser journey
         working-directory: target
         run: |
-          node scripts/check-unkive-focus-qna.mjs
-          node scripts/unkive-business-result-e2e.mjs
-          node scripts/check-unkive-paid-ai-context.mjs
-          node scripts/check-unkive-personalization.mjs
-          node scripts/unkive-personalization-e2e.mjs
-          node scripts/check-unkive-monthly-guidance.mjs
-          node scripts/unkive-home-e2e.mjs
-          node scripts/unkive-release-e2e.mjs
+          run_check() {
+            local check_log="$RUNNER_TEMP/unkive-paid-browser-current.log"
+            if node "$1" > "$check_log" 2>&1; then
+              cat "$check_log"
+            else
+              cat "$check_log"
+              cp "$check_log" release-test-results/ci-paid-browser-current.log
+              python3 "$GITHUB_WORKSPACE/tools/unkive-ci-diagnostics.py" "$1" "$check_log"
+              return 1
+            fi
+          }
+          run_check scripts/check-unkive-focus-qna.mjs
+          run_check scripts/unkive-business-result-e2e.mjs
+          run_check scripts/check-unkive-paid-ai-context.mjs
+          run_check scripts/check-unkive-personalization.mjs
+          run_check scripts/unkive-personalization-e2e.mjs
+          run_check scripts/check-unkive-monthly-guidance.mjs
+          run_check scripts/unkive-home-e2e.mjs
+          run_check scripts/unkive-release-e2e.mjs
 
       - name: Dream, photo, face, and palm consent regressions
         working-directory: target
@@ -175,6 +186,8 @@ jobs:
             target/release-test-results/comprehensive-24-review.md
             target/release-test-results/comprehensive-signature-web.json
             target/release-test-results/comprehensive-rendered-*.txt
+            target/release-test-results/comprehensive-report-clock.json
+            target/release-test-results/ci-paid-browser-current.log
             target/release-test-results/home-restoration-review.json
             target/release-test-results/launch-free-content-review.md
             target/release-test-results/launch-free-30-samples.json
