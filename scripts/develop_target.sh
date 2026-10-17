@@ -116,7 +116,7 @@ clean_disposable_saju_artifacts() {
   fi
   while IFS= read -r -d '' p; do
     case "$p" in
-      .tmp*|scripts/tmp/*|backend/.consumer-*|backend/.generic-*|probe-*|scripts/probe-*)
+      .tmp*|scripts/tmp/*|backend/.consumer-*|backend/.generic-*|probe-*|scripts/probe-*|scripts/probe_*|scripts/_probe*|scripts/.probe*|scripts/_debug*)
         rm -rf -- "$p"
         ;;
     esac
@@ -187,7 +187,9 @@ for p in paths:
     if __import__('os').environ.get('ALIAS','').startswith('saju') and (
         p.startswith('.tmp') or p.startswith('scripts/tmp/') or
         p.startswith('backend/.consumer-') or p.startswith('backend/.generic-') or
-        p.startswith('probe-') or p.startswith('scripts/probe-')
+        p.startswith('probe-') or p.startswith('scripts/probe-') or
+        p.startswith('scripts/probe_') or p.startswith('scripts/_probe') or
+        p.startswith('scripts/.probe') or p.startswith('scripts/_debug')
     ):
         blocked.append(p)
     # WORLD PATCH edits are scoped to the isolated original-series module.
