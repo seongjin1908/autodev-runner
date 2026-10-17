@@ -171,3 +171,8 @@ jobs:
           path: |
             target/release-test-results/content-review.json
             target/release-test-results/content-review.md
+            target/release-test-results/launch-free-content-review.md
+            target/release-test-results/launch-free-30-samples.json
+            target/release-test-results/launch-blockers-browser.json
+            target/release-test-results/launch-layout-*.json
+            target/release-test-results/launch-free-*.png
