@@ -9,12 +9,12 @@ print(base64.b64decode(sys.argv[1]).decode())
 PY
 )"
 
-PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/mimo-v2.6-flash-free}"
+PRIMARY_MODEL="${DDD_FREE_CODE_MODEL_PRIMARY:-opencode/space-bunny-free}"
 SECONDARY_MODEL="${DDD_FREE_CODE_MODEL_SECONDARY:-opencode/longcat-2.5-preview-free}"
 TERTIARY_MODEL="${DDD_FREE_CODE_MODEL_TERTIARY:-opencode/nemotron-3.5-lightning-free}"
 QUATERNARY_MODEL="${DDD_FREE_CODE_MODEL_QUATERNARY:-opencode/ling-3.0-flash-fin-free}"
 QUINARY_MODEL="${DDD_FREE_CODE_MODEL_QUINARY:-opencode/laguna-s-2.1-free}"
-SENARY_MODEL="${DDD_FREE_CODE_MODEL_SENARY:-opencode/space-bunny-free}"
+SENARY_MODEL="${DDD_FREE_CODE_MODEL_SENARY:-opencode/mimo-v2.6-flash-free}"
 MODEL_TIMEOUT="${DDD_FREE_MODEL_TIMEOUT_SECONDS:-300}"
 TRANSIENT_RETRIES="${DDD_FREE_MODEL_TRANSIENT_RETRIES:-0}"
 # Do not spend five minutes on each unresponsive free provider. The first
