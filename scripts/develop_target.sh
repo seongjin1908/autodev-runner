@@ -116,7 +116,7 @@ clean_disposable_saju_artifacts() {
   fi
   while IFS= read -r -d '' p; do
     case "$p" in
-      .tmp*|scripts/tmp/*|backend/.consumer-*|backend/.generic-*|probe-*|scripts/probe-*)
+      .tmp*|scripts/tmp/*|backend/.consumer-*|backend/.generic-*|probe-*|scripts/probe-*|scripts/probe_*|scripts/_probe*)
         rm -rf -- "$p"
         ;;
     esac
