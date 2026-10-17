@@ -49,6 +49,10 @@ jobs:
         shell: bash
         run: bash scripts/test_free_model_budget.sh
 
+      - name: Test specialized AutoDev real-production status and free defaults
+        shell: bash
+        run: bash scripts/test_fast_autodev_outcome.sh
+
       - name: Validate cross-project licensed OSS reuse candidates and HOLD protections
         shell: bash
         run: |
