@@ -35,12 +35,21 @@ cat > "$TMP/bin/gh" <<'MOCK'
 case "$1 $2" in
   "auth setup-git"|"pr create") exit 0 ;;
   "pr list") printf '[]\n'; exit 0 ;;
+  "api repos/example/example/git/matching-refs/heads/$WORK_BRANCH")
+    current="$(git -C "$MOCK_TARGET_DIR" ls-remote --heads origin "refs/heads/$WORK_BRANCH" | awk '{print $1}')"
+    if [[ -z "$current" ]]; then
+      printf '[]\n'
+    else
+      printf '[{"ref":"refs/heads/%s","object":{"sha":"%s"}}]\n' "$WORK_BRANCH" "$current"
+    fi
+    exit 0
+    ;;
   *) echo "Unexpected gh operation: $*" >&2; exit 5 ;;
 esac
 MOCK
 chmod +x "$TMP/bin/gh"
 export PATH="$TMP/bin:$PATH"
-export WORK_BRANCH BASE_BRANCH=main REPOSITORY=example/example START_SHA="$BASE_SHA"
+export WORK_BRANCH BASE_BRANCH=main REPOSITORY=example/example START_SHA="$BASE_SHA" MOCK_TARGET_DIR="$TARGET_DIR"
 
 # Scenario 1: remote run-scoped ref absent; guarded push MUST succeed.
 test -z "$(git -C "$TARGET_DIR" ls-remote --heads origin "refs/heads/$WORK_BRANCH")"
