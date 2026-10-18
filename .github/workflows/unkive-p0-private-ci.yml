@@ -153,6 +153,7 @@ jobs:
           run_check scripts/check-unkive-personalization.mjs
           run_check scripts/unkive-personalization-e2e.mjs
           run_check scripts/check-unkive-monthly-guidance.mjs
+          run_check scripts/check-unkive-narrative-case-review.mjs
           run_check scripts/unkive-home-e2e.mjs
           run_check scripts/unkive-release-e2e.mjs
 
@@ -191,6 +192,8 @@ jobs:
             target/release-test-results/comprehensive-report-clock.json
             target/release-test-results/narrative-plan-review.json
             target/release-test-results/narrative-content-audit.json
+            target/release-test-results/monthly-interpretation-review.json
+            target/release-test-results/narrative-case-review.json
             target/release-test-results/narrative-ten-pairs.md
             target/release-test-results/ci-paid-browser-current.log
             target/release-test-results/home-restoration-review.json
