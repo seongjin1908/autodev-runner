@@ -194,6 +194,7 @@ jobs:
             target/release-test-results/narrative-content-audit.json
             target/release-test-results/monthly-interpretation-review.json
             target/release-test-results/narrative-case-review.json
+            target/release-test-results/report-composition-review.json
             target/release-test-results/narrative-ten-pairs.md
             target/release-test-results/ci-paid-browser-current.log
             target/release-test-results/home-restoration-review.json
