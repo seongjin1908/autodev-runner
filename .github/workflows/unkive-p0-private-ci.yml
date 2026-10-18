@@ -189,6 +189,9 @@ jobs:
             target/release-test-results/comprehensive-signature-web.json
             target/release-test-results/comprehensive-rendered-*.txt
             target/release-test-results/comprehensive-report-clock.json
+            target/release-test-results/narrative-plan-review.json
+            target/release-test-results/narrative-content-audit.json
+            target/release-test-results/narrative-ten-pairs.md
             target/release-test-results/ci-paid-browser-current.log
             target/release-test-results/home-restoration-review.json
             target/release-test-results/launch-free-content-review.md
