@@ -17,7 +17,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout runner control plane
         uses: actions/checkout@v4
@@ -164,7 +164,9 @@ jobs:
 
       - name: Generate and validate full 24-chart x 3-tier PDF matrix
         working-directory: target
-        timeout-minutes: 10
+        # The generator retains its own 600-second cap. Allow complete
+        # 96-file font/geometry inspection to finish after generation.
+        timeout-minutes: 15
         run: |
           mkdir -p release-test-results
           npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition-check.cjs
