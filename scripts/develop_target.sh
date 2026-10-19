@@ -18,6 +18,11 @@ print_worker_timings() {
     printf "| Baseline validation | %s |\n" "$BASELINE_SECONDS"
     printf "| OpenCode installation | %s |\n" "$OPENCODE_SECONDS"
     printf "| Total worker | %s |\n" "$(( $(date +%s) - RUN_STARTED_EPOCH ))"
+    if [[ -n "${MODEL_METRICS_FILE:-}" && -f "$MODEL_METRICS_FILE" ]]; then
+      echo
+      echo "### Sanitized OpenCode model outcome"
+      python3 "$ROOT_DIR/scripts/model_metrics.py" summary --file "$MODEL_METRICS_FILE" || true
+    fi
   } >> "$GITHUB_STEP_SUMMARY"
 }
 trap print_worker_timings EXIT
@@ -43,6 +48,8 @@ source "$ROOT_DIR/scripts/free_model_budget.sh"
 MODEL_PRIMARY_CAP="${DDD_FREE_MODEL_PRIMARY_TIMEOUT_CAP_SECONDS:-180}"
 MODEL_FALLBACK_CAP="${DDD_FREE_MODEL_FALLBACK_TIMEOUT_CAP_SECONDS:-90}"
 MODEL_ATTEMPT_REPORT="${RUNNER_TEMP:-/tmp}/autodev-model-attempts.md"
+MODEL_METRICS_FILE="${RUNNER_TEMP:-/tmp}/autodev-model-metrics.jsonl"
+: > "$MODEL_METRICS_FILE"
 printf '| Free model | Timeout | Actual seconds | Exit code | Result |\n|---|---:|---:|---:|---|\n' > "$MODEL_ATTEMPT_REPORT"
 
 echo "BATCH_READY=false" >> "$GITHUB_ENV"
@@ -77,7 +84,7 @@ echo "$BASELINE_RC" > /tmp/autodev-baseline-rc
 echo "Baseline validation completed (exit $BASELINE_RC)."
 
 opencode_started="$(date +%s)"
-npm install -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
+npm install --cache "${RUNNER_TEMP:-/tmp}/autodev-public-cli-npm-cache" -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
 OPENCODE_SECONDS="$(( $(date +%s) - opencode_started ))"
 
 # REA is optional and only enabled after a verified OpenCode MCP handshake.
@@ -165,6 +172,13 @@ RULES
   echo "# Baseline validation output"
   cat /tmp/autodev-baseline.log
 } >/tmp/autodev-prompt.txt
+
+# Scope a single source-grounded task per batch instead of broad repo rewrites.
+# The helper is deterministic, offline, and never prints source contents.
+python3 "$ROOT_DIR/scripts/select_task_slice.py" --root "$PWD" \
+  --alias "$ALIAS" --baseline-rc "$BASELINE_RC" \
+  --run-number "${GITHUB_RUN_NUMBER:-0}" >> /tmp/autodev-prompt.txt
+echo "Grounded small-task brief added to the existing project prompt."
 
 clean_disposable_saju_artifacts() {
   if [[ "${ALIAS:-}" != saju* ]]; then
@@ -342,6 +356,7 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     MODEL_SECONDS="$(( $(date +%s) - model_started ))"
 
     MODEL_ISSUE="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" classify --log /tmp/autodev-model.log --exit-code "$MODEL_RC")"
+    python3 "$ROOT_DIR/scripts/model_metrics.py" record --file "$MODEL_METRICS_FILE" --model "$model" --result attempt --seconds "$MODEL_SECONDS" --exit-code "$MODEL_RC"
     if [[ "$MODEL_ISSUE" == timeout ]]; then
       CONSECUTIVE_TIMEOUTS=$((CONSECUTIVE_TIMEOUTS + 1))
     else
@@ -391,6 +406,7 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     GUARD_RC=$?
     set -e
     if [[ "$GUARD_RC" -ne 0 ]]; then
+      python3 "$ROOT_DIR/scripts/model_metrics.py" record --file "$MODEL_METRICS_FILE" --model "$model" --result guard_rejected --seconds "$MODEL_SECONDS" --exit-code "$MODEL_RC"
       append_feedback "change guard rejected the batch" /tmp/autodev-guard.log
       break
     fi
@@ -404,12 +420,14 @@ for model in "${MODEL_CANDIDATES[@]}"; do
       fi
       cp "$VALIDATION_LOG" /tmp/autodev-final-validation.log
       echo "0" > /tmp/autodev-final-rc
+      python3 "$ROOT_DIR/scripts/model_metrics.py" record --file "$MODEL_METRICS_FILE" --model "$model" --result validated --seconds "$MODEL_SECONDS" --exit-code "$MODEL_RC"
       echo "Validated model batch accepted: $SELECTED_MODEL"
       break 2
     else
       FINAL_RC=$?
       echo "$FINAL_RC" > /tmp/autodev-final-rc
       cp "$VALIDATION_LOG" /tmp/autodev-final-validation.log
+      python3 "$ROOT_DIR/scripts/model_metrics.py" record --file "$MODEL_METRICS_FILE" --model "$model" --result validation_failed --seconds "$MODEL_SECONDS" --exit-code "$MODEL_RC"
       append_feedback "validation failed after model $model" "$VALIDATION_LOG"
       echo "Validation failed for $model; rolling back before the next model."
       break

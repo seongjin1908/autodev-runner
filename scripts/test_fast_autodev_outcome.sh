@@ -57,7 +57,7 @@ for path in (
     assert workflow.count(marker) == 1, path
 runner = (root / "scripts/develop_target.sh").read_text(encoding="utf-8")
 assert runner.count("npm ci --no-audit --no-fund") >= 2
-assert "npm install -g opencode-ai --no-audit --no-fund" in runner
+assert 'npm install --cache "${RUNNER_TEMP:-/tmp}/autodev-public-cli-npm-cache" -g opencode-ai --no-audit --no-fund' in runner
 assert "trap print_worker_timings EXIT" in runner
 assert "MODEL_SECONDS" in runner and "Actual seconds" in runner
 assert "AutoDev time spent (seconds)" in runner
