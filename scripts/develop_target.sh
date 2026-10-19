@@ -3,6 +3,25 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR/target"
 
+# Emit only duration counters in the public workflow summary, never private source or logs.
+RUN_STARTED_EPOCH="$(date +%s)"
+INSTALL_SECONDS="not-run"
+BASELINE_SECONDS="not-run"
+OPENCODE_SECONDS="not-run"
+print_worker_timings() {
+  [[ -n "${GITHUB_STEP_SUMMARY:-}" ]] || return 0
+  {
+    echo
+    echo "## AutoDev time spent (seconds)"
+    printf "| Phase | Seconds |\n|---|---:|\n"
+    printf "| Dependency setup | %s |\n" "$INSTALL_SECONDS"
+    printf "| Baseline validation | %s |\n" "$BASELINE_SECONDS"
+    printf "| OpenCode installation | %s |\n" "$OPENCODE_SECONDS"
+    printf "| Total worker | %s |\n" "$(( $(date +%s) - RUN_STARTED_EPOCH ))"
+  } >> "$GITHUB_STEP_SUMMARY"
+}
+trap print_worker_timings EXIT
+
 VALIDATION="$(python - "$VALIDATION_B64" <<'PY'
 import base64,sys
 print(base64.b64decode(sys.argv[1]).decode())
@@ -24,7 +43,7 @@ source "$ROOT_DIR/scripts/free_model_budget.sh"
 MODEL_PRIMARY_CAP="${DDD_FREE_MODEL_PRIMARY_TIMEOUT_CAP_SECONDS:-180}"
 MODEL_FALLBACK_CAP="${DDD_FREE_MODEL_FALLBACK_TIMEOUT_CAP_SECONDS:-90}"
 MODEL_ATTEMPT_REPORT="${RUNNER_TEMP:-/tmp}/autodev-model-attempts.md"
-printf '| Free model | Timeout | Exit code | Result |\n|---|---:|---:|---|\n' > "$MODEL_ATTEMPT_REPORT"
+printf '| Free model | Timeout | Actual seconds | Exit code | Result |\n|---|---:|---:|---:|---|\n' > "$MODEL_ATTEMPT_REPORT"
 
 echo "BATCH_READY=false" >> "$GITHUB_ENV"
 echo "AUTODEV_RUN_STATUS=running" >> "$GITHUB_ENV"
@@ -44,16 +63,22 @@ install_baseline_dependencies() {
   fi
 }
 
+install_started="$(date +%s)"
 install_baseline_dependencies
+INSTALL_SECONDS="$(( $(date +%s) - install_started ))"
 
+baseline_started="$(date +%s)"
 set +e
 bash -lc "$VALIDATION" >/tmp/autodev-baseline.log 2>&1
 BASELINE_RC=$?
 set -e
+BASELINE_SECONDS="$(( $(date +%s) - baseline_started ))"
 echo "$BASELINE_RC" > /tmp/autodev-baseline-rc
 echo "Baseline validation completed (exit $BASELINE_RC)."
 
+opencode_started="$(date +%s)"
 npm install -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
+OPENCODE_SECONDS="$(( $(date +%s) - opencode_started ))"
 
 # REA is optional and only enabled after a verified OpenCode MCP handshake.
 # A failed handshake never blocks validated product development.
@@ -260,10 +285,12 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     ATTEMPT_TIMEOUT="$(model_attempt_timeout "$MODEL_TIMEOUT" "$ATTEMPT" "$MODEL_PRIMARY_CAP" "$MODEL_FALLBACK_CAP")"
     echo "Free coding model attempt $ATTEMPT: $model (provider try $provider_try; bounded to ${ATTEMPT_TIMEOUT}s)"
 
+    model_started="$(date +%s)"
     set +e
     timeout "$ATTEMPT_TIMEOUT" opencode run --model "$model" --agent build "$(cat /tmp/autodev-prompt.txt)" >/tmp/autodev-model.log 2>&1
     MODEL_RC=$?
     set -e
+    MODEL_SECONDS="$(( $(date +%s) - model_started ))"
 
     clean_disposable_saju_artifacts
     # Never include provider's raw response: it could contain sensitive context.
@@ -274,7 +301,7 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     else
       ATTEMPT_RESULT="no durable edit"
     fi
-    printf '| `%s` | %ss | %s | %s |\n' "$model" "$ATTEMPT_TIMEOUT" "$MODEL_RC" "$ATTEMPT_RESULT" >> "$MODEL_ATTEMPT_REPORT"
+    printf '| `%s` | %ss | %ss | %s | %s |\n' "$model" "$ATTEMPT_TIMEOUT" "$MODEL_SECONDS" "$MODEL_RC" "$ATTEMPT_RESULT" >> "$MODEL_ATTEMPT_REPORT"
 
     if ! DURABLE_PATHS="$(has_durable_changes)"; then
       # A timed-out worker already used its entire budget. Move to the next
