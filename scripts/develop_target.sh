@@ -84,6 +84,29 @@ OPENCODE_SECONDS="$(( $(date +%s) - opencode_started ))"
 # A failed handshake never blocks validated product development.
 source "$ROOT_DIR/scripts/prepare_rea_worker.sh"
 
+# Discover installed candidates, then filter through the reviewed no-cost allowlist.
+FREE_LISTING=/tmp/autodev-free-models.txt
+DISCOVERY_ARGS=()
+if timeout 25s opencode models opencode >"$FREE_LISTING" 2>/tmp/autodev-free-discovery.log; then
+  DISCOVERY_ARGS=(--listing "$FREE_LISTING")
+  echo "Model discovery succeeded; pricing safety enforced by code allowlist."
+else
+  echo "::warning::Model listing unavailable. Fallback is limited to historical free IDs."
+fi
+if ! MODEL_LINES="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" candidates "${DISCOVERY_ARGS[@]}")"; then
+  echo "::error::Paid, unknown, or unapproved model was rejected."
+  exit 2
+fi
+MODEL_CANDIDATES=()
+if [[ -n "$MODEL_LINES" ]]; then mapfile -t MODEL_CANDIDATES <<< "$MODEL_LINES"; fi
+echo "Model candidates: ${#MODEL_CANDIDATES[@]} (preferred model is checked again next scheduled run)."
+POOL_MAX_SECONDS="${DDD_FREE_MODEL_POOL_MAX_SECONDS:-540}"
+POOL_MAX_ATTEMPTS="${DDD_FREE_MODEL_MAX_ATTEMPTS:-10}"
+if ! [[ "$POOL_MAX_SECONDS" =~ ^[1-9][0-9]*$ && "$POOL_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "::error::Model time and attempt limits must be positive integers."
+  exit 2
+fi
+
 {
   echo "You are a zero-budget autonomous coding worker."
   echo
@@ -275,14 +298,30 @@ validate_attempt() {
 
 SELECTED_MODEL=""
 ATTEMPT=0
+POOL_STARTED_EPOCH="$(date +%s)"
 
-for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL" "$QUINARY_MODEL" "$SENARY_MODEL"; do
+for model in "${MODEL_CANDIDATES[@]}"; do
+  if (( ATTEMPT >= POOL_MAX_ATTEMPTS )); then
+    echo "Free-model attempt cap reached; no paid fallback."
+    break
+  fi
+  remaining="$(( POOL_MAX_SECONDS - ($(date +%s) - POOL_STARTED_EPOCH) ))"
+  if (( remaining < 10 )); then
+    echo "Free model time budget reached; retry next scheduled run."
+    break
+  fi
   provider_try=0
   while (( provider_try <= TRANSIENT_RETRIES )); do
     provider_try=$((provider_try + 1))
     ATTEMPT=$((ATTEMPT + 1))
     restore_attempt_baseline
     ATTEMPT_TIMEOUT="$(model_attempt_timeout "$MODEL_TIMEOUT" "$ATTEMPT" "$MODEL_PRIMARY_CAP" "$MODEL_FALLBACK_CAP")"
+    remaining="$(( POOL_MAX_SECONDS - ($(date +%s) - POOL_STARTED_EPOCH) ))"
+    if (( remaining < 10 )); then
+      echo "Total free-model time budget exhausted."
+      break 2
+    fi
+    if (( ATTEMPT_TIMEOUT > remaining )); then ATTEMPT_TIMEOUT="$remaining"; fi
     echo "Free coding model attempt $ATTEMPT: $model (provider try $provider_try; bounded to ${ATTEMPT_TIMEOUT}s)"
 
     model_started="$(date +%s)"
@@ -292,6 +331,7 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     set -e
     MODEL_SECONDS="$(( $(date +%s) - model_started ))"
 
+    MODEL_ISSUE="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" classify --log /tmp/autodev-model.log --exit-code "$MODEL_RC")"
     clean_disposable_saju_artifacts
     # Never include provider's raw response: it could contain sensitive context.
     if has_durable_changes >/dev/null; then
@@ -299,11 +339,20 @@ for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_
     elif [[ "$MODEL_RC" -eq 124 || "$MODEL_RC" -eq 137 ]]; then
       ATTEMPT_RESULT="timeout; no durable edit"
     else
-      ATTEMPT_RESULT="no durable edit"
+      ATTEMPT_RESULT="$MODEL_ISSUE; no durable edit"
     fi
     printf '| `%s` | %ss | %ss | %s | %s |\n' "$model" "$ATTEMPT_TIMEOUT" "$MODEL_SECONDS" "$MODEL_RC" "$ATTEMPT_RESULT" >> "$MODEL_ATTEMPT_REPORT"
 
     if ! DURABLE_PATHS="$(has_durable_changes)"; then
+      if [[ "$MODEL_ISSUE" == auth_block || "$MODEL_ISSUE" == billing_block ]]; then
+        echo "::warning::Shared OpenCode provider authentication or billing blocked; no paid fallback is allowed."
+        break 2
+      fi
+      if [[ "$MODEL_ISSUE" == rate_limited || "$MODEL_ISSUE" == model_unavailable ]]; then
+        echo "Quota-limited or unavailable free model; switching to next allowlisted free model."
+        printf "\n# Previous free-model failure: %s (sanitized)\n" "$MODEL_ISSUE" >> /tmp/autodev-prompt.txt
+        break
+      fi
       # A timed-out worker already used its entire budget. Move to the next
       # provider rather than spending another five minutes on the same stall.
       if [[ "$MODEL_RC" -ne 0 && "$MODEL_RC" -ne 124 && "$MODEL_RC" -ne 137 ]] && is_transient_model_error /tmp/autodev-model.log && (( provider_try <= TRANSIENT_RETRIES )); then
