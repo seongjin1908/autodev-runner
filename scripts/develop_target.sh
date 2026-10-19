@@ -298,8 +298,18 @@ validate_attempt() {
 
 SELECTED_MODEL=""
 ATTEMPT=0
+POOL_STARTED_EPOCH="$(date +%s)"
 
-for model in "$PRIMARY_MODEL" "$SECONDARY_MODEL" "$TERTIARY_MODEL" "$QUATERNARY_MODEL" "$QUINARY_MODEL" "$SENARY_MODEL"; do
+for model in "${MODEL_CANDIDATES[@]}"; do
+  if (( ATTEMPT >= POOL_MAX_ATTEMPTS )); then
+    echo "Free-model attempt cap reached; no paid fallback."
+    break
+  fi
+  remaining="$(( POOL_MAX_SECONDS - ($(date +%s) - POOL_STARTED_EPOCH) ))"
+  if (( remaining < 10 )); then
+    echo "Free model time budget reached; retry next scheduled run."
+    break
+  fi
   provider_try=0
   while (( provider_try <= TRANSIENT_RETRIES )); do
     provider_try=$((provider_try + 1))
