@@ -166,6 +166,13 @@ RULES
   cat /tmp/autodev-baseline.log
 } >/tmp/autodev-prompt.txt
 
+# Scope a single source-grounded task per batch instead of broad repo rewrites.
+# The helper is deterministic, offline, and never prints source contents.
+python3 "$ROOT_DIR/scripts/select_task_slice.py" --root "$PWD" \
+  --alias "$ALIAS" --baseline-rc "$BASELINE_RC" \
+  --run-number "${GITHUB_RUN_NUMBER:-0}" >> /tmp/autodev-prompt.txt
+echo "Grounded small-task brief added to the existing project prompt."
+
 clean_disposable_saju_artifacts() {
   if [[ "${ALIAS:-}" != saju* ]]; then
     return 0
