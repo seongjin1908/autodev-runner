@@ -58,6 +58,8 @@ jobs:
     timeout-minutes: 55
     env:
       TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'auto' }}
+      # Expose only opt-in state, not the Gemini secret, to the OpenCode timing policy.
+      AUTODEV_GEMINI_FREE_ENABLED: ${{ vars.AUTODEV_GEMINI_FREE_ENABLED || 'false' }}
       DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/space-bunny-free' }}
       DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
       DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}

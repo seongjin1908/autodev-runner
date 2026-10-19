@@ -100,7 +100,15 @@ fi
 MODEL_CANDIDATES=()
 if [[ -n "$MODEL_LINES" ]]; then mapfile -t MODEL_CANDIDATES <<< "$MODEL_LINES"; fi
 echo "Model candidates: ${#MODEL_CANDIDATES[@]} (preferred model is checked again next scheduled run)."
-POOL_MAX_SECONDS="${DDD_FREE_MODEL_POOL_MAX_SECONDS:-540}"
+# When a separately authenticated free Gemini fallback is opted in, try it
+# sooner instead of spending the full OpenCode pool time on repeated stalls.
+# Without that explicit opt-in, preserve the historical 540-second window.
+if [[ "${AUTODEV_GEMINI_FREE_ENABLED:-false}" == "true" ]]; then
+  POOL_MAX_SECONDS="${DDD_FREE_MODEL_POOL_MAX_SECONDS:-270}"
+else
+  POOL_MAX_SECONDS="${DDD_FREE_MODEL_POOL_MAX_SECONDS:-540}"
+fi
+echo "OpenCode model time budget: ${POOL_MAX_SECONDS}s (independent free Gemini opt-in: ${AUTODEV_GEMINI_FREE_ENABLED:-false})."
 POOL_MAX_ATTEMPTS="${DDD_FREE_MODEL_MAX_ATTEMPTS:-10}"
 if ! [[ "$POOL_MAX_SECONDS" =~ ^[1-9][0-9]*$ && "$POOL_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]]; then
   echo "::error::Model time and attempt limits must be positive integers."
