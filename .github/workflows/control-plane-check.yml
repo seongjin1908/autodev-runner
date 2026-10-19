@@ -29,6 +29,9 @@ jobs:
       - name: Validate project registry JSON
         run: python -m json.tool config/projects.json >/dev/null
 
+      - name: Verify free local MVP scaffold, safe defaults and no overwrite
+        run: python3 scripts/test_scaffold_zero_cost_mvp.py
+
       - name: Validate shell syntax
         shell: bash
         run: |
