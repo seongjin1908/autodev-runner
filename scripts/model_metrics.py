@@ -66,6 +66,23 @@ def report(path: Path) -> str:
     )
 
 
+def model_scorecard(path: Path) -> str:
+    """Run-scoped outcome table; no prompts, private paths, or provider logs."""
+    events = records(path)
+    attempted = [x for x in events if x["result"] == "attempt"]
+    validated = [x for x in events if x["result"] == "validated"]
+    if not attempted:
+        return "No free model call was recorded."
+    names = sorted({x["model"] for x in attempted})
+    lines = ["| Free model | Calls | Validated edits | Duration (s) |", "|---|---:|---:|---:|"]
+    for name in names:
+        trials = [x for x in attempted if x["model"] == name]
+        successes = sum(1 for x in validated if x["model"] == name)
+        seconds = sum(x["seconds"] for x in trials)
+        lines.append(f"| `{name}` | {len(trials)} | {successes} | {seconds} |")
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     subs = parser.add_subparsers(dest="command", required=True)
@@ -80,6 +97,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.command == "summary":
         print(report(args.file))
+        print(model_scorecard(args.file))
         return
     entry = make_record(args.model, args.result, args.seconds, args.exit_code)
     with args.file.open("a", encoding="utf-8") as target:
