@@ -69,14 +69,12 @@ jobs:
           fetch-depth: ${{ steps.select.outputs.branch_mode == 'run_scoped' && 1 || 0 }}
           persist-credentials: false
 
-      - name: Restore safe npm package cache for free worker
-        # Package download cache only; no source code, Git auth, or AI credentials.
+      - name: Restore PUBLIC coding CLI download cache
+        # Critical: NEVER cache ~/.npm, target deps, or private source in this public controller.
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: npm-free-worker-v1-${{ runner.os }}-${{ hashFiles('target/package-lock.json', 'target/npm-shrinkwrap.json') }}
-          restore-keys: |
-            npm-free-worker-v1-${{ runner.os }}-
+          path: ${{ runner.temp }}/autodev-public-cli-npm-cache
+          key: public-cli-npm-v1-${{ runner.os }}
 
       - name: Prepare collision and failure-hold guard
         if: steps.token.outputs.configured == 'true'
