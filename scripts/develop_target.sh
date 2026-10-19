@@ -84,6 +84,29 @@ OPENCODE_SECONDS="$(( $(date +%s) - opencode_started ))"
 # A failed handshake never blocks validated product development.
 source "$ROOT_DIR/scripts/prepare_rea_worker.sh"
 
+# Discover installed candidates, then filter through the reviewed no-cost allowlist.
+FREE_LISTING=/tmp/autodev-free-models.txt
+DISCOVERY_ARGS=()
+if timeout 25s opencode models opencode >"$FREE_LISTING" 2>/tmp/autodev-free-discovery.log; then
+  DISCOVERY_ARGS=(--listing "$FREE_LISTING")
+  echo "Model discovery succeeded; pricing safety enforced by code allowlist."
+else
+  echo "::warning::Model listing unavailable. Fallback is limited to historical free IDs."
+fi
+if ! MODEL_LINES="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" candidates "${DISCOVERY_ARGS[@]}")"; then
+  echo "::error::Paid, unknown, or unapproved model was rejected."
+  exit 2
+fi
+MODEL_CANDIDATES=()
+if [[ -n "$MODEL_LINES" ]]; then mapfile -t MODEL_CANDIDATES <<< "$MODEL_LINES"; fi
+echo "Model candidates: ${#MODEL_CANDIDATES[@]} (preferred model is checked again next scheduled run)."
+POOL_MAX_SECONDS="${DDD_FREE_MODEL_POOL_MAX_SECONDS:-540}"
+POOL_MAX_ATTEMPTS="${DDD_FREE_MODEL_MAX_ATTEMPTS:-10}"
+if ! [[ "$POOL_MAX_SECONDS" =~ ^[1-9][0-9]*$ && "$POOL_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "::error::Model time and attempt limits must be positive integers."
+  exit 2
+fi
+
 {
   echo "You are a zero-budget autonomous coding worker."
   echo
