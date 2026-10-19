@@ -84,7 +84,7 @@ echo "$BASELINE_RC" > /tmp/autodev-baseline-rc
 echo "Baseline validation completed (exit $BASELINE_RC)."
 
 opencode_started="$(date +%s)"
-npm install -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
+npm install --cache "${RUNNER_TEMP:-/tmp}/autodev-public-cli-npm-cache" -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
 OPENCODE_SECONDS="$(( $(date +%s) - opencode_started ))"
 
 # REA is optional and only enabled after a verified OpenCode MCP handshake.
