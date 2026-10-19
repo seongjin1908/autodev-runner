@@ -72,6 +72,15 @@ jobs:
           fetch-depth: ${{ steps.select.outputs.branch_mode == 'run_scoped' && 1 || 0 }}
           persist-credentials: false
 
+      - name: Restore safe npm package cache for free worker
+        # Package download cache only; no source code, Git auth, or AI credentials.
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-free-worker-v1-${{ runner.os }}-${{ hashFiles('target/package-lock.json', 'target/npm-shrinkwrap.json') }}
+          restore-keys: |
+            npm-free-worker-v1-${{ runner.os }}-
+
       - name: Prepare collision and failure-hold guard
         if: steps.token.outputs.configured == 'true'
         env:
@@ -113,6 +122,15 @@ jobs:
           MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
         shell: bash
         run: bash scripts/gemini_free_fallback.sh
+      - name: Preserve privacy-safe free model outcome scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-model-scorecard-${{ github.run_id }}-${{ github.job }}
+          path: ${{ runner.temp }}/autodev-model-metrics.jsonl
+          if-no-files-found: ignore
+          retention-days: 3
+
       - name: Report private launch diagnostics
         if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
         env:
