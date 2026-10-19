@@ -299,6 +299,7 @@ validate_attempt() {
 SELECTED_MODEL=""
 ATTEMPT=0
 POOL_STARTED_EPOCH="$(date +%s)"
+CONSECUTIVE_TIMEOUTS=0
 
 for model in "${MODEL_CANDIDATES[@]}"; do
   if (( ATTEMPT >= POOL_MAX_ATTEMPTS )); then
@@ -316,6 +317,7 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     ATTEMPT=$((ATTEMPT + 1))
     restore_attempt_baseline
     ATTEMPT_TIMEOUT="$(model_attempt_timeout "$MODEL_TIMEOUT" "$ATTEMPT" "$MODEL_PRIMARY_CAP" "$MODEL_FALLBACK_CAP")"
+    ATTEMPT_TIMEOUT="$(model_timeout_after_stalls "$ATTEMPT_TIMEOUT" "$CONSECUTIVE_TIMEOUTS" 2 25)"
     remaining="$(( POOL_MAX_SECONDS - ($(date +%s) - POOL_STARTED_EPOCH) ))"
     if (( remaining < 10 )); then
       echo "Total free-model time budget exhausted."
@@ -332,6 +334,13 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     MODEL_SECONDS="$(( $(date +%s) - model_started ))"
 
     MODEL_ISSUE="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" classify --log /tmp/autodev-model.log --exit-code "$MODEL_RC")"
+    if [[ "$MODEL_ISSUE" == timeout ]]; then
+      CONSECUTIVE_TIMEOUTS=$((CONSECUTIVE_TIMEOUTS + 1))
+    else
+      CONSECUTIVE_TIMEOUTS=0
+    fi
+    # Publish only fixed, sanitized classifications and elapsed time, never provider logs.
+    echo "Free model outcome: $MODEL_ISSUE (exit $MODEL_RC, ${MODEL_SECONDS}s). Consecutive timeouts: $CONSECUTIVE_TIMEOUTS."
     clean_disposable_saju_artifacts
     # Never include provider's raw response: it could contain sensitive context.
     if has_durable_changes >/dev/null; then
@@ -360,7 +369,9 @@ for model in "${MODEL_CANDIDATES[@]}"; do
         sleep 3
         continue
       fi
-      append_feedback "model produced no durable source change (exit $MODEL_RC)" /tmp/autodev-model.log
+      # Provider failure transcripts are not appropriate prompts for the next
+      # free model. Avoid token bloat and accidental cross-session data leakage.
+      printf "\n# Previous provider result: %s, exit %s, without a code change.\n" "$MODEL_ISSUE" "$MODEL_RC" >> /tmp/autodev-prompt.txt
       break
     fi
 
