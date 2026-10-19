@@ -1,0 +1,45 @@
+name: UNKIVE paid context strict type follow-up
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: source
+        run: |
+          ref="$(tr -d '\r\n' < config/unkive-p0-ci-ref.txt)"
+          [[ "$ref" =~ ^[a-f0-9]{40}$ ]]
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ steps.source.outputs.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          fetch-depth: 2
+          persist-credentials: false
+          path: target
+      - name: Verify successful full baseline and exact test-only delta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/unkive-paid-context-followup.py target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing dependencies without lifecycle hooks
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Verify original production hashes and frontend types
+        working-directory: target
+        run: |
+          node scripts/production-contract-check.mjs
+          npx --no-install tsc --noEmit
+      - name: Verify strict backend context types and full 80-report benchmark
+        working-directory: target
+        run: node scripts/check-unkive-paid-ai-context.mjs
