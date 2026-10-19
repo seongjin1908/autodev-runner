@@ -45,6 +45,7 @@ def is_test(path: str) -> bool:
 
 def prioritized(paths: list[str], limit: int, include_tests: bool) -> list[str]:
     valid = [p for p in paths if PurePosixPath(p).suffix.lower() in SOURCE_SUFFIXES
+             and not any(part in EXCLUDE_PARTS or part.startswith(".env") for part in PurePosixPath(p).parts)
              and is_test(p) == include_tests]
     valid.sort(key=lambda p: (not p.startswith(SOURCE_PREFIXES), p.count("/"), p))
     return valid[:limit]
