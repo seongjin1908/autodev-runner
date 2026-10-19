@@ -331,6 +331,7 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     set -e
     MODEL_SECONDS="$(( $(date +%s) - model_started ))"
 
+    MODEL_ISSUE="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" classify --log /tmp/autodev-model.log --exit-code "$MODEL_RC")"
     clean_disposable_saju_artifacts
     # Never include provider's raw response: it could contain sensitive context.
     if has_durable_changes >/dev/null; then
@@ -338,11 +339,20 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     elif [[ "$MODEL_RC" -eq 124 || "$MODEL_RC" -eq 137 ]]; then
       ATTEMPT_RESULT="timeout; no durable edit"
     else
-      ATTEMPT_RESULT="no durable edit"
+      ATTEMPT_RESULT="$MODEL_ISSUE; no durable edit"
     fi
     printf '| `%s` | %ss | %ss | %s | %s |\n' "$model" "$ATTEMPT_TIMEOUT" "$MODEL_SECONDS" "$MODEL_RC" "$ATTEMPT_RESULT" >> "$MODEL_ATTEMPT_REPORT"
 
     if ! DURABLE_PATHS="$(has_durable_changes)"; then
+      if [[ "$MODEL_ISSUE" == auth_block || "$MODEL_ISSUE" == billing_block ]]; then
+        echo "::warning::Shared OpenCode provider authentication or billing blocked; no paid fallback is allowed."
+        break 2
+      fi
+      if [[ "$MODEL_ISSUE" == rate_limited || "$MODEL_ISSUE" == model_unavailable ]]; then
+        echo "Quota-limited or unavailable free model; switching to next allowlisted free model."
+        printf "\n# Previous free-model failure: %s (sanitized)\n" "$MODEL_ISSUE" >> /tmp/autodev-prompt.txt
+        break
+      fi
       # A timed-out worker already used its entire budget. Move to the next
       # provider rather than spending another five minutes on the same stall.
       if [[ "$MODEL_RC" -ne 0 && "$MODEL_RC" -ne 124 && "$MODEL_RC" -ne 137 ]] && is_transient_model_error /tmp/autodev-model.log && (( provider_try <= TRANSIENT_RETRIES )); then
