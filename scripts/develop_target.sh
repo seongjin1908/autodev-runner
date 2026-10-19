@@ -316,6 +316,12 @@ for model in "${MODEL_CANDIDATES[@]}"; do
     ATTEMPT=$((ATTEMPT + 1))
     restore_attempt_baseline
     ATTEMPT_TIMEOUT="$(model_attempt_timeout "$MODEL_TIMEOUT" "$ATTEMPT" "$MODEL_PRIMARY_CAP" "$MODEL_FALLBACK_CAP")"
+    remaining="$(( POOL_MAX_SECONDS - ($(date +%s) - POOL_STARTED_EPOCH) ))"
+    if (( remaining < 10 )); then
+      echo "Total free-model time budget exhausted."
+      break 2
+    fi
+    if (( ATTEMPT_TIMEOUT > remaining )); then ATTEMPT_TIMEOUT="$remaining"; fi
     echo "Free coding model attempt $ATTEMPT: $model (provider try $provider_try; bounded to ${ATTEMPT_TIMEOUT}s)"
 
     model_started="$(date +%s)"
