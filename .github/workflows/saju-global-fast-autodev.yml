@@ -64,7 +64,7 @@ jobs:
           ref: ${{ steps.select.outputs.checkout_branch }}
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
-          fetch-depth: 0
+          fetch-depth: ${{ steps.select.outputs.branch_mode == 'run_scoped' && 1 || 0 }}
           persist-credentials: false
 
       - name: Prepare collision and failure-hold guard
