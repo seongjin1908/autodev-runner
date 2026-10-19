@@ -96,6 +96,17 @@ jobs:
         shell: bash
         run: bash scripts/develop_target.sh
 
+      - name: Optional independent Gemini free-tier coding fallback
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && vars.AUTODEV_GEMINI_FREE_ENABLED == 'true'
+        env:
+          # Never pass Gemini credentials to OpenCode, npm baseline, or other steps.
+          GEMINI_API_KEY: ${{ secrets.AUTODEV_GEMINI_FREE_API_KEY }}
+          AUTODEV_GEMINI_FREE_ENABLED: ${{ vars.AUTODEV_GEMINI_FREE_ENABLED }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+          VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
+          MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
+        shell: bash
+        run: bash scripts/gemini_free_fallback.sh
       - name: Report diagnostics
         if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
         env:
