@@ -1,203 +1,45 @@
-name: UNKIVE P0 private source verification
-
+name: UNKIVE paid context strict type follow-up
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/unkive-p0-private-ci.yml'
-      - 'config/unkive-p0-ci-ref.txt'
   workflow_dispatch:
-
 permissions:
   contents: read
-
-concurrency:
-  group: unkive-p0-private-ci-${{ github.ref }}
-  cancel-in-progress: true
-
+  actions: read
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 8
     steps:
-      - name: Checkout runner control plane
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
-      - name: Validate immutable target SHA
-        id: target
-        shell: bash
+      - id: source
         run: |
-          set -euo pipefail
           ref="$(tr -d '\r\n' < config/unkive-p0-ci-ref.txt)"
-          if ! [[ "$ref" =~ ^[a-f0-9]{40}$ ]]; then
-            echo "::error::P0 verification requires a pinned 40-character commit SHA."
-            exit 1
-          fi
+          [[ "$ref" =~ ^[a-f0-9]{40}$ ]]
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
-          echo "Validating immutable UNKIVE source ref: $ref"
-
-      - name: Check private repository access
-        shell: bash
-        env:
-          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
-        run: |
-          if [ -z "$REPO_TOKEN" ]; then
-            echo "::error::Private checkout credential not configured."
-            exit 1
-          fi
-
-      - name: Checkout UNKIVE private commit read-only
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: ${{ steps.target.outputs.ref }}
+          ref: ${{ steps.source.outputs.ref }}
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
-          path: target
+          fetch-depth: 2
           persist-credentials: false
-
-      - name: Use Node.js 24
-        uses: actions/setup-node@v4
+          path: target
+      - name: Verify successful full baseline and exact test-only delta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/unkive-paid-context-followup.py target
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
-
-      - name: Install existing project dependencies (no lifecycle hooks)
+      - name: Install existing dependencies without lifecycle hooks
         working-directory: target
         run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
-
-      - name: Verify production contract and TypeScript
+      - name: Verify original production hashes and frontend types
         working-directory: target
         run: |
           node scripts/production-contract-check.mjs
-          node scripts/check-domestic-catalog.mjs
           npx --no-install tsc --noEmit
-
-      - name: Verify bounded Premium AI recovery without provider calls
+      - name: Verify strict backend context types and full 80-report benchmark
         working-directory: target
-        run: |
-          node scripts/check-unkive-premium-ai-recovery.mjs
-          node scripts/check-unkive-analysis-provenance.mjs
-
-      - name: Verify backend bundle
-        working-directory: target
-        run: npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=/tmp/unkive-private-p0.mjs
-
-      - name: Fail fast on paid answer specificity and calculated timing
-        working-directory: target
-        run: |
-          mkdir -p release-test-results
-          node scripts/check-unkive-paid-quality.mjs
-          node scripts/check-unkive-personalization.mjs
-
-      - name: Review synthetic customer copy and cross-profile differentiation
-        working-directory: target
-        run: |
-          node scripts/check-unkive-content-review.mjs
-          node scripts/check-unkive-offline-editorial-benchmark.mjs
-
-      - name: Verify free chart grounding and eight-interest editorial quality
-        working-directory: target
-        run: node scripts/check-unkive-free-editorial.mjs
-
-
-      - name: Verify paid PDF grapheme integrity and measured pagination
-        working-directory: target
-        run: |
-          mkdir -p release-test-results
-          node scripts/check-unkive-paged-text.mjs
-          node scripts/check-unkive-flow-unicode.mjs
-          node scripts/check-unkive-evidence-density.mjs
-          node scripts/check-unkive-pdf.mjs
-
-      - name: Verify order recovery, notifications, and paid report quality without providers
-        working-directory: target
-        run: |
-          node scripts/check-unkive-delivery.mjs
-          node scripts/check-unkive-alimtalk.mjs
-          node scripts/check-unkive-paid-quality.mjs
-
-      - name: Verify isolated release bundle
-        working-directory: target
-        run: npx --no-install vite build --config scripts/vite-release-test.mjs
-
-      - name: Install isolated browser test dependencies
-        working-directory: target
-        run: |
-          npm install --no-save --no-package-lock --no-audit --no-fund playwright
-          npx playwright install --with-deps chromium
-
-      - name: Payment amount, fulfillment, and purchase journey regressions
-        working-directory: target
-        run: |
-          node scripts/check-unkive-calculation.mjs
-          node scripts/check-unkive-daangn-pricing.mjs
-          node scripts/unkive-daangn-e2e.mjs
-          node scripts/check-unkive-backend-recovery.mjs
-
-      - name: Paid personalization, question specificity, and mobile browser journey
-        working-directory: target
-        run: |
-          run_check() {
-            local check_log="$RUNNER_TEMP/unkive-focused-check.log"
-            if node "$1" > "$check_log" 2>&1; then
-              cat "$check_log"
-            else
-              cat "$check_log"
-              cp "$check_log" release-test-results/ci-focused-failure.log
-              python3 "$GITHUB_WORKSPACE/tools/unkive-ci-diagnostics.py" "$1" "$check_log"
-              return 1
-            fi
-          }
-          run_check scripts/check-unkive-focus-qna.mjs
-          run_check scripts/unkive-business-result-e2e.mjs
-          run_check scripts/check-unkive-paid-ai-context.mjs
-          run_check scripts/check-unkive-personalization.mjs
-          run_check scripts/unkive-personalization-e2e.mjs
-          run_check scripts/check-unkive-monthly-guidance.mjs
-          run_check scripts/unkive-home-e2e.mjs
-          run_check scripts/unkive-release-e2e.mjs
-
-      - name: Dream, photo, face, and palm consent regressions
-        working-directory: target
-        run: |
-          node scripts/check-unkive-dream.mjs
-          node scripts/unkive-dream-e2e.mjs
-          node scripts/unkive-photo-e2e.mjs
-          node scripts/check-unkive-face.mjs
-          node scripts/unkive-face-e2e.mjs
-          node scripts/check-unkive-palm.mjs
-          node scripts/unkive-palm-e2e.mjs
-
-      - name: Inspect actual PDF font coverage and visual geometry
-        working-directory: target
-        run: |
-          python -m pip install PyMuPDF==1.26.5
-          if python scripts/check-unkive-pdf-layout.py > "$RUNNER_TEMP/unkive-pdf-layout.log" 2>&1; then
-            cat "$RUNNER_TEMP/unkive-pdf-layout.log"
-          else
-            cat "$RUNNER_TEMP/unkive-pdf-layout.log"
-            python3 "$GITHUB_WORKSPACE/tools/unkive-ci-diagnostics.py" scripts/check-unkive-pdf-layout.py "$RUNNER_TEMP/unkive-pdf-layout.log"
-            exit 1
-          fi
-
-      - name: Generate and validate full 24-chart x 4-tier PDF matrix
-        working-directory: target
-        timeout-minutes: 10
-        run: |
-          mkdir -p release-test-results
-          npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition-check.cjs
-          node -e "require('./release-test-results/report-composition-check.cjs').reportCompositionCheck().catch(e => { console.error(e); process.exitCode=1; })"
-          node scripts/check-unkive-pdf-matrix.mjs
-          python scripts/check-unkive-pdf-matrix.py
-
-      - name: Retain synthetic content review outputs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unkive-content-review-24-synthetic
-          retention-days: 7
-          path: |
-            target/release-test-results/content-review.json
-            target/release-test-results/content-review.md
-            target/release-test-results/pdf-matrix/
-            target/release-test-results/report-composition-review.json
+        run: node scripts/check-unkive-paid-ai-context.mjs
