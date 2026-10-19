@@ -21,14 +21,14 @@ jobs:
     timeout-minutes: 55
     env:
       TARGET: ${{ matrix.target }}
-      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/mimo-v2.6-flash-free' }}
+      DDD_FREE_CODE_MODEL_PRIMARY: ${{ vars.DDD_FREE_CODE_MODEL_PRIMARY || 'opencode/space-bunny-free' }}
       DDD_FREE_CODE_MODEL_SECONDARY: ${{ vars.DDD_FREE_CODE_MODEL_SECONDARY || 'opencode/longcat-2.5-preview-free' }}
       DDD_FREE_CODE_MODEL_TERTIARY: ${{ vars.DDD_FREE_CODE_MODEL_TERTIARY || 'opencode/nemotron-3.5-lightning-free' }}
       DDD_FREE_CODE_MODEL_QUATERNARY: ${{ vars.DDD_FREE_CODE_MODEL_QUATERNARY || 'opencode/ling-3.0-flash-fin-free' }}
       DDD_FREE_CODE_MODEL_QUINARY: ${{ vars.DDD_FREE_CODE_MODEL_QUINARY || 'opencode/laguna-s-2.1-free' }}
-      DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/space-bunny-free' }}
+      DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/mimo-v2.6-flash-free' }}
       DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '300' }}
-      DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '1' }}
+      DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '0' }}
 
     steps:
       - name: Checkout runner control plane
@@ -112,6 +112,20 @@ jobs:
           FAILURE_HOLD_MINUTES: ${{ steps.select.outputs.failure_hold_minutes }}
         shell: bash
         run: bash scripts/report_target.sh
+
+      - name: Require configured repository token
+        if: steps.token.outputs.configured != 'true'
+        shell: bash
+        run: |
+          echo "::error::AUTODEV_REPO_TOKEN is required to generate a reviewable launch batch"
+          exit 1
+
+      - name: Require validated code production
+        # A free provider timing out is not successful launch development.
+        # Intentional collision/permission HOLDs are not coding attempts.
+        if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true'
+        shell: bash
+        run: bash scripts/require_production_batch.sh
 
       - name: Push validated launch batch and maintain PR
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY == 'true'
