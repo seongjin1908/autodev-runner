@@ -52,6 +52,15 @@ jobs:
         shell: bash
         run: bash scripts/test_free_model_budget.sh
 
+      - name: Verify single focused task selection from existing tracked files
+        run: python3 scripts/test_task_slice.py
+
+      - name: Validate model-by-model no-secret scorecards
+        run: python3 scripts/test_model_metrics.py
+
+      - name: Verify only public CLI npm content is cached
+        run: python3 scripts/test_worker_efficiency.py
+
       - name: Test early Gemini handoff time budget and opt-in safety
         run: python3 scripts/test_early_gemini_handoff.py
 
