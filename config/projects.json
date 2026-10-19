@@ -220,6 +220,7 @@
     },
     {
       "alias": "saju-global",
+      "dedicated_schedule_only": true,
       "repository": "seongjin1908/daangn-saju-autodev",
       "work_branch": "autodev/saju-global/run-scoped",
       "base_branch": "autodev-v12",
@@ -241,6 +242,7 @@
     },
     {
       "alias": "creative-studio",
+      "dedicated_schedule_only": true,
       "repository": "seongjin1908/creative-growth-studio",
       "work_branch": "autodev/creative-studio/run-scoped",
       "base_branch": "main",
@@ -261,6 +263,7 @@
     },
     {
       "alias": "saju-core",
+      "dedicated_schedule_only": true,
       "repository": "seongjin1908/daangn-saju-autodev",
       "work_branch": "autodev/saju-core/run-scoped",
       "base_branch": "release/unkive-production-1791471961339",
