@@ -185,3 +185,4 @@ jobs:
             target/release-test-results/content-review.md
             target/release-test-results/pdf-matrix/
             target/release-test-results/report-composition-review.json
+            target/release-test-results/domain-summary-review.json
