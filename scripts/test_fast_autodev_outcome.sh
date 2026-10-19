@@ -43,4 +43,23 @@ assert "if: always() && steps.token.outputs.configured == 'true' && env.SKIP_TAR
 assert launch.count("run: bash scripts/require_production_batch.sh") == 1
 assert "env.BATCH_READY == 'true'" in launch
 print("PASS: saju-core launch sprint fails closed on no-code or missing token, keeping zero-cost defaults")
+
+# Optimization contract: each isolated new PR may use shallow checkout,
+# but fixed work branches must retain history for ahead/behind verification.
+for path in (
+    ".github/workflows/autodev.yml",
+    ".github/workflows/launch-sprint.yml",
+    ".github/workflows/saju-global-fast-autodev.yml",
+    ".github/workflows/creative-studio-fast-autodev.yml",
+):
+    workflow = (root / path).read_text(encoding="utf-8")
+    marker = "fetch-depth: ${{ steps.select.outputs.branch_mode == 'run_scoped' && 1 || 0 }}"
+    assert workflow.count(marker) == 1, path
+runner = (root / "scripts/develop_target.sh").read_text(encoding="utf-8")
+assert runner.count("npm ci --no-audit --no-fund") >= 2
+assert "npm install -g opencode-ai --no-audit --no-fund" in runner
+assert "trap print_worker_timings EXIT" in runner
+assert "MODEL_SECONDS" in runner and "Actual seconds" in runner
+assert "AutoDev time spent (seconds)" in runner
+print("PASS: cheap shallow checkouts, offline-safe network flags and duration measurements")
 PY
