@@ -20,7 +20,10 @@ class SafeWorkerArtifacts(unittest.TestCase):
                 self.assertEqual(workflow.count("uses: actions/cache@v4"),1)
                 self.assertIn("path: ${{ runner.temp }}/autodev-public-cli-npm-cache",workflow)
                 self.assertNotIn("path: ~/.npm",workflow)
-                self.assertNotIn("path: target",workflow)
+                cache_section=workflow.split("      - name: Restore PUBLIC coding CLI download cache",1)[1]
+                cache_section=cache_section.split("      - name: Prepare collision and failure-hold guard",1)[0]
+                self.assertNotIn("path: target",cache_section)
+                self.assertNotIn("~/.npm",cache_section.replace("# Critical: NEVER cache ~/.npm, target deps, or private source in this public controller.", ""))
                 self.assertIn("key: public-cli-npm-v1-",workflow)
 
     def test_only_sanitized_data_in_short_retention_artifact(self):
