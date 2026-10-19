@@ -40,6 +40,7 @@ class ModelMetricTests(unittest.TestCase):
             self.assertEqual(module.report(file),
                              "Free-model calls: 1; validated source batches: 1; attempted wall seconds: 24.")
             self.assertEqual(len(module.records(file)), 2)
+            self.assertIn("| `opencode/space-bunny-free` | 1 | 1 | 24 |", module.model_scorecard(file))
             self.assertNotIn("SECRET", file.read_text())
 
     def test_corrupt_record_ignored(self):
