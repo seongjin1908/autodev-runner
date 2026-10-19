@@ -36,7 +36,7 @@ if [[ ! -s /tmp/autodev-prompt.txt ]]; then
 fi
 # Install from the trusted control plane, with the key removed from npm's environment.
 cd "$ROOT_DIR"
-if ! env -u GEMINI_API_KEY -u GOOGLE_API_KEY npm install -g @google/gemini-cli --no-audit --no-fund --ignore-scripts >/tmp/autodev-gemini-install.log 2>&1; then
+if ! env -u GEMINI_API_KEY -u GOOGLE_API_KEY npm install --cache "${RUNNER_TEMP:-/tmp}/autodev-public-cli-npm-cache" -g @google/gemini-cli --no-audit --no-fund --ignore-scripts >/tmp/autodev-gemini-install.log 2>&1; then
   echo "::warning::Gemini CLI could not be installed; no source changes accepted."
   exit 0
 fi
