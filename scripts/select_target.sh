@@ -15,7 +15,7 @@ if [[ "$TARGET" == "auto" ]]; then
   mapfile -t AUTO_CYCLE < <(python - "$CONFIG" <<'PY'
 import json,sys
 cfg=json.load(open(sys.argv[1], encoding='utf-8'))
-projects=[p for p in cfg['projects'] if p.get('auto_enabled', True) and int(p.get('auto_weight', 1)) > 0]
+projects=[p for p in cfg['projects'] if p.get('auto_enabled', True) and int(p.get('auto_weight', 1)) > 0 and not p.get('dedicated_schedule_only', False)]
 if projects and any('auto_weight' in p for p in projects):
     projects=sorted(projects, key=lambda p:(-int(p.get('release_priority',0)), p['alias']))
     max_weight=max(int(p.get('auto_weight',1)) for p in projects)
