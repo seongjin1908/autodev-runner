@@ -30,6 +30,13 @@ if [[ "$(git rev-parse HEAD)" != "$START_SHA" || -n "$(git status --porcelain)" 
   echo "::error::Target changed since OpenCode failure. Gemini cannot touch unreviewed state."
   exit 2
 fi
+# A headless trust override is safe only if this target cannot supply
+# workspace-level Gemini configuration, hooks, extensions, or MCP policies.
+# Refuse instead of implicitly trusting unreviewed repository instructions.
+if [[ -e .gemini || -e .mcp.json || -e .env || -e "$ROOT_DIR/.gemini" ]]; then
+  echo "::warning::Gemini fallback blocked: project/parent Gemini config or local environment detected. No model request made."
+  exit 0
+fi
 if [[ ! -s /tmp/autodev-prompt.txt ]]; then
   echo "::error::Missing validated worker prompt; refusing Gemini API request."
   exit 2
@@ -51,6 +58,8 @@ mkdir -p "$SAFE_HOME/.gemini"
 cat > "$SAFE_HOME/.gemini/settings.json" <<'SETTINGS'
 {
   "general": {"enableAutoUpdate": false},
+  "security": {"folderTrust": {"enabled": true}, "disableYoloMode": true},
+  "hooks": {"enabled": false},
   "tools": {"core": ["read_file", "write_file", "replace", "list_directory", "glob", "grep_search"]}
 }
 SETTINGS
@@ -60,6 +69,7 @@ echo "Starting opt-in Gemini free-tier fallback: $GEMINI_MODEL (bounded to ${GEM
 cd "$ROOT_DIR/target"
 set +e
 HOME="$SAFE_HOME" timeout "$GEMINI_TIMEOUT_SECONDS" gemini \
+  --skip-trust \
   --model "$GEMINI_MODEL" \
   --approval-mode auto_edit \
   --extensions none \
@@ -69,7 +79,11 @@ GEMINI_RC=$?
 set -e
 unset GEMINI_API_KEY
 rm -rf -- "$SAFE_HOME"
-echo "Gemini command finished (exit $GEMINI_RC); private model transcript not published."
+GEMINI_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-run.log --exit-code "$GEMINI_RC")"
+echo "Gemini command finished (exit $GEMINI_RC; classified: $GEMINI_ISSUE). Private model transcript not published."
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+  printf "\n### Gemini free fallback\n- Exit status: %s\n- Fixed diagnostic: %s\n" "$GEMINI_RC" "$GEMINI_ISSUE" >> "$GITHUB_STEP_SUMMARY"
+fi
 # The key is no longer in the worker environment for all validation/build steps.
 restore_clean() {
   git reset --hard "$START_SHA" >/dev/null

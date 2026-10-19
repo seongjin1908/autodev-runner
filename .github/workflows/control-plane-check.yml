@@ -64,6 +64,9 @@ jobs:
       - name: Test early Gemini handoff time budget and opt-in safety
         run: python3 scripts/test_early_gemini_handoff.py
 
+      - name: Test headless Gemini trust recovery and redacted error diagnosis
+        run: python3 scripts/test_gemini_headless_recovery.py
+
       - name: Verify opt-in Gemini headless free-tier gate and credential isolation
         run: python3 scripts/test_gemini_free_fallback.py
 

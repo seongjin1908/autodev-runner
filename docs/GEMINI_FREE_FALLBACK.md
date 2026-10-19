@@ -43,3 +43,12 @@ Repository: seongjin1908/autodev-runner
 CI of this PR checks gating, tests and syntax. True model failover is only proved
 after the account owner explicitly opts in with a verified free-only API key
 and one real Actions run produces a validated source PR without billing.
+
+## Verified operational diagnosis — October 2026
+
+- GitHub Actions run `39340783760` invoked Gemini after all free OpenCode attempts failed; Gemini exited `55` before any edits. This matches Gemini CLI's documented headless `FatalUntrustedWorkspaceError` behavior, but the previous private log was not exposed and cannot by itself conclusively prove the exact error.
+- The worker now explicitly sets `--skip-trust` **only after verifying** the checked-out target has no `.gemini` project settings/hooks/extensions, `.mcp.json`, `.env`, or controller-local `.gemini` override. If any are present, the worker refuses the Gemini model call instead of trusting the config.
+- The worker maintains a clean HOME with an explicit file-edit tool allowlist, disables hooks and YOLO mode, disallows extensions and shell-tool usage, and retains the validation/rollback/code-change gates.
+- Classification uses `scripts/gemini_failure.py` to print only fixed labels (such as `workspace_untrusted`, `authorization_failed`, `quota_limited`, `configuration_failure`) and the CLI exit code. Never show raw model output or private files in public Actions logs.
+- **Do not treat any successfully completed fallback step as successful software development** unless the protected production gate finds a tested and committed source batch and the PR is pushed.
+- If Gemini still exits with a different error, use the fixed label to correct that specific issue; do not enable paid APIs, weaken the safety guard, or rerun high-frequency probes.
