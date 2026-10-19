@@ -35,7 +35,7 @@ install_baseline_dependencies() {
     corepack enable >>/tmp/autodev-install.log 2>&1
     pnpm install --frozen-lockfile >>/tmp/autodev-install.log 2>&1
   elif [[ -f package-lock.json ]]; then
-    npm ci >>/tmp/autodev-install.log 2>&1
+    npm ci --no-audit --no-fund >>/tmp/autodev-install.log 2>&1
   elif [[ -f package.json ]]; then
     npm install --no-package-lock --no-audit --no-fund >>/tmp/autodev-install.log 2>&1
   fi
@@ -53,7 +53,7 @@ set -e
 echo "$BASELINE_RC" > /tmp/autodev-baseline-rc
 echo "Baseline validation completed (exit $BASELINE_RC)."
 
-npm install -g opencode-ai >/tmp/autodev-opencode-install.log 2>&1
+npm install -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
 
 # REA is optional and only enabled after a verified OpenCode MCP handshake.
 # A failed handshake never blocks validated product development.
@@ -236,7 +236,7 @@ validate_attempt() {
   local logfile="$1"
   if manifest_changed; then
     if [[ -f package-lock.json ]]; then
-      npm ci >/tmp/autodev-attempt-install.log 2>&1
+      npm ci --no-audit --no-fund >/tmp/autodev-attempt-install.log 2>&1
     elif [[ -f package.json ]]; then
       npm install --no-package-lock --no-audit --no-fund >/tmp/autodev-attempt-install.log 2>&1
     fi
