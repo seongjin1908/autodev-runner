@@ -181,5 +181,8 @@ jobs:
           path: |
             target/release-test-results/content-review.json
             target/release-test-results/content-review.md
+            # Retain the 80-report / 400-question corpus actually tested, so
+            # each flagged cross-profile pair can be independently inspected.
+            target/release-test-results/offline-editorial-samples.json
             target/release-test-results/pdf-matrix/
             target/release-test-results/report-composition-review.json
