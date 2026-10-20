@@ -66,18 +66,27 @@ cat > "$SAFE_HOME/.gemini/settings.json" <<'SETTINGS'
   "tools": {"core": ["read_file", "write_file", "replace", "list_directory", "glob", "grep_search"]}
 }
 SETTINGS
-# Fail before sending private source or spending free API quota if this installed
-# Gemini CLI cannot read the generated settings, options or clean HOME.
-# Extension listing performs a local CLI configuration load and makes no model request.
-if ! env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME="$SAFE_HOME" timeout 20s gemini \
-  --skip-trust --extensions none --list-extensions \
-  >/tmp/autodev-gemini-configcheck.log 2>&1; then
-  CHECK_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-configcheck.log --exit-code 1)"
+# An extension-listing subcommand is not a reliable proxy for whether Gemini
+# can generate code: on some headless releases it fails before any model attempt.
+# Validate the generated JSON and the installed executable independently without
+# sharing the key; only the protected later invocation may send a prompt to Gemini.
+if ! python3 -m json.tool "$SAFE_HOME/.gemini/settings.json" >/dev/null; then
   rm -rf -- "$SAFE_HOME"
-  echo "::warning::Gemini local CLI configuration check failed ($CHECK_ISSUE); no API request made."
+  echo "::warning::Gemini generated settings are not valid JSON; no API request made."
   exit 0
 fi
-echo "Gemini CLI local configuration check passed (no API call)."
+set +e
+env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME="$SAFE_HOME" timeout 20s gemini --version \
+  >/tmp/autodev-gemini-configcheck.log 2>&1
+CHECK_RC=$?
+set -e
+if [[ "$CHECK_RC" -ne 0 ]]; then
+  CHECK_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-configcheck.log --exit-code "$CHECK_RC")"
+  rm -rf -- "$SAFE_HOME"
+  echo "::warning::Gemini local executable check failed (exit $CHECK_RC; $CHECK_ISSUE); no API request made."
+  exit 0
+fi
+echo "Gemini settings JSON and installed CLI version checks passed (no API call)."
 # The model needs enough time for useful edits but must never consume all CI time.
 GEMINI_TIMEOUT_SECONDS=180
 echo "Starting opt-in Gemini free-tier fallback: $GEMINI_MODEL (bounded to ${GEMINI_TIMEOUT_SECONDS}s)."

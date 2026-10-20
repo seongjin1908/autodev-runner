@@ -34,11 +34,14 @@ class GeminiSettingsSchemaTests(unittest.TestCase):
         self.assertNotIn("mcpServers", settings)
 
     def test_local_no_key_preflight_before_any_model_call(self):
-        self.assertIn("gemini \\\n  --skip-trust --extensions none --list-extensions", SCRIPT)
+        self.assertIn('python3 -m json.tool "$SAFE_HOME/.gemini/settings.json"', SCRIPT)
+        self.assertIn('gemini --version', SCRIPT)
         self.assertIn("env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME=", SCRIPT)
-        self.assertLess(SCRIPT.index("gemini \\\n  --skip-trust --extensions none --list-extensions"),
+        self.assertLess(SCRIPT.index("gemini --version"),
                         SCRIPT.index('echo "Starting opt-in Gemini free-tier fallback'))
-        self.assertIn("Gemini local CLI configuration check failed", SCRIPT)
+        self.assertIn("Gemini local executable check failed", SCRIPT)
+        self.assertIn("CHECK_RC=$?", SCRIPT)
+        self.assertNotIn("--list-extensions", SCRIPT)
         self.assertIn("no API request made.", SCRIPT)
         self.assertIn("GEMINI_TIMEOUT_SECONDS=180", SCRIPT)
         self.assertIn("git diff --check", SCRIPT)
