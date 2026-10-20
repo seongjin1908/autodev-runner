@@ -86,6 +86,7 @@ jobs:
           node scripts/check-unkive-free-editorial.mjs
           node scripts/check-unkive-today.mjs
           node scripts/check-unkive-past-reflection.mjs
+          node scripts/check-unkive-paid-report-search.mjs
 
       - name: Upload synthetic editorial evidence for review
         if: always()
