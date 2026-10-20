@@ -37,7 +37,10 @@
       "branch_mode": "run_scoped",
       "source_branch": "release/fortune-rc-20261005-v3",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "development_status": "hold",
+      "hold_reason": "user_owned_separate_saju_development_2026-10-20",
+      "external_worker_lock": true
     },
     {
       "alias": "pricecam",
@@ -156,7 +159,10 @@
       "branch_mode": "run_scoped",
       "source_branch": "release/fortune-rc-20261005-v3",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "development_status": "hold",
+      "hold_reason": "user_owned_separate_saju_development_2026-10-20",
+      "external_worker_lock": true
     },
     {
       "alias": "face-lab-design",
@@ -228,8 +234,8 @@
       "prompt_file": "prompts/saju-global.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40,
-      "auto_enabled": true,
-      "auto_weight": 3,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 99,
       "failure_hold_threshold": 4,
       "failure_hold_minutes": 20,
@@ -238,7 +244,9 @@
       "source_branch": "autodev-v12",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "external_worker_lock": false
+      "external_worker_lock": true,
+      "development_status": "hold",
+      "hold_reason": "user_owned_separate_saju_development_2026-10-20"
     },
     {
       "alias": "creative-studio",
@@ -271,17 +279,19 @@
       "prompt_file": "prompts/saju-launch.md",
       "recent_change_guard_minutes": 15,
       "max_changed_files": 12,
-      "auto_enabled": true,
-      "auto_weight": 6,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 100,
       "failure_hold_threshold": 2,
       "failure_hold_minutes": 45,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "source_branch": "release/unkive-production-1791471961339",
-      "external_worker_lock": false,
+      "external_worker_lock": true,
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "development_status": "hold",
+      "hold_reason": "user_owned_separate_saju_development_2026-10-20"
     },
     {
       "alias": "world-patch",
