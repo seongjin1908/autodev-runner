@@ -60,6 +60,22 @@ jobs:
             repo: seongjin1908/restore-ai-autodev
             ref: 60fe4b7bba7826bb02f800f96856bf0c199faa9f
             case: restore-ai-pr19
+          - target: todaypick
+            repo: seongjin1908/todaypick-growth-engine
+            ref: main
+            case: todaypick-main
+          - target: ddd-revenue
+            repo: seongjin1908/ddd-revenue-os
+            ref: main
+            case: ddd-revenue-main
+          - target: ddd-rfq
+            repo: seongjin1908/ddd-rfq-marketplace
+            ref: main
+            case: ddd-rfq-main
+          - target: fundos
+            repo: seongjin1908/fundos-capital
+            ref: main
+            case: fundos-main
 
     steps:
       - name: Require trusted repository token
@@ -102,6 +118,10 @@ jobs:
           set -euo pipefail
           if [ "$TARGET" = "cyber-guardian" ]; then
             echo "Defensive project uses Node.js built-ins; no dependency install necessary"
+            exit 0
+          fi
+          if [ "$TARGET" = "todaypick" ] || [ "$TARGET" = "ddd-revenue" ] || [ "$TARGET" = "fundos" ]; then
+            echo "Python/document-only deterministic gate; no npm install or paid model."
             exit 0
           fi
           if [ "$TARGET" = "restore-ai" ]; then
@@ -188,6 +208,25 @@ jobs:
                 echo "::error::Unexpected networking or process-execution capability in defensive engine"
                 exit 1
               fi
+              ;;
+            todaypick)
+              check validate python3 -m todaypick.cli validate
+              check cost-guard python3 -m todaypick.cli cost-check
+              check security-guard python3 -m todaypick.cli security-check
+              check tests bash -lc 'python3 -m unittest discover -s tests -v'
+              ;;
+            ddd-revenue)
+              check syntax bash -lc 'python3 -m py_compile scripts/*.py gateway/*.py'
+              check tests bash -lc 'python3 -m unittest discover -s tests -v'
+              ;;
+            ddd-rfq)
+              check checks npm run check
+              check tests npm test
+              ;;
+            fundos)
+              # This is a documentation-stage readiness check, NOT application QA.
+              check spec-files bash -lc 'test -f docs/AUTODEV_POLICY.md && test -f docs/MASTER_SPEC.md'
+              check diff git diff --check
               ;;
             *)
               echo "::error::Unrecognized launch candidate"
