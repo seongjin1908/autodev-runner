@@ -14,10 +14,10 @@ SCRIPT = (ROOT / "scripts/gemini_free_fallback.sh").read_text(encoding="utf-8")
 
 class GeminiSettingsSchemaTests(unittest.TestCase):
     def settings(self):
-        marker = 'cat > "$SAFE_HOME/.gemini/settings.json" <<\'SETTINGS\'\\n'
+        marker = 'cat > "$SAFE_HOME/.gemini/settings.json" <<\'SETTINGS\'\n'
         self.assertIn(marker, SCRIPT, "Cannot locate generated clean HOME settings")
         start = SCRIPT.index(marker) + len(marker)
-        end = SCRIPT.index("\\nSETTINGS", start)
+        end = SCRIPT.index("\nSETTINGS", start)
         return json.loads(SCRIPT[start:end])
 
     def test_current_schema_and_security(self):
