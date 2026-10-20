@@ -24,7 +24,9 @@ class GeminiSettingsSchemaTests(unittest.TestCase):
         settings = self.settings()
         # The isolated HOME has no prior interactive auth selection. Headless
         # Gemini must choose the configured API key credential explicitly.
-        self.assertEqual(settings["selectedAuthType"], "gemini-api-key")
+        self.assertEqual(settings["security"]["auth"]["selectedType"], "gemini-api-key")
+        self.assertEqual(settings["security"]["auth"]["enforcedType"], "gemini-api-key")
+        self.assertNotIn("selectedAuthType", settings, "Legacy top-level auth selection is ignored by current Gemini CLI")
         self.assertNotIn("mcpServers", settings)
         self.assertEqual(settings["hooksConfig"], {"enabled": False})
         self.assertNotIn("enabled", settings.get("hooks", {}))
@@ -41,6 +43,8 @@ class GeminiSettingsSchemaTests(unittest.TestCase):
         self.assertIn('python3 -m json.tool "$SAFE_HOME/.gemini/settings.json"', SCRIPT)
         self.assertIn('gemini --version', SCRIPT)
         self.assertIn("env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME=", SCRIPT)
+        self.assertIn('GEMINI_CLI_HOME="$SAFE_HOME"', SCRIPT)
+        self.assertEqual(SCRIPT.count('GEMINI_CLI_HOME="$SAFE_HOME"'), 2)
         self.assertLess(SCRIPT.index("gemini --version"),
                         SCRIPT.index('echo "Starting opt-in Gemini free-tier fallback'))
         self.assertIn("Gemini local executable check failed", SCRIPT)
