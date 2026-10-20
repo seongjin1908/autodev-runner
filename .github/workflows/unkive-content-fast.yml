@@ -63,6 +63,11 @@ jobs:
           node scripts/check-unkive-personalization.mjs
           node scripts/check-unkive-content-review.mjs
           node scripts/check-unkive-offline-editorial-benchmark.mjs
+      - name: Recheck 24 Premium repeated-sentence types
+        working-directory: target
+        run: |
+          npx --no-install esbuild scripts/unkive-premium-repetition-recheck.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/premium-repetition-recheck.cjs
+          node release-test-results/premium-repetition-recheck.cjs
       - name: Upload content evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -74,3 +79,4 @@ jobs:
             target/release-test-results/report-composition-review.json
             target/release-test-results/content-review.json
             target/release-test-results/content-review.md
+            target/release-test-results/premium-repetition-recheck.json
