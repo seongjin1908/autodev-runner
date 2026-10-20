@@ -24,7 +24,7 @@ def classify(log: str, exit_code: int) -> str:
         return "billing_blocked"
     if re.search(r"\b429\b|rate.?limit|resource.?exhausted|quota.{0,50}(?:exceed|reached|limit)|too many requests", data):
         return "quota_limited"
-    if re.search(r"\b401\b|\b403\b|invalid api key|api key not valid|permission denied|unauthori[sz]ed|unauthenticated", data):
+    if re.search(r"\b401\b|\b403\b|invalid api key|api key not valid|permission denied|unauthori[sz]ed|unauthenticated|please set an auth method|manual authorization is required|no authentication method selected|select.*authentication method", data):
         return "authorization_failed"
     if re.search(r"\b50[234]\b|connection reset|temporarily unavailable|upstream|overload|econnreset", data):
         return "transport_failure"
