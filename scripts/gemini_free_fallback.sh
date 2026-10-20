@@ -109,6 +109,9 @@ unset GEMINI_API_KEY
 rm -rf -- "$SAFE_HOME"
 GEMINI_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-run.log --json-output /tmp/autodev-gemini-run.json --exit-code "$GEMINI_RC")"
 echo "Gemini command finished (exit $GEMINI_RC; classified: $GEMINI_ISSUE). Private model transcript not published."
+# Never print private stderr/stdout; emit only enumerated output shape and error family.
+GEMINI_TRIAGE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-run.log --json-output /tmp/autodev-gemini-run.json --exit-code "$GEMINI_RC" --safe-triage)"
+echo "Gemini safe triage: $GEMINI_TRIAGE"
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   printf "\n### Gemini free fallback\n- Exit status: %s\n- Fixed diagnostic: %s\n" "$GEMINI_RC" "$GEMINI_ISSUE" >> "$GITHUB_STEP_SUMMARY"
 fi
