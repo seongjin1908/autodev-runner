@@ -67,6 +67,9 @@ jobs:
       - name: Verify clean and protected OpenCode to Gemini checkout handoff
         run: python3 scripts/test_gemini_handoff.py
 
+      - name: Validate current Gemini CLI settings schema and keyless startup check
+        run: python3 scripts/test_gemini_config_schema.py
+
       - name: Test headless Gemini trust recovery and redacted error diagnosis
         run: python3 scripts/test_gemini_headless_recovery.py
 
