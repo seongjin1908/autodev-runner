@@ -1,0 +1,57 @@
+name: One-off direct free OpenRouter PriceCam source test
+on:
+  push:
+    branches: [test/openrouter-free-smoke-20261020]
+    paths: [.github/workflows/openrouter-direct-one-off.yml]
+permissions:
+  contents: read
+jobs:
+  direct-source-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout latest reviewed controller without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: controller
+          persist-credentials: false
+      - name: Checkout owned PriceCam code (no credentials stored)
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/pricecam-autodev
+          ref: main
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - name: Execute one zero-priced direct source request with no publish
+        shell: bash
+        working-directory: target
+        env:
+          ALIAS: pricecam
+          OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
+          AUTODEV_OPENROUTER_FREE_MODEL: openrouter/minimax/minimax-m3.1-flash:free
+        run: |
+          set -euo pipefail
+          set +e
+          python3 ../controller/scripts/openrouter_direct_patch.py >/tmp/direct-pricecam-result.log 2>&1
+          rc=$?
+          set -e
+          unset OPENROUTER_API_KEY
+          case "$rc" in
+            0) echo "PASS: direct free API edited a tracked PriceCam source file; provider transcript withheld." ;;
+            *) 
+              # Script prints only controlled reason labels; no response body.
+              grep -E '^direct_free_code_blocked:' /tmp/direct-pricecam-result.log | head -n 1 || true
+              echo "::error::No acceptable direct code edit generated."
+              exit 1 ;;
+          esac
+          git diff --check
+          if [[ -z "$(git diff --name-only)" ]]; then
+            echo "::error::No actual source modification."
+            exit 2
+          fi
+          echo "PASS: exact source edit exists with git whitespace check."
+          # This is an ephemeral test. No commit, PR, merge, deploy or source artifact.
+          echo "### Direct free source coding" >> "$GITHUB_STEP_SUMMARY"
+          echo "PASS: priced at 0, one accepted source-file modification, git diff --check." >> "$GITHUB_STEP_SUMMARY"
