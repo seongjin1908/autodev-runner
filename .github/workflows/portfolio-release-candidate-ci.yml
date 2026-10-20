@@ -56,6 +56,14 @@ jobs:
             repo: seongjin1908/worklink
             ref: main
             case: worklink-main
+          - target: worklink
+            repo: seongjin1908/worklink
+            ref: 7043a42744d4aef5093dd3a7d5c4273ff73900b9
+            case: worklink-pr10-list
+          - target: worklink
+            repo: seongjin1908/worklink
+            ref: d332b3f59137e30321d584144d3095dc05b7d6d0
+            case: worklink-pr10-merge-preview
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
             ref: main
