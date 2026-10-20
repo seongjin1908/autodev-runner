@@ -80,9 +80,11 @@ jobs:
           node scripts/check-unkive-offline-editorial-benchmark.mjs
           node scripts/unkive-offline-overlap-review.mjs
 
-      - name: Test free customer interpretations
+      - name: Test free customer interpretations and Korea-time daily fortune
         working-directory: target
-        run: node scripts/check-unkive-free-editorial.mjs
+        run: |
+          node scripts/check-unkive-free-editorial.mjs
+          node scripts/check-unkive-today.mjs
 
       - name: Upload synthetic editorial evidence for review
         if: always()
