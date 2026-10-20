@@ -62,7 +62,9 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
         self.assertIn("--approval-mode auto_edit", SHELL)
         self.assertIn("--extensions none", SHELL)
         self.assertIn('bash -lc "$VALIDATION"', SHELL)
-        self.assertIn('if [[ "$(git rev-parse HEAD)" != "$START_SHA"', SHELL)
+        self.assertIn('bash "$ROOT_DIR/scripts/prepare_gemini_handoff.sh"', SHELL)
+        protected = (ROOT / "scripts/prepare_gemini_handoff.sh").read_text(encoding="utf-8")
+        self.assertIn('if [[ "$original" != "$START_SHA" ]]; then', protected)
 
 
 if __name__ == "__main__":
