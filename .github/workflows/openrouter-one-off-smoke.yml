@@ -18,15 +18,17 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
         run: |
           set -euo pipefail
-          if [[ "$FREE_OPT_IN" != "true" ]]; then
-            echo "::error::OpenRouter disabled. Set Actions variable AUTODEV_OPENROUTER_FREE_ENABLED=true; no model request made."
-            exit 2
-          fi
           if [[ -z "$OPENROUTER_API_KEY" ]]; then
             echo "::error::OpenRouter secret not configured. Expected AUTODEV_OPENROUTER_FREE_API_KEY; no model request made."
+            if [[ "$FREE_OPT_IN" != "true" ]]; then
+              echo "::warning::Central scheduled fallback also disabled; set Actions variable AUTODEV_OPENROUTER_FREE_ENABLED=true after adding the secret."
+            fi
             exit 3
           fi
-          echo "OpenRouter opt-in and secret: both present (secret value never displayed)."
+          if [[ "$FREE_OPT_IN" != "true" ]]; then
+            echo "::warning::Central fallback is disabled. This branch executes only the explicitly user-requested one-off zero-priced connectivity test."
+          fi
+          echo "OpenRouter secret is present (value never displayed). Free pricing preflight is next."
           curl -fsSL --retry 1 --max-time 25 \
             https://openrouter.ai/api/v1/models \
             -o "$RUNNER_TEMP/openrouter-public-models.json"
