@@ -46,7 +46,7 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
         self.assertIn("--skip-trust", SHELL)
         self.assertIn('[[ -e .gemini || -e .mcp.json || -e .env || -e "$ROOT_DIR/.gemini" ]]', SHELL)
         self.assertIn('"disableYoloMode": true', SHELL)
-        self.assertIn('"hooks": {"enabled": false}', SHELL)
+        self.assertIn('"hooksConfig": {"enabled": false}', SHELL)
         self.assertIn('"tools": {"core": ["read_file", "write_file", "replace", "list_directory", "glob", "grep_search"]}', SHELL)
         self.assertNotIn("--approval-mode yolo", SHELL)
         self.assertIn('GEMINI_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify', SHELL)
