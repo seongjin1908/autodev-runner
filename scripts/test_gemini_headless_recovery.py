@@ -78,6 +78,39 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
             self.assertNotIn("never-echo", result.stdout)
             self.assertNotIn("confidential source", result.stdout)
 
+    def test_private_safe_triage_reports_shape_only(self):
+        private = "customer-data-token-ABC123"
+        payload = json.dumps({"error": {"status": "RESOURCE_EXHAUSTED", "message": private},
+                              "response": private})
+        diagnosis = gemini.safe_triage("TypeError: " + private, payload, 1)
+        self.assertIn("stdout=json_error", diagnosis)
+        self.assertIn("api_status=resource_exhausted", diagnosis)
+        self.assertIn("stderr=node_exception", diagnosis)
+        self.assertNotIn(private, diagnosis)
+        self.assertEqual(gemini.safe_triage("", "", 1),
+                         "stdout=empty;api_status=none;stderr=empty;out_size=empty;err_size=empty")
+        malformed = gemini.safe_triage("ERR_MODULE_NOT_FOUND " + private, "{not-json", 1)
+        self.assertIn("stdout=non_json", malformed)
+        self.assertIn("stderr=runtime_module", malformed)
+        self.assertNotIn(private, malformed)
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            error_file = directory / "private-error.log"
+            response_file = directory / "private-response.json"
+            error_file.write_text("TypeError: " + private, encoding="utf-8")
+            response_file.write_text(payload, encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(MODULE), "classify",
+                 "--log", str(error_file), "--json-output", str(response_file),
+                 "--exit-code", "1", "--safe-triage"],
+                capture_output=True, text=True, check=False
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertNotIn(private, result.stdout)
+            self.assertEqual(result.stdout.strip(), diagnosis)
+        self.assertIn("--safe-triage", SHELL)
+        self.assertNotIn("cat /tmp/autodev-gemini-run.log", SHELL)
+
     def test_gemini_uses_single_json_attempt_and_no_public_private_logs(self):
         self.assertIn("--output-format json", SHELL)
         self.assertIn(">/tmp/autodev-gemini-run.json 2>/tmp/autodev-gemini-run.log", SHELL)
