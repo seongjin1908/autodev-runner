@@ -19,7 +19,7 @@ jobs:
         run: |
           set -euo pipefail
           current="$(gh api "repos/$GH_REPO/branches/main" --jq '.commit.sha')"
-          if [[ "$current" != "ec08eefe2e4a10cf7df687933db46a794b82fba2" ]]; then
+          if [[ "$current" != "4a70996e60a38aa8d94bad442412900d61beadce" ]]; then
             echo "::error::Main has changed since tested manual opt-in; refusing unattended dispatch."
             exit 2
           fi
