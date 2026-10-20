@@ -27,6 +27,7 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
             ("Please set an Auth method in ~/.gemini/settings.json", 1, "authorization_failed"),
             ("Manual authorization is required but the current session is non-interactive", 1, "authorization_failed"),
             ("invalid config", 52, "configuration_failure"),
+            ("Unknown argument: skip-trust", 1, "configuration_failure"),
             ("Payment Required 402", 1, "billing_blocked"),
             ("", 124, "timeout"),
             ("", 0, "ok"),
@@ -86,7 +87,8 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
         self.assertIn('AUTODEV_GEMINI_FREE_ENABLED:-false', SHELL)
 
     def test_no_untrusted_project_config_is_silently_overridden(self):
-        self.assertIn("--skip-trust", SHELL)
+        self.assertIn("GEMINI_CLI_TRUST_WORKSPACE=true", SHELL)
+        self.assertNotIn("--skip-trust", SHELL)
         self.assertIn('[[ -e .gemini || -e .mcp.json || -e .env || -e "$ROOT_DIR/.gemini" ]]', SHELL)
         self.assertIn('"disableYoloMode": true', SHELL)
         self.assertIn('"hooksConfig": {"enabled": false}', SHELL)
