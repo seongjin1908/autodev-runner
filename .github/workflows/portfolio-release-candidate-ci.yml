@@ -172,6 +172,19 @@ jobs:
             elif grep -Eqi '(assertionerror|expected|not ok |failed tests)' /tmp/portfolio-private-check.log; then
               issue="test_assertion_failed"
             fi
+            # Only emit numeric TAP failure indices; never publish private
+            # source, test names, fixtures, assertions, model output or secrets.
+            if [ "$TARGET" = "cyber-guardian" ] && [ "$label" = "defensive-tests" ]; then
+              failure_indices="$(python3 - <<'PY'
+import re
+from pathlib import Path
+p=Path('/tmp/portfolio-private-check.log')
+data=p.read_text(encoding='utf-8',errors='replace')[:200000]
+print(','.join(re.findall(r'(?m)^not ok ([0-9]+) - ', data)[:24]) or 'not-exposed')
+PY
+)"
+              echo "::warning::Cyber defensive TAP failure indices: $failure_indices (no test names or private output)"
+            fi
             echo "::error::$TARGET/$label failed ($issue); private product logs withheld."
             exit 1
           }
