@@ -44,6 +44,14 @@ jobs:
             repo: seongjin1908/fault-intelligence
             ref: main
             case: fault-intel-main
+          - target: fault-intel
+            repo: seongjin1908/fault-intelligence
+            ref: 2cde421e4ca5534826396ea0ea058e6544fd46d0
+            case: fault-intel-pr9-seo
+          - target: fault-intel
+            repo: seongjin1908/fault-intelligence
+            ref: 498c90c5655bda1e7e5b495a0444c4ede7696513
+            case: fault-intel-pr9-main-merge-preview
           - target: worklink
             repo: seongjin1908/worklink
             ref: main
