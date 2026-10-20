@@ -44,6 +44,21 @@ if [[ ! -s /tmp/autodev-prompt.txt ]]; then
   echo "::error::Missing validated worker prompt; refusing OpenRouter API request."
   exit 2
 fi
+# Explicit manual jobs call free API directly; do not start the hanging OpenCode CLI.
+if [[ "${AUTODEV_OPENROUTER_DIRECT_FIRST:-false}" == "true" ]]; then
+  set +e
+  python3 "$ROOT_DIR/scripts/openrouter_direct_patch.py" >/tmp/autodev-openrouter-direct.log 2>&1
+  OPENROUTER_RC=$?
+  set -e
+  unset OPENROUTER_API_KEY
+  if [[ "$OPENROUTER_RC" == 0 ]]; then
+    OPENROUTER_ISSUE=direct_candidate_pending_validation
+    echo "OpenRouter direct API produced a source candidate; existing security and product test gates apply."
+  else
+    OPENROUTER_ISSUE=direct_no_valid_edit
+    echo "::warning::OpenRouter direct API returned no approved code change (exit $OPENROUTER_RC)."
+  fi
+else
 # Already-installed OpenCode CLI, with provider credentials isolated from npm and baseline tests.
 if ! command -v opencode >/dev/null 2>&1; then
   echo "::warning::OpenCode CLI unavailable; no free provider call."
@@ -70,6 +85,7 @@ export HOME="$ORIGINAL_HOME"
 rm -rf -- "$SAFE_HOME"
 OPENROUTER_ISSUE="$(python3 "$ROOT_DIR/scripts/free_model_pool.py" classify --log /tmp/autodev-openrouter-run.log --exit-code "$OPENROUTER_RC")"
 echo "OpenRouter free model finished (exit $OPENROUTER_RC; classified: $OPENROUTER_ISSUE). Private transcript withheld."
+fi
 restore_clean() {
   git reset --hard "$START_SHA" >/dev/null
   git clean -fd -e node_modules/ >/dev/null
