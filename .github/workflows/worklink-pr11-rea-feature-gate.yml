@@ -1,0 +1,143 @@
+name: Independent WORKLINK PR11 REA feature gate
+
+# Private product repo Actions jobs terminate before runner assignment.
+# Use owner-controlled PUBLIC control plane but keep private source + REA output PRIVATE.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/worklink-pr11-rea-feature-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: independent-worklink-pr11-rea
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require private repository checkout access
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Missing private source access token"; exit 10; }
+
+      - name: Checkout WORKLINK PR11 immutable first-party source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 72559fe75937f918ac9a1630cf34cd377cc2036c
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target
+
+      - name: Set up Node 24 for REA
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify exact reviewed source and presence of deterministic tests
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "72559fe75937f918ac9a1630cf34cd377cc2036c"
+          test -f src/lib/quick-phrases.mjs
+          test -f tests/quick-phrases.test.mjs
+          echo 'WORKLINK PR11 immutable source verified.'
+
+      - name: Install dependencies with no lifecycle scripts
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm install --no-package-lock --no-audit --no-fund --ignore-scripts >/tmp/wl11-deps.log 2>&1; then
+            echo '::error::WORKLINK dependency bootstrap failed (private details not published).'
+            exit 11
+          fi
+          echo 'WORKLINK bootstrap PASS'
+
+      - name: Source feature tests
+        shell: bash
+        working-directory: target
+        run: |
+          if ! node --test tests/quick-phrases.test.mjs >/tmp/wl11-quick.log 2>&1; then
+            echo '::error::WORKLINK quick-chat tests failed (private details not published).'
+            exit 12
+          fi
+          echo 'WORKLINK quick-chat tests PASS'
+
+      - name: Existing contract tests
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm test >/tmp/wl11-tests.log 2>&1; then
+            echo '::error::WORKLINK existing tests failed (private details not published).'
+            exit 13
+          fi
+          echo 'WORKLINK tests PASS'
+
+      - name: Typecheck
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm run typecheck >/tmp/wl11-ts.log 2>&1; then
+            echo '::error::WORKLINK TypeScript failed (private details not published).'
+            exit 14
+          fi
+          echo 'WORKLINK typecheck PASS'
+
+      - name: Production bundle build
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm run build >/tmp/wl11-build.log 2>&1; then
+            echo '::error::WORKLINK build failed (private details not published).'
+            exit 15
+          fi
+          echo 'WORKLINK build PASS'
+
+      - name: Install pinned REA in temporary isolated path
+        shell: bash
+        run: |
+          if ! npm install --prefix "$RUNNER_TEMP/wl11-rea" --no-save --no-package-lock --ignore-scripts rea-agents@6.5.0 >/tmp/wl11-rea-install.log 2>&1; then
+            echo '::error::REA installation failed; no source details shared.'
+            exit 16
+          fi
+          echo 'Pinned REA installed'
+
+      - name: REA analyze authorized owned JavaScript (never competitor binaries)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/wl11-owned" "$RUNNER_TEMP/wl11-analysis"
+          cp target/src/lib/quick-phrases.mjs target/src/lib/validation.mjs "$RUNNER_TEMP/wl11-owned/"
+          if ! "$RUNNER_TEMP/wl11-rea/node_modules/.bin/rea" analyze-javascript-application "$RUNNER_TEMP/wl11-owned" --json >"$RUNNER_TEMP/wl11-analysis/analysis.json" 2>/tmp/wl11-rea-error.log; then
+            echo '::error::REA owned-source analysis failed. No raw analysis exposed.'
+            exit 17
+          fi
+          if ! node -e 'const f=require("fs");const s=f.readFileSync(process.argv[1],"utf8");const d=JSON.parse(s);if(s.length<20 || !d || typeof d!=="object")process.exit(1);' "$RUNNER_TEMP/wl11-analysis/analysis.json"; then
+            echo '::error::REA output invalid or incomplete.'
+            exit 18
+          fi
+          echo 'REA first-party static analysis PASS; evidence retained only in temporary runner.'
+          echo 'No private analysis artifact is uploaded to this public repository.'
+
+      - name: Independent result
+        run: |
+          echo '### WORKLINK PR11 independent source-gate result' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Pinned source 72559fe75937f918ac9a1630cf34cd377cc2036c' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Product tests, typecheck, build and REA owned-source analysis completed only if preceding steps passed.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- External REA competitor decompilation: NOT performed. No payment, launch, or merge.' >> "$GITHUB_STEP_SUMMARY"
