@@ -60,9 +60,12 @@ SAFE_HOME="$(mktemp -d)"
 mkdir -p "$SAFE_HOME/.gemini"
 cat > "$SAFE_HOME/.gemini/settings.json" <<'SETTINGS'
 {
-  "selectedAuthType": "gemini-api-key",
   "general": {"enableAutoUpdate": false},
-  "security": {"folderTrust": {"enabled": true}, "disableYoloMode": true},
+  "security": {
+    "auth": {"selectedType": "gemini-api-key", "enforcedType": "gemini-api-key"},
+    "folderTrust": {"enabled": true},
+    "disableYoloMode": true
+  },
   "hooksConfig": {"enabled": false},
   "tools": {"core": ["read_file", "write_file", "replace", "list_directory", "glob", "grep_search"]}
 }
@@ -77,7 +80,7 @@ if ! python3 -m json.tool "$SAFE_HOME/.gemini/settings.json" >/dev/null; then
   exit 0
 fi
 set +e
-env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME="$SAFE_HOME" timeout 20s gemini --version \
+env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME="$SAFE_HOME" GEMINI_CLI_HOME="$SAFE_HOME" timeout 20s gemini --version \
   >/tmp/autodev-gemini-configcheck.log 2>&1
 CHECK_RC=$?
 set -e
@@ -93,7 +96,7 @@ GEMINI_TIMEOUT_SECONDS=180
 echo "Starting opt-in Gemini free-tier fallback: $GEMINI_MODEL (bounded to ${GEMINI_TIMEOUT_SECONDS}s)."
 cd "$ROOT_DIR/target"
 set +e
-HOME="$SAFE_HOME" timeout "$GEMINI_TIMEOUT_SECONDS" gemini \
+HOME="$SAFE_HOME" GEMINI_CLI_HOME="$SAFE_HOME" timeout "$GEMINI_TIMEOUT_SECONDS" gemini \
   --skip-trust \
   --model "$GEMINI_MODEL" \
   --approval-mode auto_edit \
