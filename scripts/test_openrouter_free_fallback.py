@@ -14,6 +14,9 @@ class OpenRouterNoCostTests(unittest.TestCase):
         env={k:v for k,v in os.environ.items()
              if k not in ("OPENROUTER_API_KEY","AUTODEV_OPENROUTER_FREE_MODEL","AUTODEV_OPENROUTER_FREE_ENABLED")}
         env["AUTODEV_OPENROUTER_FREE_ENABLED"]=enabled
+        env["START_SHA"]="0"*40
+        env["VALIDATION_B64"]="bm9kZSAtLXZlcnNpb24="
+        env["MAX_CHANGED_FILES"]="8"
         if key: env["OPENROUTER_API_KEY"]=key
         if model: env["AUTODEV_OPENROUTER_FREE_MODEL"]=model
         return subprocess.run(["bash",str(ROOT/"scripts/openrouter_free_fallback.sh")],
