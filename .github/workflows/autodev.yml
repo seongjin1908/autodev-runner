@@ -9,7 +9,7 @@ on:
       - 'scripts/**'
       - '.github/workflows/autodev.yml'
   schedule:
-    - cron: '17 */2 * * *'
+    - cron: '17,47 * * * *'
   workflow_dispatch:
     inputs:
       target:
@@ -200,13 +200,14 @@ jobs:
         run: bash scripts/develop_target.sh
 
       - name: Optional strictly zero-priced OpenRouter direct coding (manual or bounded schedule)
-        # Six? No: every 2h = at most 12 scheduled requests/day, plus one bounded malformed-reply retry. Models are price-checked at 0 before any API call.
+        # Every 30 min: at most 48 scheduled free model requests/day. Disable scheduled response retries to preserve the free quota.
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && (github.event_name == 'schedule' || inputs.openrouter_free_once == true || vars.AUTODEV_OPENROUTER_FREE_ENABLED == 'true')
         env:
           OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
           AUTODEV_OPENROUTER_FREE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || inputs.openrouter_free_once == true && 'true' || vars.AUTODEV_OPENROUTER_FREE_ENABLED || 'false' }}
           AUTODEV_OPENROUTER_FREE_MODEL: ${{ vars.AUTODEV_OPENROUTER_FREE_MODEL || 'openrouter/minimax/minimax-m3.1-flash:free' }}
           AUTODEV_OPENROUTER_DIRECT_FIRST: ${{ (github.event_name == 'schedule' || inputs.openrouter_free_once == true) && 'true' || 'false' }}
+          AUTODEV_OPENROUTER_RETRY_ONCE: ${{ github.event_name == 'schedule' && 'false' || 'true' }}
           VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
           MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
           ALIAS: ${{ steps.select.outputs.alias }}

@@ -86,6 +86,39 @@ class DirectFreeCodingTests(unittest.TestCase):
             finally:
                 os.chdir(cwd)
 
+    def test_scheduled_request_never_retries_bad_model_json(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            target=root/'backend'/'affiliate.ts'
+            target.parent.mkdir(parents=True)
+            initial='export function identity(value: string) { return value.trim(); }\n' + '// reviewed source\n'*30
+            edited=initial.replace('return value.trim();',"return value ? value.trim() : ''; ")
+            cwd=Path.cwd()
+            try:
+                os.chdir(root)
+                for retry,max_calls in (('false',1),('true',2)):
+                    target.write_text(initial,encoding='utf8')
+                    completions=[]
+                    def reply(url,payload=None,key=None,timeout=30):
+                        if url.endswith('/models'):
+                            return {'data':[{'id':'minimax/minimax-m3.1-flash:free','pricing':{'prompt':'0','completion':'0'}}]}
+                        completions.append(1)
+                        if len(completions)==1:
+                            return {'choices':[{'message':{'content':'invalid-json'}}]}
+                        return {'choices':[{'message':{'content':__import__('json').dumps({'path':'backend/affiliate.ts','content':edited,'reason':'Correct checked input handling'})}}]}
+                    env={'OPENROUTER_API_KEY':'synthetic-test-key','ALIAS':'pricecam','AUTODEV_OPENROUTER_FREE_MODEL':'openrouter/minimax/minimax-m3.1-flash:free','AUTODEV_OPENROUTER_RETRY_ONCE':retry}
+                    with patch.dict(os.environ,env):
+                        with patch.object(direct,'candidate_file',return_value=('backend/affiliate.ts',initial)):
+                            with patch.object(direct,'request_json',side_effect=reply):
+                                if retry=='true':
+                                    self.assertEqual(direct.run(),'backend/affiliate.ts')
+                                else:
+                                    with self.assertRaises(direct.SafeBlock): direct.run()
+                    self.assertEqual(len(completions),max_calls)
+                    self.assertEqual(target.read_text(),edited if retry=='true' else initial)
+            finally:
+                os.chdir(cwd)
+
     def test_code_path_does_not_call_shell_or_write_credentials(self):
         content=(HERE/"openrouter_direct_patch.py").read_text()
         self.assertNotIn("shell=True",content)
