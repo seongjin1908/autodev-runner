@@ -47,14 +47,14 @@ PY
       break
     fi
 
-    IFS='|' read -r candidate_repo candidate_branch candidate_guard candidate_locked candidate_mode < <(python - "$CONFIG" "$candidate" <<'PY'
+    IFS='|' read -r candidate_repo candidate_branch candidate_guard candidate_locked candidate_mode candidate_base < <(python - "$CONFIG" "$candidate" <<'PY'
 import json,sys
 cfg,target=sys.argv[1:3]
 p=next((x for x in json.load(open(cfg, encoding='utf-8'))['projects'] if x['alias']==target), None)
 if not p:
     raise SystemExit(f'Unknown target: {target}')
 branch = p['work_branch'] if p.get('branch_mode','fixed') != 'run_scoped' else (p.get('source_branch') or p['base_branch'])
-print(f"{p['repository']}|{branch}|{p.get('recent_change_guard_minutes', 25)}|{str(p.get('external_worker_lock', False)).lower()}|{p.get('branch_mode', 'fixed')}")
+print(f"{p['repository']}|{branch}|{p.get('recent_change_guard_minutes', 25)}|{str(p.get('external_worker_lock', False)).lower()}|{p.get('branch_mode', 'fixed')}|{p['base_branch']}")
 PY
     )
 
@@ -67,6 +67,28 @@ PY
       continue
     fi
 
+    # Do not spend free model calls producing yet another run-scoped branch
+    # when an existing AI-generated PR for this exact lane is awaiting review.
+    # This checks all normal and fixed branches and fails closed on an API error.
+    pending_json="$(gh pr list -R "$candidate_repo" --state open --base "$candidate_base" --limit 100 --json headRefName 2>/dev/null)" || {
+      echo "Skipping $candidate: open-PR backlog could not be inspected." >&2
+      continue
+    }
+    pending_count="$(python3 -c '
+import json,sys
+alias=sys.argv[1]
+records=json.loads(sys.stdin.read())
+assert isinstance(records,list)
+prefix="autodev/"+alias+"/"
+print(sum(isinstance(r,dict) and str(r.get("headRefName","")).startswith(prefix) for r in records))
+' "$candidate" <<< "$pending_json")" || {
+      echo "Skipping $candidate: malformed PR backlog result." >&2
+      continue
+    }
+    if (( pending_count > 0 )); then
+      echo "Skipping $candidate: $pending_count unreviewed AutoDev PR(s); integrate existing work first." >&2
+      continue
+    fi
     set +e
     push_allowed="$(gh api "repos/$candidate_repo" --jq '.permissions.push // false' 2>/dev/null)"
     repo_rc=$?

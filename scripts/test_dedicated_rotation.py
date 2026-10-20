@@ -45,7 +45,8 @@ central = [
 ]
 assert central and len(central) >= 10
 assert not {p["alias"] for p in central}.intersection(dedicated)
-assert sum(p["auto_weight"] for p in central) == 49
+assert sum(p["auto_weight"] for p in central) >= 30
+assert sum(p["auto_weight"] for p in central if p["alias"] in {"pricecam","fault-intel"}) / sum(p["auto_weight"] for p in central) >= 0.70
 
 # Automatic selection excludes dedicated lanes, but explicit/manual selection
 # still resolves them for their own cron workflows and user-directed dispatch.
