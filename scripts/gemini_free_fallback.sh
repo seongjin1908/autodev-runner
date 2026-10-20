@@ -26,9 +26,12 @@ case "$GEMINI_MODEL" in
   *) echo "::error::Unapproved Gemini model; refusing API request."; exit 2 ;;
 esac
 cd "$ROOT_DIR/target"
-if [[ "$(git rev-parse HEAD)" != "$START_SHA" || -n "$(git status --porcelain)" ]]; then
-  echo "::error::Target changed since OpenCode failure. Gemini cannot touch unreviewed state."
-  exit 2
+# Primary provider did not produce validated code. Before any Gemini request,
+# safely restore the immutable start commit in this ephemeral Actions checkout.
+# Unknown workspace policy/credential files or a different HEAD still fail closed.
+if ! bash "$ROOT_DIR/scripts/prepare_gemini_handoff.sh"; then
+  echo "::warning::Gemini fallback blocked because handoff could not be validated."
+  exit 0
 fi
 # A headless trust override is safe only if this target cannot supply
 # workspace-level Gemini configuration, hooks, extensions, or MCP policies.
