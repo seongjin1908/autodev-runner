@@ -24,6 +24,8 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
             ("WARNING private-data and 55", 55, "configuration_failure"),
             ("429 RESOURCE_EXHAUSTED private-key-secret", 1, "quota_limited"),
             ("401 API key not valid private-key-secret", 1, "authorization_failed"),
+            ("Please set an Auth method in ~/.gemini/settings.json", 1, "authorization_failed"),
+            ("Manual authorization is required but the current session is non-interactive", 1, "authorization_failed"),
             ("invalid config", 52, "configuration_failure"),
             ("Payment Required 402", 1, "billing_blocked"),
             ("", 124, "timeout"),
