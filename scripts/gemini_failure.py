@@ -62,7 +62,7 @@ def classify_structured_error(json_output: str, stderr: str, exit_code: int) -> 
     else:
         diagnostic = ""
     if diagnostic:
-        return classify(diagnostic + "\\n" + stderr[:4096], exit_code)
+        return classify(diagnostic + "\n" + stderr[:4096], exit_code)
     return classify(stderr, exit_code)
 
 
