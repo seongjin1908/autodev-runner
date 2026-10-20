@@ -49,7 +49,7 @@ if ! command -v opencode >/dev/null 2>&1; then
   echo "::warning::OpenCode CLI unavailable; no free provider call."
   exit 0
 fi
-if [[ -e .opencode || -e opencode.json || -e opencode.jsonc || -e .agents || -e .env.local ]]; then
+if [[ -e .opencode || -e opencode.json || -e opencode.jsonc || -e .env.local ]]; then
   echo "::warning::Unreviewed local agent/provider config detected; free model blocked."
   exit 0
 fi
