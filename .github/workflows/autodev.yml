@@ -77,6 +77,8 @@ jobs:
       # This does not change cron defaults or enable recurring OpenRouter use.
       DDD_FREE_MODEL_POOL_MAX_SECONDS: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.openrouter_free_once == true)) && '1' || vars.DDD_FREE_MODEL_POOL_MAX_SECONDS || '' }}
       AUTODEV_ROTATION_SLOT_SECONDS: '1800'
+      # Default scheduled and manual coding to the bounded, already proven $0 API.
+      AUTODEV_DIRECT_FREE_ONLY: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'true' || 'false' }}
 
     steps:
       - name: Checkout runner control plane
@@ -200,14 +202,14 @@ jobs:
         run: bash scripts/develop_target.sh
 
       - name: Optional strictly zero-priced OpenRouter direct coding (manual or bounded schedule)
-        # Every 30 min: at most 48 scheduled free model requests/day. Disable scheduled response retries to preserve the free quota.
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && (github.event_name == 'schedule' || inputs.openrouter_free_once == true || vars.AUTODEV_OPENROUTER_FREE_ENABLED == 'true')
+        # Every 30 min: at most 48 scheduled calls/day. Manual explicit retry only.
+        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true'
         env:
           OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
-          AUTODEV_OPENROUTER_FREE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || inputs.openrouter_free_once == true && 'true' || vars.AUTODEV_OPENROUTER_FREE_ENABLED || 'false' }}
+          AUTODEV_OPENROUTER_FREE_ENABLED: 'true'
           AUTODEV_OPENROUTER_FREE_MODEL: ${{ vars.AUTODEV_OPENROUTER_FREE_MODEL || 'openrouter/minimax/minimax-m3.1-flash:free' }}
-          AUTODEV_OPENROUTER_DIRECT_FIRST: ${{ (github.event_name == 'schedule' || inputs.openrouter_free_once == true) && 'true' || 'false' }}
-          AUTODEV_OPENROUTER_RETRY_ONCE: ${{ github.event_name == 'schedule' && 'false' || 'true' }}
+          AUTODEV_OPENROUTER_DIRECT_FIRST: 'true'
+          AUTODEV_OPENROUTER_RETRY_ONCE: ${{ github.event_name == 'workflow_dispatch' && inputs.openrouter_free_once == true && 'true' || 'false' }}
           VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
           MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
           ALIAS: ${{ steps.select.outputs.alias }}
@@ -215,7 +217,7 @@ jobs:
         run: bash scripts/openrouter_free_fallback.sh
 
       - name: Optional independent Gemini free-tier coding fallback
-        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && vars.AUTODEV_GEMINI_FREE_ENABLED == 'true' && !(github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.openrouter_free_once == true))
+        if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && vars.AUTODEV_GEMINI_FREE_ENABLED == 'true' && !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         env:
           # Never pass Gemini credentials to OpenCode, npm baseline, or other steps.
           GEMINI_API_KEY: ${{ secrets.AUTODEV_GEMINI_FREE_API_KEY }}
