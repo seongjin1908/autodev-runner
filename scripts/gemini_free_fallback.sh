@@ -96,8 +96,7 @@ GEMINI_TIMEOUT_SECONDS=180
 echo "Starting opt-in Gemini free-tier fallback: $GEMINI_MODEL (bounded to ${GEMINI_TIMEOUT_SECONDS}s)."
 cd "$ROOT_DIR/target"
 set +e
-HOME="$SAFE_HOME" GEMINI_CLI_HOME="$SAFE_HOME" timeout "$GEMINI_TIMEOUT_SECONDS" gemini \
-  --skip-trust \
+HOME="$SAFE_HOME" GEMINI_CLI_HOME="$SAFE_HOME" GEMINI_CLI_TRUST_WORKSPACE=true timeout "$GEMINI_TIMEOUT_SECONDS" gemini \
   --model "$GEMINI_MODEL" \
   --approval-mode auto_edit \
   --extensions none \

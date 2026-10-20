@@ -30,7 +30,7 @@ def classify(log: str, exit_code: int) -> str:
         return "transport_failure"
     if re.search(r"model.{0,45}(?:not found|not supported|not available)|no such model", data):
         return "model_unavailable"
-    if re.search(r"invalid config|configuration error|malformed settings|unknown option|invalid argument", data) or exit_code in (42, 52):
+    if re.search(r"invalid config|configuration error|malformed settings|unknown option|unknown arguments?|unrecognized arguments?|invalid argument", data) or exit_code in (42, 52):
         return "configuration_failure"
     if exit_code == 55:
         # Some versions use code 55 for headless workspace trust. No assumptions

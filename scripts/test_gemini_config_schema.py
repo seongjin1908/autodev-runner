@@ -45,6 +45,8 @@ class GeminiSettingsSchemaTests(unittest.TestCase):
         self.assertIn("env -u GEMINI_API_KEY -u GOOGLE_API_KEY HOME=", SCRIPT)
         self.assertIn('GEMINI_CLI_HOME="$SAFE_HOME"', SCRIPT)
         self.assertEqual(SCRIPT.count('GEMINI_CLI_HOME="$SAFE_HOME"'), 2)
+        self.assertIn('GEMINI_CLI_TRUST_WORKSPACE=true', SCRIPT)
+        self.assertNotIn("--skip-trust", SCRIPT)
         self.assertLess(SCRIPT.index("gemini --version"),
                         SCRIPT.index('echo "Starting opt-in Gemini free-tier fallback'))
         self.assertIn("Gemini local executable check failed", SCRIPT)

@@ -10,6 +10,9 @@ permissions:
 
 jobs:
   launch-batch:
+    # Paused: the user owns SajuMyeongkwae development outside this central runner.
+    # Keep schedule/manual dispatch inert until explicitly unpaused and isolation removed.
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
