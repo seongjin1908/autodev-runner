@@ -46,6 +46,11 @@ class OpenRouterNoCostTests(unittest.TestCase):
         self.assertIn("github.event_name == 'workflow_dispatch'",after.split("      - name:",1)[0])
         self.assertIn("vars.AUTODEV_OPENROUTER_FREE_ENABLED == 'true'",after)
         self.assertEqual(WF.count("secrets.AUTODEV_OPENROUTER_FREE_API_KEY"),1)
+        self.assertIn("openrouter_free_once:",WF)
+        self.assertIn("default: false",WF.split("      openrouter_free_once:",1)[1].split("permissions:",1)[0])
+        self.assertIn("inputs.openrouter_free_once == true",after.split("      - name:",1)[0])
+        self.assertIn("DDD_FREE_MODEL_POOL_MAX_SECONDS:",before)
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.openrouter_free_once == true",before)
         self.assertLess(WF.index("run: bash scripts/develop_target.sh"),
                         WF.index("run: bash scripts/openrouter_free_fallback.sh"))
         self.assertLess(WF.index("run: bash scripts/openrouter_free_fallback.sh"),

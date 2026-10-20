@@ -44,6 +44,11 @@ on:
           - fundos
           - motion-grid
           - tradepilot
+      openrouter_free_once:
+        description: Try verified zero-priced OpenRouter model for this manual run
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -68,6 +73,9 @@ jobs:
       DDD_FREE_CODE_MODEL_SENARY: ${{ vars.DDD_FREE_CODE_MODEL_SENARY || 'opencode/mimo-v2.6-flash-free' }}
       DDD_FREE_MODEL_TIMEOUT_SECONDS: ${{ vars.DDD_FREE_MODEL_TIMEOUT_SECONDS || '300' }}
       DDD_FREE_MODEL_TRANSIENT_RETRIES: ${{ vars.DDD_FREE_MODEL_TRANSIENT_RETRIES || '0' }}
+      # Explicit one-off manual opt-in fast-skips unavailable legacy provider pool.
+      # This does not change cron defaults or enable recurring OpenRouter use.
+      DDD_FREE_MODEL_POOL_MAX_SECONDS: ${{ github.event_name == 'workflow_dispatch' && inputs.openrouter_free_once == true && '1' || vars.DDD_FREE_MODEL_POOL_MAX_SECONDS || '' }}
       AUTODEV_ROTATION_SLOT_SECONDS: '1800'
 
     steps:
@@ -193,10 +201,10 @@ jobs:
 
       - name: Optional manual-only OpenRouter zero-priced coding fallback
         # Never spend the user's 50/day free quota on recurring unattended jobs.
-        if: github.event_name == 'workflow_dispatch' && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && vars.AUTODEV_OPENROUTER_FREE_ENABLED == 'true'
+        if: github.event_name == 'workflow_dispatch' && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && (inputs.openrouter_free_once == true || vars.AUTODEV_OPENROUTER_FREE_ENABLED == 'true')
         env:
           OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
-          AUTODEV_OPENROUTER_FREE_ENABLED: ${{ vars.AUTODEV_OPENROUTER_FREE_ENABLED }}
+          AUTODEV_OPENROUTER_FREE_ENABLED: ${{ inputs.openrouter_free_once == true && 'true' || vars.AUTODEV_OPENROUTER_FREE_ENABLED || 'false' }}
           AUTODEV_OPENROUTER_FREE_MODEL: ${{ vars.AUTODEV_OPENROUTER_FREE_MODEL || 'openrouter/minimax/minimax-m3.1-flash:free' }}
           VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
           MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
