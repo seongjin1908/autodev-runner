@@ -1,0 +1,113 @@
+name: SajuMyeongkwae targeted Premium PDF smoke
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/unkive-pdf-smoke.yml'
+      - 'config/unkive-pdf-smoke-ref.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sajomyeongkwae-pdf-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  premium-single-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolated runner controls
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate immutable source SHA
+        id: target
+        run: |
+          set -euo pipefail
+          ref="$(tr -d '\\r\\n' < config/unkive-pdf-smoke-ref.txt)"
+          if ! [[ "$ref" =~ ^[a-f0-9]{40}$ ]]; then exit 1; fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - name: Read private source at pinned commit
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ steps.target.outputs.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing packages without lifecycle hooks
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Generate failing fixture 02-P002 only (no model requests)
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          cat > release-test-results/p002-smoke.ts <<'TS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import { calculateFortune } from '../backend/fortune';
+          import { generateAdminPreviewAnalysis } from '../backend/analysis';
+          import { buildPdfBase64 } from '../backend/pdf';
+          import { comprehensiveInput } from '../scripts/comprehensive-fixtures';
+          import { reset, state } from '../scripts/test-backend-sdk';
+          async function main() {
+            reset();
+            globalThis.fetch = async () => { throw new Error('Network forbidden'); };
+            const input = comprehensiveInput(2);
+            const fortune = calculateFortune(input);
+            const originalFortune = JSON.stringify(fortune);
+            const analysis = await generateAdminPreviewAnalysis(fortune, 'P002', undefined, 'marriage');
+            const originalAnalysis = JSON.stringify(analysis);
+            const pdf = Buffer.from(await buildPdfBase64(input.name,
+              { code: 'P002', name: 'Premium' }, fortune, analysis, 'SYNTHETIC-02'), 'base64');
+            assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
+            assert.equal(JSON.stringify(analysis), originalAnalysis, 'analysis mutated');
+            assert.equal(JSON.stringify(fortune), originalFortune, 'natal facts mutated');
+            assert.equal(state.aiCalls, 0, 'unexpected paid AI call');
+            fs.writeFileSync('release-test-results/02-P002.pdf', pdf);
+            console.log('P002_SINGLE_PDF_GENERATED', pdf.length);
+          }
+          main().catch(error => { console.error(error); process.exitCode = 1; });
+          TS
+          npx --no-install esbuild release-test-results/p002-smoke.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/p002-smoke.cjs
+          node release-test-results/p002-smoke.cjs
+      - name: Assert rendered body and legal notice stay together
+        working-directory: target
+        run: |
+          python -m pip install PyMuPDF==1.26.5
+          python - <<'PY'
+          import fitz
+          pdf = fitz.open('release-test-results/02-P002.pdf')
+          for number, page in enumerate(pdf):
+              if number == 0: continue
+              data = page.get_text('dict')
+              body = ' '.join(span['text'] for block in data['blocks']
+                for line in block.get('lines', [])
+                for span in line.get('spans', []) if 75 <= line['bbox'][1] < 740).strip()
+              assert len(body) >= 125, f'page {number+1}: only {len(body)} characters'
+              assert '�' not in page.get_text(), f'page {number+1}: missing glyph'
+              footer = [span['text'].strip() for block in data['blocks']
+                 for line in block.get('lines', [])
+                 for span in line.get('spans', []) if span['bbox'][1] > 745 and span['bbox'][0] > 520]
+              assert str(number+1).zfill(2) in footer, f'page {number+1}: missing page number'
+          last = pdf[-1].get_text()
+          assert '명리 용어 쉽게 보기' in last, 'glossary separated from disclaimer'
+          assert '전통 명리 계산과 해석 규칙' in last, 'disclaimer missing'
+          assert '2026년' in ''.join(page.get_text() for page in pdf), 'year omitted'
+          print('P002_SINGLE_FIXTURE_PASS', len(pdf), 'pages', len(last), 'last-page text chars')
+          PY
+      - name: Retain one rendered PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sajumyeongkwae-p002-smoke
+          retention-days: 7
+          if-no-files-found: ignore
+          path: target/release-test-results/02-P002.pdf
