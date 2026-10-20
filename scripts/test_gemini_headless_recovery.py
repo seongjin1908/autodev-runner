@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline regression tests for headless Gemini trust failure classification."""
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -41,6 +42,46 @@ class GeminiHeadlessRecoveryTests(unittest.TestCase):
             self.assertEqual(run.returncode, 0)
             self.assertEqual(run.stdout.strip(), "workspace_untrusted")
             self.assertNotIn("private-123", run.stdout)
+
+    def test_structured_headless_api_errors_without_user_content_exposure(self):
+        samples = [
+            ({"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "message": "quota exceeded; secret=never-echo"}, "response": "confidential source"}, "quota_limited"),
+            ({"error": {"code": 403, "status": "PERMISSION_DENIED", "message": "private token=never-echo"}, "response": "customer data"}, "authorization_failed"),
+            ({"error": {"code": 402, "message": "payment required; secret=never-echo"}}, "billing_blocked"),
+            ({"error": {"message": "invalid argument --flag secret=never-echo"}}, "configuration_failure"),
+            ({"response": "success content may include 429, customer private data"}, "unknown_cli_failure"),
+        ]
+        for payload, expected in samples:
+            with self.subTest(expected=expected):
+                self.assertEqual(
+                    gemini.classify_structured_error(json.dumps(payload), "", 1),
+                    expected,
+                )
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            error_file = directory / "stderr.log"
+            response_file = directory / "private-result.json"
+            error_file.write_text("", encoding="utf-8")
+            response_file.write_text(json.dumps(samples[0][0]), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(MODULE), "classify",
+                 "--log", str(error_file),
+                 "--json-output", str(response_file),
+                 "--exit-code", "1"],
+                capture_output=True, text=True, check=False
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "quota_limited")
+            self.assertNotIn("never-echo", result.stdout)
+            self.assertNotIn("confidential source", result.stdout)
+
+    def test_gemini_uses_single_json_attempt_and_no_public_private_logs(self):
+        self.assertIn("--output-format json", SHELL)
+        self.assertIn(">/tmp/autodev-gemini-run.json 2>/tmp/autodev-gemini-run.log", SHELL)
+        self.assertIn("--json-output /tmp/autodev-gemini-run.json", SHELL)
+        self.assertNotIn("cat /tmp/autodev-gemini-run.json", SHELL)
+        self.assertIn("private model transcript not published", SHELL.lower())
+        self.assertIn('AUTODEV_GEMINI_FREE_ENABLED:-false', SHELL)
 
     def test_no_untrusted_project_config_is_silently_overridden(self):
         self.assertIn("--skip-trust", SHELL)
