@@ -1,0 +1,93 @@
+name: One-off guarded PriceCam free AI code PR
+on:
+  push:
+    branches: [test/openrouter-free-smoke-20261020]
+    paths: [.github/workflows/pricecam-free-ai-pr-once.yml]
+permissions:
+  contents: read
+jobs:
+  build-reviewed-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed latest AutoDev controller
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: controller
+          persist-credentials: false
+      - name: Checkout PriceCam owned repo
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/pricecam-autodev
+          ref: main
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify baseline, get free patch, validate and open review PR
+        working-directory: target
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
+          AUTODEV_OPENROUTER_FREE_MODEL: openrouter/minimax/minimax-m3.1-flash:free
+          ALIAS: pricecam
+        run: |
+          set -euo pipefail
+          expected="$(git rev-parse HEAD)"
+          if [[ -z "$GH_TOKEN" || -z "$OPENROUTER_API_KEY" ]]; then
+            echo "::error::No authorized token and/or free model secret; no action."
+            exit 1
+          fi
+          if [[ "$(gh api repos/seongjin1908/pricecam-autodev/branches/main --jq .commit.sha)" != "$expected" ]]; then
+            echo "::error::PriceCam source changed during checkout; no edit."
+            exit 1
+          fi
+          if [[ -n "$(gh pr list -R seongjin1908/pricecam-autodev --state open --json number --jq '.[0].number // empty')" ]]; then
+            echo "::warning::PriceCam has an existing open PR; avoid duplicate automatic edits."
+            exit 0
+          fi
+          npm install --no-audit --no-fund >/tmp/pricecam-deps.log 2>&1
+          node -e "JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))"
+          npm run build >/tmp/pricecam-before.log 2>&1
+          echo "Baseline PriceCam build: PASS."
+          set +e
+          python3 ../controller/scripts/openrouter_direct_patch.py >/tmp/pricecam-free-model-result.log 2>&1
+          rc=$?
+          set -e
+          unset OPENROUTER_API_KEY
+          if [[ "$rc" != "0" ]]; then
+            grep -E '^direct_free_code_blocked:[a-z_]+$' /tmp/pricecam-free-model-result.log | head -n 1 || true
+            echo "::error::Free AI returned no acceptable code source change."
+            exit 2
+          fi
+          changed="$(git diff --name-only)"
+          if [[ "$changed" != "backend/affiliate.ts" ]]; then
+            echo "::error::Unexpected source modification; do not publish."
+            exit 3
+          fi
+          git diff --check
+          node -e "JSON.parse(require('fs').readFileSync('tests/tests.json','utf8'))"
+          npm run build >/tmp/pricecam-after.log 2>&1
+          echo "Free source patch and full configured build: PASS."
+          if [[ "$(gh api repos/seongjin1908/pricecam-autodev/branches/main --jq .commit.sha)" != "$expected" ]]; then
+            echo "::error::Main advanced while validating; no PR."
+            exit 4
+          fi
+          git config user.name "central-autodev-runner"
+          git config user.email "central-autodev-runner@users.noreply.github.com"
+          git checkout -b "autodev/free-openrouter-pricecam-20261020"
+          git add -- backend/affiliate.ts
+          git commit -m "fix: validated free AI PriceCam source safety improvement"
+          gh auth setup-git >/dev/null 2>&1
+          git push origin HEAD:refs/heads/autodev/free-openrouter-pricecam-20261020 >/tmp/pricecam-push.log 2>&1
+          gh pr create -R seongjin1908/pricecam-autodev --base main --head autodev/free-openrouter-pricecam-20261020 \
+            --title "fix: validated no-cost AI PriceCam source safety" \
+            --body "One manually requested, zero-price OpenRouter API source improvement. Full existing PriceCam build passed both before and after. Single tracked file backend/affiliate.ts; changes need independent review. No auto-merge or deployment." >/dev/null
+          echo "PASS: One price-verified free AI source patch passed configured build; a review-only PR exists."
+          echo "### Free AI PriceCam result" >> "$GITHUB_STEP_SUMMARY"
+          echo "PASS: build before/after, one guarded source file, no-cost AI, review-only PR." >> "$GITHUB_STEP_SUMMARY"
