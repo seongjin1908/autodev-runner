@@ -1,0 +1,99 @@
+name: Independent SajuMyeongkwae Today PR250
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/saju-today-pr250-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-saju-today-pr250
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - name: Require existing private-source access
+        shell: bash
+        env:
+          SOURCE_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$SOURCE_TOKEN" || { echo '::error::Protected source token missing'; exit 10; }
+
+      - name: Checkout pinned private feature commit
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 5a088b873840173ae44cc262ea98611b1e9dba27
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: product
+
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify immutable source
+        shell: bash
+        working-directory: product
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "5a088b873840173ae44cc262ea98611b1e9dba27"
+          echo 'PINNED_SAJU_TODAY_SOURCE_PASS'
+
+      - name: Install offline-safe public packages without lifecycle scripts
+        working-directory: product
+        shell: bash
+        run: |
+          if ! npm install --no-package-lock --no-audit --no-fund --ignore-scripts >/tmp/saju-today-install.log 2>&1; then
+            echo '::error::Dependency install failed. Private logs withheld.'
+            exit 11
+          fi
+          echo 'SAJU_TODAY_DEPENDENCIES_PASS'
+
+      - name: Verify deterministic today fortune and KST boundaries
+        working-directory: product
+        shell: bash
+        run: |
+          if ! node scripts/check-unkive-today.mjs >/tmp/saju-today-feature.log 2>&1; then
+            echo '::error::Today fortune feature test failed (private details withheld).'
+            exit 12
+          fi
+          echo 'SAJU_TODAY_FEATURE_TESTS_PASS'
+
+      - name: Verify production types with existing frontend tsconfig
+        working-directory: product
+        shell: bash
+        run: |
+          if ! ./node_modules/.bin/tsc --noEmit >/tmp/saju-today-typecheck.log 2>&1; then
+            echo '::error::Frontend typecheck failed (private details withheld).'
+            exit 13
+          fi
+          echo 'SAJU_TODAY_TYPECHECK_PASS'
+
+      - name: Verify production Vite bundle
+        working-directory: product
+        shell: bash
+        run: |
+          if ! npm run build >/tmp/saju-today-build.log 2>&1; then
+            echo '::error::Frontend bundle build failed (private details withheld).'
+            exit 14
+          fi
+          echo 'SAJU_TODAY_BUILD_PASS'
+
+      - name: Report tested scope
+        shell: bash
+        run: |
+          echo '### SajuMyeongkwae daily free isolated gate' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Source commit: 5a088b873840173ae44cc262ea98611b1e9dba27' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Deterministic KST test, source-only frontend typecheck, bundle build.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No provider request, payment, customer-data read, code merge, public artifact or deployment.' >> "$GITHUB_STEP_SUMMARY"
