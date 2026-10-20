@@ -99,7 +99,7 @@ assert 0<len(paths)<=limit, "No durable changes or too many changed files"
 code_exts={".js",".jsx",".ts",".tsx",".mjs",".cjs",".py",".go",".rs",".java",".kt",".swift",".vue",".svelte",".html",".css",".sql"}
 def allowed(path):
     lower=path.lower()
-    if path.startswith((".github/","/.openrouter/",".opencode/",".agents/",".codex/")) or path.startswith(".env"):
+    if path in (".mcp.json","opencode.json","opencode.jsonc") or path.startswith((".github/",".openrouter/",".opencode/",".agents/",".codex/")) or path.startswith(".env"):
         return False
     if "/.env" in path or "secret" in lower or lower.endswith((".pem",".key",".p12")):
         return False
