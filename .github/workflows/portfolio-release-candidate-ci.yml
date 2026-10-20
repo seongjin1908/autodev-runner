@@ -56,6 +56,11 @@ jobs:
             repo: seongjin1908/cyber-guardian-ai
             ref: main
             case: cyber-guardian-main
+          # Security P0 PR #10: immutable already-reviewed source snapshot.
+          - target: cyber-guardian
+            repo: seongjin1908/cyber-guardian-ai
+            ref: 6f1f5b7accb9abfd764f76f178c8febe2e40f155
+            case: cyber-guardian-pr10-audit-p0
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
             ref: 60fe4b7bba7826bb02f800f96856bf0c199faa9f
