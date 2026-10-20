@@ -83,6 +83,28 @@ BASELINE_SECONDS="$(( $(date +%s) - baseline_started ))"
 echo "$BASELINE_RC" > /tmp/autodev-baseline-rc
 echo "Baseline validation completed (exit $BASELINE_RC)."
 
+# Direct free API runs do not need OpenCode, model listing or REA initialization.
+# Avoid global CLI installation and repeated provider timeouts on every 30-min job.
+if [[ "${AUTODEV_DIRECT_FREE_ONLY:-false}" == "true" ]]; then
+  if (( BASELINE_RC != 0 )); then
+    echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
+    echo "AUTODEV_FAILURE_REASON=baseline_failed" >> "$GITHUB_ENV"
+    echo "::error::Baseline validation failed; do not generate unrelated code."
+    exit 1
+  fi
+  if [[ ! -f "$ROOT_DIR/$PROMPT_FILE" ]]; then
+    echo "::error::Review prompt missing."
+    exit 2
+  fi
+  {
+    printf 'Target: %s\n' "$ALIAS"
+    cat "$ROOT_DIR/$PROMPT_FILE"
+    printf '\nDo not modify protected files or activate paid APIs.\n'
+  } > /tmp/autodev-prompt.txt
+  echo "AUTODEV_FAILURE_REASON=direct_provider_pending" >> "$GITHUB_ENV"
+  echo "Direct-free-only path: baseline passed; skipped OpenCode installation, REA and model timeout loop."
+  exit 0
+fi
 opencode_started="$(date +%s)"
 npm install --cache "${RUNNER_TEMP:-/tmp}/autodev-public-cli-npm-cache" -g opencode-ai --no-audit --no-fund >/tmp/autodev-opencode-install.log 2>&1
 OPENCODE_SECONDS="$(( $(date +%s) - opencode_started ))"
