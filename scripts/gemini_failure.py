@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import re
 
@@ -42,18 +43,49 @@ def classify(log: str, exit_code: int) -> str:
     return "unknown_cli_failure"
 
 
+def classify_structured_error(json_output: str, stderr: str, exit_code: int) -> str:
+    """Classify only the JSON error object, never its response or model source."""
+    try:
+        payload = json.loads(json_output)
+    except (ValueError, TypeError):
+        payload = None
+    if not isinstance(payload, dict) or payload.get("error") in (None, False):
+        return classify(stderr, exit_code)
+    error = payload["error"]
+    if isinstance(error, dict):
+        # Only documented, bounded diagnostic fields; exclude arbitrary model
+        # response, tool calls, prompt and source entirely.
+        parts = [str(error.get(key, ""))[:2048] for key in ("code", "status", "type", "message")]
+        diagnostic = " ".join(parts)
+    elif isinstance(error, str):
+        diagnostic = error[:4096]
+    else:
+        diagnostic = ""
+    if diagnostic:
+        return classify(diagnostic + "\n" + stderr[:4096], exit_code)
+    return classify(stderr, exit_code)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
     req = sub.add_parser("classify")
     req.add_argument("--log", type=Path, required=True)
     req.add_argument("--exit-code", type=int, required=True)
+    req.add_argument("--json-output", type=Path)
     args = parser.parse_args()
     try:
         data = args.log.read_text(encoding="utf-8", errors="replace")
     except OSError:
         data = ""
-    print(classify(data, args.exit_code))
+    if args.json_output is not None:
+        try:
+            response = args.json_output.read_text(encoding="utf-8", errors="replace")[:2_000_000]
+        except OSError:
+            response = ""
+        print(classify_structured_error(response, data, args.exit_code))
+    else:
+        print(classify(data, args.exit_code))
 
 
 if __name__ == "__main__":
