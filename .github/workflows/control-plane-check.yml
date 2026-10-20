@@ -48,6 +48,9 @@ jobs:
         shell: bash
         run: bash scripts/test_production_gate.sh
 
+      - name: Verify release-first rotation, duplicate-PR guard, and direct fast path
+        run: python3 scripts/test_release_focus.py
+
       - name: Test bounded free coding model attempts
         shell: bash
         run: bash scripts/test_free_model_budget.sh
