@@ -1,0 +1,53 @@
+name: SajuMyeongkwae 12 fixed-question editorial comparison
+on:
+  pull_request:
+    paths:
+      - .github/workflows/unkive-release12.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-twelve:
+    name: ${{ matrix.version.label }} same twelve Q1 / four tiers
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - label: baseline
+            ref: da9cf033eee27db3b2c32c1587df063f23a63717
+          - label: candidate
+            ref: 435d993145409ec3228240b62703cae2fe44ddcc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout pinned private analysis code read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ matrix.version.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Generate fixed 12 chart / question snapshots without model calls
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/unkive-release12-content-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/release12.cjs
+          node release-test-results/release12.cjs
+      - name: Retain exact same-case customer report text
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-release12-${{ matrix.version.label }}
+          path: target/release-test-results/release12-content.json
+          if-no-files-found: ignore
+          retention-days: 7
