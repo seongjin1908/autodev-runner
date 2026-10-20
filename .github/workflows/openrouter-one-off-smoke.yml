@@ -1,0 +1,87 @@
+name: One-off OpenRouter zero-price connection test
+on:
+  push:
+    branches: [test/openrouter-free-smoke-20261020]
+    paths: [.github/workflows/openrouter-one-off-smoke.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  openrouter-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify opt-in, catalog zero price, and one bounded model response
+        shell: bash
+        env:
+          FREE_OPT_IN: ${{ vars.AUTODEV_OPENROUTER_FREE_ENABLED }}
+          OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ "$FREE_OPT_IN" != "true" ]]; then
+            echo "::error::OpenRouter disabled. Set Actions variable AUTODEV_OPENROUTER_FREE_ENABLED=true; no model request made."
+            exit 2
+          fi
+          if [[ -z "$OPENROUTER_API_KEY" ]]; then
+            echo "::error::OpenRouter secret not configured. Expected AUTODEV_OPENROUTER_FREE_API_KEY; no model request made."
+            exit 3
+          fi
+          echo "OpenRouter opt-in and secret: both present (secret value never displayed)."
+          curl -fsSL --retry 1 --max-time 25 \
+            https://openrouter.ai/api/v1/models \
+            -o "$RUNNER_TEMP/openrouter-public-models.json"
+          python3 - "$RUNNER_TEMP/openrouter-public-models.json" <<'PY'
+          import json,sys
+          models=json.load(open(sys.argv[1],encoding="utf-8")).get("data",[])
+          want="minimax/minimax-m3.1-flash:free"
+          hits=[x for x in models if x.get("id")==want]
+          if len(hits)!=1:
+              print("::error::Pinned free model not advertised in public catalog; abort without a charged request.")
+              sys.exit(4)
+          pricing=hits[0].get("pricing",{})
+          try:
+              free=(float(pricing["prompt"])==0 and float(pricing["completion"])==0)
+          except (KeyError,ValueError,TypeError):
+              free=False
+          if not free:
+              print("::error::Model input/output pricing is not verified zero; abort.")
+              sys.exit(5)
+          print("Pinned MiniMax M3.1 Flash:free catalog input and output prices confirmed zero.")
+          PY
+          printf '%s' '{"model":"minimax/minimax-m3.1-flash:free","messages":[{"role":"user","content":"Reply with just READY."}],"max_tokens":24,"temperature":0}' > "$RUNNER_TEMP/openrouter-test-payload.json"
+          set +e
+          status="$(curl -sS --max-time 45 -o "$RUNNER_TEMP/openrouter-private-test.json" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary @"$RUNNER_TEMP/openrouter-test-payload.json" \
+            https://openrouter.ai/api/v1/chat/completions 2>/dev/null)"
+          rc=$?
+          set -e
+          unset OPENROUTER_API_KEY
+          if [[ "$rc" != "0" ]]; then
+            echo "::error::Free model request failed at network/client level; curl exit $rc. No response body disclosed."
+            exit 6
+          fi
+          case "$status" in
+            200) ;;
+            401|403) echo "::error::OpenRouter authentication/authorization rejected (HTTP $status)."; exit 7 ;;
+            402) echo "::error::OpenRouter billing or free quota not authorized (HTTP 402); no paid fallback."; exit 8 ;;
+            429) echo "::error::OpenRouter free quota rate limited (HTTP 429)."; exit 9 ;;
+            *) echo "::error::OpenRouter free endpoint returned HTTP $status; private response withheld."; exit 10 ;;
+          esac
+          python3 - "$RUNNER_TEMP/openrouter-private-test.json" <<'PY'
+          import json,sys
+          try:
+              result=json.load(open(sys.argv[1],encoding="utf-8"))
+              text=result["choices"][0]["message"]["content"]
+              valid=isinstance(text,str) and len(text.strip())>0
+          except (KeyError,IndexError,ValueError,TypeError):
+              valid=False
+          if not valid:
+              print("::error::HTTP 200 but no valid model answer; content withheld.")
+              sys.exit(11)
+          print("PASS: one zero-priced OpenRouter API response returned nonempty text; content withheld.")
+          PY
+          echo "### OpenRouter free smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo "PASS: enabled, secret exists, model priced at zero, HTTP 200, response parsed." >> "$GITHUB_STEP_SUMMARY"
