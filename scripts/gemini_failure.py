@@ -66,6 +66,51 @@ def classify_structured_error(json_output: str, stderr: str, exit_code: int) -> 
     return classify(stderr, exit_code)
 
 
+
+def safe_triage(stderr: str, json_output: str, exit_code: int) -> str:
+    """Fixed vocabulary only: no raw error text, prompt, source, or credentials."""
+    shape = "empty"
+    status = "none"
+    if json_output.strip():
+        try:
+            data = json.loads(json_output)
+        except (ValueError, TypeError):
+            shape = "non_json"
+        else:
+            if isinstance(data, dict):
+                shape = "json_error" if data.get("error") not in (None, False) else "json_object"
+                err = data.get("error")
+                if isinstance(err, dict):
+                    candidate = str(err.get("status", "")).upper()
+                    allowed = {"INVALID_ARGUMENT", "PERMISSION_DENIED", "UNAUTHENTICATED",
+                               "RESOURCE_EXHAUSTED", "UNAVAILABLE", "NOT_FOUND", "INTERNAL"}
+                    if candidate in allowed:
+                        status = candidate.lower()
+                if shape == "json_object" and "response" in data:
+                    shape = "json_response"
+            else:
+                shape = "other_json"
+    low = stderr.lower()
+    patterns = (
+        ("runtime_module", r"err_module_not_found|cannot find module|module not found"),
+        ("runtime_native", r"err_dlopen_failed|invalid elf header|node[-_]pty"),
+        ("runtime_system", r"eacces|enospc|eaddrinuse|eperm"),
+        ("runtime_network", r"enotfound|econnrefused|eai_again|etimedout"),
+        ("cli_input", r"unknown argument|unrecognized argument|invalid option|usage: gemini"),
+        ("node_exception", r"(?:typeerror|syntaxerror|referenceerror|rangeerror):"),
+        ("node_stack", r"(?m)^\s+at [^\n]+"),
+    )
+    family = next((name for name, pat in patterns if re.search(pat, low)), "other" if stderr.strip() else "empty")
+    # Rounded sizes help distinguish no-output crashes from structured CLI failures.
+    def size_bucket(value: str) -> str:
+        n = len(value.encode("utf-8", errors="replace"))
+        return "empty" if n == 0 else "short" if n < 256 else "medium" if n < 4096 else "large"
+    return ("stdout=" + shape + ";api_status=" + status +
+            ";stderr=" + family + ";out_size=" + size_bucket(json_output) +
+            ";err_size=" + size_bucket(stderr))
+
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
@@ -73,16 +118,21 @@ def main() -> None:
     req.add_argument("--log", type=Path, required=True)
     req.add_argument("--exit-code", type=int, required=True)
     req.add_argument("--json-output", type=Path)
+    req.add_argument("--safe-triage", action="store_true")
     args = parser.parse_args()
     try:
         data = args.log.read_text(encoding="utf-8", errors="replace")
     except OSError:
         data = ""
+    response = ""
     if args.json_output is not None:
         try:
             response = args.json_output.read_text(encoding="utf-8", errors="replace")[:2_000_000]
         except OSError:
             response = ""
+    if args.safe_triage:
+        print(safe_triage(data, response, args.exit_code))
+    elif args.json_output is not None:
         print(classify_structured_error(response, data, args.exit_code))
     else:
         print(classify(data, args.exit_code))
