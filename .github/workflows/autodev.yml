@@ -1,13 +1,9 @@
 name: Central Zero-Budget AutoDev
 
+# AutoDev runs only on the 30-minute timer or an explicit manual action.
+# A controller source merge should run Control Plane Check, NOT re-launch costly
+# stale OpenCode/Gemini batch generation.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'config/projects.json'
-      - 'prompts/**'
-      - 'scripts/**'
-      - '.github/workflows/autodev.yml'
   schedule:
     - cron: '17,47 * * * *'
   workflow_dispatch:
