@@ -56,7 +56,8 @@ if [[ "${AUTODEV_OPENROUTER_DIRECT_FIRST:-false}" == "true" ]]; then
     echo "OpenRouter direct API produced a source candidate; existing security and product test gates apply."
   else
     OPENROUTER_ISSUE=direct_no_valid_edit
-    echo "::warning::OpenRouter direct API returned no approved code change (exit $OPENROUTER_RC)."
+    SAFE_REASON="$(grep -E "^direct_free_code_blocked:[a-z_]+$" /tmp/autodev-openrouter-direct.log | head -n 1 || true)"
+    echo "::warning::OpenRouter direct API produced no approved edit (exit $OPENROUTER_RC; $SAFE_REASON)."
   fi
 else
 # Already-installed OpenCode CLI, with provider credentials isolated from npm and baseline tests.
