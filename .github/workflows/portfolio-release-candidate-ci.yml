@@ -56,13 +56,9 @@ jobs:
             repo: seongjin1908/cyber-guardian-ai
             ref: main
             case: cyber-guardian-main
-          - target: worklink
-            repo: seongjin1908/worklink
-            ref: 9585339dc417f880b6d4526a07bf92dc6a6f9c63
-            case: worklink-pr9
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
-            ref: 1e42011ff6ad1db36a79783abce45f40a4914106
+            ref: 14fe5ab84123704b3b6f446845908a252331c94f
             case: restore-ai-pr19
 
     steps:
