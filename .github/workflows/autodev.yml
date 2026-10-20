@@ -191,6 +191,19 @@ jobs:
         shell: bash
         run: bash scripts/develop_target.sh
 
+      - name: Optional manual-only OpenRouter zero-priced coding fallback
+        # Never spend the user's 50/day free quota on recurring unattended jobs.
+        if: github.event_name == 'workflow_dispatch' && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && vars.AUTODEV_OPENROUTER_FREE_ENABLED == 'true'
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
+          AUTODEV_OPENROUTER_FREE_ENABLED: ${{ vars.AUTODEV_OPENROUTER_FREE_ENABLED }}
+          AUTODEV_OPENROUTER_FREE_MODEL: ${{ vars.AUTODEV_OPENROUTER_FREE_MODEL || 'openrouter/minimax/minimax-m3.1-flash:free' }}
+          VALIDATION_B64: ${{ steps.select.outputs.validation_b64 }}
+          MAX_CHANGED_FILES: ${{ steps.select.outputs.max_changed_files }}
+          ALIAS: ${{ steps.select.outputs.alias }}
+        shell: bash
+        run: bash scripts/openrouter_free_fallback.sh
+
       - name: Optional independent Gemini free-tier coding fallback
         if: steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true' && vars.AUTODEV_GEMINI_FREE_ENABLED == 'true'
         env:

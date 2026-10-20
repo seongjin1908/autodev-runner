@@ -73,6 +73,9 @@ jobs:
       - name: Test headless Gemini trust recovery and redacted error diagnosis
         run: python3 scripts/test_gemini_headless_recovery.py
 
+      - name: Verify zero-priced OpenRouter coding and strict manual-only opt-in
+        run: python3 scripts/test_openrouter_free_fallback.py
+
       - name: Verify opt-in Gemini headless free-tier gate and credential isolation
         run: python3 scripts/test_gemini_free_fallback.py
 
