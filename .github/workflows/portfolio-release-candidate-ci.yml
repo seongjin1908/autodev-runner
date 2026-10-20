@@ -58,7 +58,7 @@ jobs:
             case: cyber-guardian-main
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
-            ref: d718baec472f4fffd874aaeb0f2ac1a734a23ca0
+            ref: a0603343626ea3d6e59ad4e5259ed1cb8e150853
             case: restore-ai-pr19
 
     steps:
