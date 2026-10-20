@@ -5,7 +5,7 @@ on:
     paths:
       - '.github/workflows/portfolio-release-candidate-ci.yml'
   workflow_dispatch:
-  # Public central runner regularly validates current private main snapshots
+  # Public central runner validates current non-saju main snapshots and selected pinned PRs
   # when hosted jobs inside private product repos cannot start.
   schedule:
     - cron: '13 3 * * *'
@@ -19,7 +19,9 @@ concurrency:
 
 jobs:
   verify:
-    name: verify ${{ matrix.target }}
+    name: verify ${{ matrix.case }}
+    # A fork PR must never obtain the private-product checkout credential.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -28,25 +30,40 @@ jobs:
         include:
           - target: face-lab
             repo: seongjin1908/face-lab-global
-            sha: 24b94724fd3bbc394caee704f79489cb99074ba6
+            ref: main
+            case: face-lab-main
           - target: pricecam
             repo: seongjin1908/pricecam-autodev
-            sha: 25523524c575a8575629e6dd7351b9aa0f49466c
+            ref: main
+            case: pricecam-main
           - target: second
             repo: seongjin1908/second-work
-            sha: 1ee27642f435f3ba2f616a23d13caf0a187d06db
+            ref: main
+            case: second-main
           - target: fault-intel
             repo: seongjin1908/fault-intelligence
-            sha: 540227bf74f49a108647a6c389485134db003cc1
+            ref: main
+            case: fault-intel-main
           - target: worklink
             repo: seongjin1908/worklink
-            sha: f92f1d365d529f011d0a21f7c283b6ee620f343e
+            ref: main
+            case: worklink-main
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
-            sha: c68528c04f9fa7be4b981c1eea6e7d8f8c8d24cb
+            ref: main
+            case: restore-ai-main
           - target: cyber-guardian
             repo: seongjin1908/cyber-guardian-ai
-            sha: 71c148289564a3d73bf1a1a4bfe0d9a2a6c26ab4
+            ref: main
+            case: cyber-guardian-main
+          - target: worklink
+            repo: seongjin1908/worklink
+            ref: 9585339dc417f880b6d4526a07bf92dc6a6f9c63
+            case: worklink-pr9
+          - target: restore-ai
+            repo: seongjin1908/restore-ai-autodev
+            ref: 1e42011ff6ad1db36a79783abce45f40a4914106
+            case: restore-ai-pr19
 
     steps:
       - name: Require trusted repository token
@@ -63,9 +80,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ matrix.repo }}
-          # PR/dispatch checks stay pinned; daily scheduled checks resolve the
-          # latest default branch and record its exact checkout commit below.
-          ref: ${{ github.event_name == 'schedule' && 'main' || matrix.sha }}
+          # Main snapshots are always current; PR comparisons are immutable
+          # owner-reviewed SHAs. Never check out arbitrary event refs.
+          ref: ${{ matrix.ref }}
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
 
@@ -73,6 +90,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "Case: \`${{ matrix.case }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Checked source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up Node.js 22
@@ -91,12 +109,22 @@ jobs:
             exit 0
           fi
           if [ "$TARGET" = "restore-ai" ]; then
-            npm ci --no-audit --no-fund
+            if ! npm ci --no-audit --no-fund >/tmp/portfolio-private-install.log 2>&1; then
+              echo "::error::Dependency bootstrap failed for $TARGET (private diagnostics withheld)."
+              exit 1
+            fi
           elif [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund --ignore-scripts
+            if ! npm ci --no-audit --no-fund --ignore-scripts >/tmp/portfolio-private-install.log 2>&1; then
+              echo "::error::Dependency bootstrap failed for $TARGET (private diagnostics withheld)."
+              exit 1
+            fi
           else
-            npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+            if ! npm install --no-package-lock --no-audit --no-fund --ignore-scripts >/tmp/portfolio-private-install.log 2>&1; then
+              echo "::error::Dependency bootstrap failed for $TARGET (private diagnostics withheld)."
+              exit 1
+            fi
           fi
+          echo "PASS: dependencies installed without public private-project logs."
 
       - name: Run existing deterministic product checks
         shell: bash
@@ -105,41 +133,62 @@ jobs:
           NEXT_TELEMETRY_DISABLED: '1'
         run: |
           set -euo pipefail
+          # Tests run inside the isolated trusted checkout. Keep proprietary
+          # source excerpts, fixtures and environment diagnostics out of this
+          # public runner's logs; publish only the phase and fixed failure code.
+          check() {
+            local label="$1"
+            shift
+            if "$@" >/tmp/portfolio-private-check.log 2>&1; then
+              echo "PASS: $TARGET/$label"
+              return 0
+            fi
+            local issue="product_validation_failed"
+            if grep -Eq 'error TS[0-9]{4}:' /tmp/portfolio-private-check.log; then
+              issue="typescript_diagnostics"
+            elif grep -Eqi '(npm ERR!|MODULE_NOT_FOUND|Cannot find module)' /tmp/portfolio-private-check.log; then
+              issue="module_or_dependency_unavailable"
+            elif grep -Eqi '(assertionerror|expected|not ok |failed tests)' /tmp/portfolio-private-check.log; then
+              issue="test_assertion_failed"
+            fi
+            echo "::error::$TARGET/$label failed ($issue); private product logs withheld."
+            exit 1
+          }
           case "$TARGET" in
             face-lab)
               # Manifest is a manual-journey inventory, not proof of browser E2E.
-              node -e "const t=require('./tests/tests.json'); if (!Array.isArray(t)||t.length===0) process.exit(1)"
-              npx --no-install tsc --noEmit
-              npm run build
+              check test-manifest node -e "const t=require('./tests/tests.json'); if (!Array.isArray(t)||t.length===0) process.exit(1)"
+              check typecheck npx --no-install tsc --noEmit
+              check build npm run build
               ;;
             pricecam)
-              npm test
-              npm run typecheck
-              npm run build
+              check tests npm test
+              check typecheck npm run typecheck
+              check build npm run build
               ;;
             second)
-              npm test
-              npm run typecheck
-              npm run build
+              check tests npm test
+              check typecheck npm run typecheck
+              check build npm run build
               ;;
             fault-intel)
-              npm run check
+              check checks npm run check
               ;;
             worklink)
-              npm test
-              npm run typecheck
-              npm run build
+              check tests npm test
+              check typecheck npm run typecheck
+              check build npm run build
               ;;
             restore-ai)
-              npm run check
+              check checks npm run check
               ;;
             cyber-guardian)
-              node --check guardian.js
-              node --check guard-policy.js
-              node --check gateway/runtime.js
-              node --check gateway/server.js
-              node --test tests/*.test.js
-              if grep -nE 'fetch[(]|XMLHttpRequest|WebSocket[(]|node:child_process|node:net|exec[(]|spawn[(]' guardian.js guard-policy.js; then
+              check syntax-guardian node --check guardian.js
+              check syntax-policy node --check guard-policy.js
+              check syntax-runtime node --check gateway/runtime.js
+              check syntax-server node --check gateway/server.js
+              check defensive-tests bash -lc 'node --test tests/*.test.js'
+              if grep -qE 'fetch[(]|XMLHttpRequest|WebSocket[(]|node:child_process|node:net|exec[(]|spawn[(]' guardian.js guard-policy.js; then
                 echo "::error::Unexpected networking or process-execution capability in defensive engine"
                 exit 1
               fi
@@ -157,7 +206,7 @@ jobs:
           {
             echo "### ${{ matrix.target }} — immutable private-source checks"
             echo "- Repository: \`${{ matrix.repo }}\`"
-            echo "- Registry reference SHA (non-scheduled checks): \`${{ matrix.sha }}\`"
+            echo "- Selected reviewed ref: \`${{ matrix.ref }}\`"
             echo "- Build/test result is recorded in job steps; no paid AI or production credentials are provided."
             echo "- This does NOT prove real customer checkout, photo quality, licensing, real-data accuracy or browser E2E."
           } >> "$GITHUB_STEP_SUMMARY"
