@@ -14,6 +14,9 @@ concurrency:
 
 jobs:
   develop:
+    # Paused: the user owns SajuMyeongkwae development outside this central runner.
+    # Keep schedule/manual dispatch inert until explicitly unpaused and isolation removed.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
