@@ -22,6 +22,10 @@ class GeminiSettingsSchemaTests(unittest.TestCase):
 
     def test_current_schema_and_security(self):
         settings = self.settings()
+        # The isolated HOME has no prior interactive auth selection. Headless
+        # Gemini must choose the configured API key credential explicitly.
+        self.assertEqual(settings["selectedAuthType"], "gemini-api-key")
+        self.assertNotIn("mcpServers", settings)
         self.assertEqual(settings["hooksConfig"], {"enabled": False})
         self.assertNotIn("enabled", settings.get("hooks", {}))
         self.assertNotIn("hooks", settings)
