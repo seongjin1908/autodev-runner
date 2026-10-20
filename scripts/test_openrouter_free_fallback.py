@@ -39,7 +39,7 @@ class OpenRouterNoCostTests(unittest.TestCase):
                 self.assertIn("Unapproved OpenRouter model",result.stdout)
 
     def test_workflow_never_exposes_key_to_untrusted_install_or_cron(self):
-        name="      - name: Optional manual-only OpenRouter zero-priced coding fallback"
+        name="      - name: Optional strictly zero-priced OpenRouter direct coding (manual or bounded schedule)"
         self.assertEqual(WF.count(name),1)
         before,after=WF.split(name)
         self.assertNotIn("OPENROUTER_API_KEY:",before)
@@ -50,6 +50,11 @@ class OpenRouterNoCostTests(unittest.TestCase):
         self.assertIn("default: false",WF.split("      openrouter_free_once:",1)[1].split("permissions:",1)[0])
         self.assertIn("inputs.openrouter_free_once == true",after.split("      - name:",1)[0])
         self.assertIn("DDD_FREE_MODEL_POOL_MAX_SECONDS:",before)
+        self.assertIn("cron: '17 */2 * * *'",WF)
+        self.assertNotIn("cron: '17,47 * * * *'",WF)
+        self.assertIn("github.event_name == 'schedule'",after.split("      - name:",1)[0])
+        self.assertIn("github.event_name == 'schedule' && 'true'",after)
+        self.assertIn("AUTODEV_OPENROUTER_DIRECT_FIRST:",after)
         self.assertIn("github.event_name == 'workflow_dispatch' && inputs.openrouter_free_once == true",before)
         self.assertLess(WF.index("run: bash scripts/develop_target.sh"),
                         WF.index("run: bash scripts/openrouter_free_fallback.sh"))
