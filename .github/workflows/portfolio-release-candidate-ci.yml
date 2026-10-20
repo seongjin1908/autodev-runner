@@ -56,6 +56,16 @@ jobs:
             repo: seongjin1908/cyber-guardian-ai
             ref: main
             case: cyber-guardian-main
+          # Security P0 PR #10: immutable already-reviewed source snapshot.
+          - target: cyber-guardian
+            repo: seongjin1908/cyber-guardian-ai
+            ref: bb23f4d254f99e47d104492a3a5b8f57e19292b8
+            case: cyber-guardian-pr10-audit-p0
+          # GitHub-generated merge preview: main @ 71c148 + corrected PR #10.
+          - target: cyber-guardian
+            repo: seongjin1908/cyber-guardian-ai
+            ref: 860919b7ec3c506f1c9f0adf94bea0555625add5
+            case: cyber-guardian-pr10-merge-preview
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
             ref: 60fe4b7bba7826bb02f800f96856bf0c199faa9f
@@ -166,6 +176,12 @@ jobs:
               issue="module_or_dependency_unavailable"
             elif grep -Eqi '(assertionerror|expected|not ok |failed tests)' /tmp/portfolio-private-check.log; then
               issue="test_assertion_failed"
+            fi
+            # Only emit numeric TAP failure indices; never publish private
+            # source, test names, fixtures, assertions, model output or secrets.
+            if [ "$TARGET" = "cyber-guardian" ] && [ "$label" = "defensive-tests" ]; then
+              failure_indices="$(python3 -c 'import re,pathlib; p=pathlib.Path("/tmp/portfolio-private-check.log"); text=p.read_text(encoding="utf-8",errors="replace")[:200000]; print(",".join(re.findall(r"(?m)^not ok ([0-9]+) - ",text)[:24]) or "not-exposed")')"
+              echo "::warning::Cyber defensive TAP failure indices: $failure_indices (no test names or private output)"
             fi
             echo "::error::$TARGET/$label failed ($issue); private product logs withheld."
             exit 1
