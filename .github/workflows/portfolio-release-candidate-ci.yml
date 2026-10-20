@@ -109,12 +109,22 @@ jobs:
             exit 0
           fi
           if [ "$TARGET" = "restore-ai" ]; then
-            npm ci --no-audit --no-fund
+            if ! npm ci --no-audit --no-fund >/tmp/portfolio-private-install.log 2>&1; then
+              echo "::error::Dependency bootstrap failed for $TARGET (private diagnostics withheld)."
+              exit 1
+            fi
           elif [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund --ignore-scripts
+            if ! npm ci --no-audit --no-fund --ignore-scripts >/tmp/portfolio-private-install.log 2>&1; then
+              echo "::error::Dependency bootstrap failed for $TARGET (private diagnostics withheld)."
+              exit 1
+            fi
           else
-            npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+            if ! npm install --no-package-lock --no-audit --no-fund --ignore-scripts >/tmp/portfolio-private-install.log 2>&1; then
+              echo "::error::Dependency bootstrap failed for $TARGET (private diagnostics withheld)."
+              exit 1
+            fi
           fi
+          echo "PASS: dependencies installed without public private-project logs."
 
       - name: Run existing deterministic product checks
         shell: bash
@@ -123,41 +133,62 @@ jobs:
           NEXT_TELEMETRY_DISABLED: '1'
         run: |
           set -euo pipefail
+          # Tests run inside the isolated trusted checkout. Keep proprietary
+          # source excerpts, fixtures and environment diagnostics out of this
+          # public runner's logs; publish only the phase and fixed failure code.
+          check() {
+            local label="$1"
+            shift
+            if "$@" >/tmp/portfolio-private-check.log 2>&1; then
+              echo "PASS: $TARGET/$label"
+              return 0
+            fi
+            local issue="product_validation_failed"
+            if grep -Eq 'error TS[0-9]{4}:' /tmp/portfolio-private-check.log; then
+              issue="typescript_diagnostics"
+            elif grep -Eqi '(npm ERR!|MODULE_NOT_FOUND|Cannot find module)' /tmp/portfolio-private-check.log; then
+              issue="module_or_dependency_unavailable"
+            elif grep -Eqi '(assertionerror|expected|not ok |failed tests)' /tmp/portfolio-private-check.log; then
+              issue="test_assertion_failed"
+            fi
+            echo "::error::$TARGET/$label failed ($issue); private product logs withheld."
+            exit 1
+          }
           case "$TARGET" in
             face-lab)
               # Manifest is a manual-journey inventory, not proof of browser E2E.
-              node -e "const t=require('./tests/tests.json'); if (!Array.isArray(t)||t.length===0) process.exit(1)"
-              npx --no-install tsc --noEmit
-              npm run build
+              check test-manifest node -e "const t=require('./tests/tests.json'); if (!Array.isArray(t)||t.length===0) process.exit(1)"
+              check typecheck npx --no-install tsc --noEmit
+              check build npm run build
               ;;
             pricecam)
-              npm test
-              npm run typecheck
-              npm run build
+              check tests npm test
+              check typecheck npm run typecheck
+              check build npm run build
               ;;
             second)
-              npm test
-              npm run typecheck
-              npm run build
+              check tests npm test
+              check typecheck npm run typecheck
+              check build npm run build
               ;;
             fault-intel)
-              npm run check
+              check checks npm run check
               ;;
             worklink)
-              npm test
-              npm run typecheck
-              npm run build
+              check tests npm test
+              check typecheck npm run typecheck
+              check build npm run build
               ;;
             restore-ai)
-              npm run check
+              check checks npm run check
               ;;
             cyber-guardian)
-              node --check guardian.js
-              node --check guard-policy.js
-              node --check gateway/runtime.js
-              node --check gateway/server.js
-              node --test tests/*.test.js
-              if grep -nE 'fetch[(]|XMLHttpRequest|WebSocket[(]|node:child_process|node:net|exec[(]|spawn[(]' guardian.js guard-policy.js; then
+              check syntax-guardian node --check guardian.js
+              check syntax-policy node --check guard-policy.js
+              check syntax-runtime node --check gateway/runtime.js
+              check syntax-server node --check gateway/server.js
+              check defensive-tests bash -lc 'node --test tests/*.test.js'
+              if grep -qE 'fetch[(]|XMLHttpRequest|WebSocket[(]|node:child_process|node:net|exec[(]|spawn[(]' guardian.js guard-policy.js; then
                 echo "::error::Unexpected networking or process-execution capability in defensive engine"
                 exit 1
               fi
