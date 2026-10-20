@@ -1,0 +1,55 @@
+name: One-off independent launch PR review
+on:
+  push:
+    branches: [test/review-launch-backlog-20261021]
+    paths: ['.github/workflows/review-launch-prs-20261021.yml']
+permissions:
+  contents: read
+jobs:
+  validate-owned-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: pricecam-pr12
+            repository: seongjin1908/pricecam-autodev
+            sha: e74a9ef5e51a1401de603dc5e0f1644156b9c66f
+            test_command: npm run typecheck && npm test && npm run build
+          - label: pricecam-pr13
+            repository: seongjin1908/pricecam-autodev
+            sha: 7948f430e1fb1ce7843db2be8b4daafe8c68f6a5
+            test_command: npm run typecheck && npm test && npm run build
+          - label: fault-intel-pr8
+            repository: seongjin1908/fault-intelligence
+            sha: 4672b4995b32bb640de7dfbdbb7431be558e4502
+            test_command: npm run check
+    steps:
+      - name: Checkout exact private owned source commit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.sha }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated full product checks (no AI, payment, deploy or PR writes)
+        env:
+          EXPECTED_SHA: ${{ matrix.sha }}
+          TEST_COMMAND: ${{ matrix.test_command }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          npm install --no-audit --no-fund --ignore-scripts > /tmp/owned-install.log 2>&1
+          bash -lc "$TEST_COMMAND" > /tmp/owned-check.log 2>&1 || {
+            echo "::error::Product verification failed. Showing sanitized final output."
+            tail -n 24 /tmp/owned-check.log
+            exit 1
+          }
+          git diff --check
+          echo "PASS: exact pinned product PR source passed configured build and tests."
