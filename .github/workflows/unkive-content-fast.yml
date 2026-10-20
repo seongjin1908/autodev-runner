@@ -63,6 +63,9 @@ jobs:
           node scripts/check-unkive-personalization.mjs
           node scripts/check-unkive-content-review.mjs
           node scripts/check-unkive-offline-editorial-benchmark.mjs
+      - name: Verify free editorial and role-particle regressions
+        working-directory: target
+        run: node scripts/check-unkive-free-editorial.mjs
       - name: Recheck 24 Premium repeated-sentence types
         working-directory: target
         run: |
