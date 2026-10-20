@@ -74,6 +74,7 @@ jobs:
         run: |
           mkdir -p release-test-results
           node scripts/check-unkive-paid-quality.mjs
+          node scripts/check-unkive-paid-ai-context.mjs
           node scripts/check-unkive-personalization.mjs
           node scripts/check-unkive-content-review.mjs
           node scripts/check-unkive-offline-editorial-benchmark.mjs
