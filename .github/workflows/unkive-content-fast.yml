@@ -1,0 +1,76 @@
+name: SajuMyeongkwae Premium decision regression
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/unkive-content-fast.yml'
+      - 'config/unkive-content-fast-ref.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saju-premium-decision-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  content-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolated runner controls
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate immutable commit
+        id: target
+        run: |
+          set -euo pipefail
+          ref="$(tr -d '\r\n' < config/unkive-content-fast-ref.txt)"
+          if ! [[ "$ref" =~ ^[a-f0-9]{40}$ ]]; then exit 1; fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - name: Checkout source read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ steps.target.outputs.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install packages without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Verify production contract and TypeScript
+        working-directory: target
+        run: |
+          node scripts/production-contract-check.mjs
+          npx --no-install tsc --noEmit
+      - name: Verify full four-tier composition on 24 chart fixtures
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition-check.cjs
+          node -e "require('./release-test-results/report-composition-check.cjs').reportCompositionCheck().catch(e => { console.error(e); process.exitCode=1; })"
+      - name: Verify personalization and paid content
+        working-directory: target
+        run: |
+          node scripts/check-unkive-paid-quality.mjs
+          node scripts/check-unkive-personalization.mjs
+          node scripts/check-unkive-content-review.mjs
+          node scripts/check-unkive-offline-editorial-benchmark.mjs
+      - name: Upload content evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saju-premium-decision-fast-review
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            target/release-test-results/report-composition-review.json
+            target/release-test-results/content-review.json
+            target/release-test-results/content-review.md
