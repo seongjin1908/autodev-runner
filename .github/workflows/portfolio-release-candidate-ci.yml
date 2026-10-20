@@ -61,6 +61,11 @@ jobs:
             repo: seongjin1908/cyber-guardian-ai
             ref: bb23f4d254f99e47d104492a3a5b8f57e19292b8
             case: cyber-guardian-pr10-audit-p0
+          # GitHub-generated merge preview: main @ 71c148 + corrected PR #10.
+          - target: cyber-guardian
+            repo: seongjin1908/cyber-guardian-ai
+            ref: 860919b7ec3c506f1c9f0adf94bea0555625add5
+            case: cyber-guardian-pr10-merge-preview
           - target: restore-ai
             repo: seongjin1908/restore-ai-autodev
             ref: 60fe4b7bba7826bb02f800f96856bf0c199faa9f
