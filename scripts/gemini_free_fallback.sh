@@ -97,13 +97,14 @@ HOME="$SAFE_HOME" timeout "$GEMINI_TIMEOUT_SECONDS" gemini \
   --model "$GEMINI_MODEL" \
   --approval-mode auto_edit \
   --extensions none \
+  --output-format json \
   --prompt "$(head -c 30000 /tmp/autodev-prompt.txt)" \
-  >/tmp/autodev-gemini-run.log 2>&1
+  >/tmp/autodev-gemini-run.json 2>/tmp/autodev-gemini-run.log
 GEMINI_RC=$?
 set -e
 unset GEMINI_API_KEY
 rm -rf -- "$SAFE_HOME"
-GEMINI_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-run.log --exit-code "$GEMINI_RC")"
+GEMINI_ISSUE="$(python3 "$ROOT_DIR/scripts/gemini_failure.py" classify --log /tmp/autodev-gemini-run.log --json-output /tmp/autodev-gemini-run.json --exit-code "$GEMINI_RC")"
 echo "Gemini command finished (exit $GEMINI_RC; classified: $GEMINI_ISSUE). Private model transcript not published."
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   printf "\n### Gemini free fallback\n- Exit status: %s\n- Fixed diagnostic: %s\n" "$GEMINI_RC" "$GEMINI_ISSUE" >> "$GITHUB_STEP_SUMMARY"
