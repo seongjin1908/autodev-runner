@@ -25,6 +25,11 @@ class ReleaseFocusTests(unittest.TestCase):
                 self.assertTrue(p.get("external_worker_lock"))
         wf=(ROOT/".github/workflows/autodev.yml").read_text()
         self.assertIn("cron: '17,47 * * * *'",wf)
+        event_triggers=wf.split("on:",1)[1].split("permissions:",1)[0]
+        self.assertIn("  schedule:",event_triggers)
+        self.assertIn("  workflow_dispatch:",event_triggers)
+        self.assertNotIn("  push:",event_triggers,
+                         "Controller code merges must not trigger failed legacy model runs")
 
     def test_selection_skips_existing_generated_prs(self):
         with tempfile.TemporaryDirectory() as directory:
