@@ -60,6 +60,7 @@ SAFE_HOME="$(mktemp -d)"
 mkdir -p "$SAFE_HOME/.gemini"
 cat > "$SAFE_HOME/.gemini/settings.json" <<'SETTINGS'
 {
+  "selectedAuthType": "gemini-api-key",
   "general": {"enableAutoUpdate": false},
   "security": {"folderTrust": {"enabled": true}, "disableYoloMode": true},
   "hooksConfig": {"enabled": false},
