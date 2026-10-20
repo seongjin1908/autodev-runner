@@ -21,9 +21,9 @@ jobs:
             repository: seongjin1908/pricecam-autodev
             sha: 7948f430e1fb1ce7843db2be8b4daafe8c68f6a5
             test_command: npm run typecheck && npm test && npm run build
-          - label: fault-intel-pr8
+          - label: fault-intel-pr10
             repository: seongjin1908/fault-intelligence
-            sha: 4672b4995b32bb640de7dfbdbb7431be558e4502
+            sha: 5ab0b887787b58112332a00b6b5d670c914122fa
             test_command: npm run check
     steps:
       - name: Checkout exact private owned source commit
