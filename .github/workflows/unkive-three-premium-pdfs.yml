@@ -1,0 +1,116 @@
+name: SajuMyeongkwae 3 Premium orphan PDF regression
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/unkive-three-premium-pdfs.yml'
+      - 'config/unkive-three-premium-pdfs-ref.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: saju-three-premium-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  three-case-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify immutable source commit
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(tr -d '\r\n' < config/unkive-three-premium-pdfs-ref.txt)"
+          [[ "$sha" =~ ^[a-f0-9]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ steps.source.outputs.sha }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing dependencies
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Render 02 08 20 Premium without AI or payment calls
+        working-directory: target
+        run: |
+          mkdir -p release-test-results/orphan-smoke
+          cat > release-test-results/three-orphan-check.ts <<'TS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import { calculateFortune } from '../backend/fortune';
+          import { generateAdminPreviewAnalysis } from '../backend/analysis';
+          import { buildPdfBase64 } from '../backend/pdf';
+          import { comprehensiveInput } from '../scripts/comprehensive-fixtures';
+          import { reset, state } from '../scripts/test-backend-sdk';
+          async function main() {
+            reset();
+            globalThis.fetch = async () => { throw new Error('External network access prohibited'); };
+            const years: Record<string,number[]> = {};
+            for (const index of [2,8,20]) {
+              const input = comprehensiveInput(index);
+              const fortune = calculateFortune(input);
+              const originalFortune = JSON.stringify(fortune);
+              const analysis = await generateAdminPreviewAnalysis(fortune,'P002',undefined,index%2?'business':'marriage');
+              const originalAnalysis = JSON.stringify(analysis);
+              const pdf = Buffer.from(await buildPdfBase64(input.name,{code:'P002',name:'Premium'},fortune,analysis,'SYNTHETIC-P002-'+index),'base64');
+              assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
+              assert.equal(JSON.stringify(fortune),originalFortune);
+              assert.equal(JSON.stringify(analysis),originalAnalysis);
+              const file = String(index).padStart(2,'0')+'-P002';
+              fs.writeFileSync('release-test-results/orphan-smoke/'+file+'.pdf',pdf);
+              years[file] = analysis.annualOutlook!.years.map(item=>item.year);
+              console.log('P002_RENDERED',file,pdf.length,'purchased years',years[file]);
+            }
+            assert.equal(state.aiCalls,0);
+            fs.writeFileSync('release-test-results/orphan-smoke/years.json',JSON.stringify(years));
+          }
+          main().catch(error=>{console.error(error);process.exitCode=1;});
+          TS
+          npx --no-install esbuild release-test-results/three-orphan-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/three-orphan-check.cjs
+          node release-test-results/three-orphan-check.cjs
+      - name: Validate actual 3 PDF body and purchased scope
+        working-directory: target
+        run: |
+          python -m pip install PyMuPDF==1.26.5
+          python - <<'PY'
+          import fitz,json,pathlib
+          root=pathlib.Path('release-test-results/orphan-smoke')
+          years=json.loads((root/'years.json').read_text())
+          assert len(years)==3
+          for base, purchased in years.items():
+              doc=fitz.open(root/(base+'.pdf'))
+              text=''.join(page.get_text() for page in doc)
+              assert len(purchased)==5, (base,'Premium must retain 5 years')
+              for year in purchased: assert str(year)+'년' in text,(base,year)
+              for number,page in enumerate(doc):
+                  if number==0:continue
+                  data=page.get_text('dict')
+                  lines=[line for b in data['blocks'] for line in b.get('lines', []) if 74<=line['bbox'][1]<730]
+                  body=' '.join(span['text'] for b in data['blocks'] for line in b.get('lines', []) for span in line.get('spans', []) if 75<=line['bbox'][1]<740).strip()
+                  assert len(body)>=125,(base,'near-empty',number+1,len(body))
+                  assert lines,(base,'empty',number+1)
+                  for line in lines:
+                      x0,y0,x1,y1=line['bbox']
+                      assert x0>=35 and x1<=page.rect.width-30,(base,'clipped',number+1)
+                  foot=[span['text'].strip() for b in data['blocks'] for line in b.get('lines', []) for span in line.get('spans', []) if span['bbox'][1]>745 and span['bbox'][0]>520]
+                  assert str(number+1).zfill(2) in foot,(base,'page number',number+1)
+              assert '명리 용어 쉽게 보기' in doc[-1].get_text(),base
+              assert '전통 명리 계산과 해석 규칙' in doc[-1].get_text(),base
+              print('PREMIUM_ORPHAN_PASS',base,'pages',len(doc),'minimum_chars',min(len(' '.join(s['text'] for b in p.get_text('dict')['blocks'] for l in b.get('lines',[]) for s in l.get('spans',[]) if 75<=l['bbox'][1]<740).strip()) for p in list(doc)[1:]))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sajumyeongkwae-pdf-3-premium
+          retention-days: 7
+          if-no-files-found: ignore
+          path: target/release-test-results/orphan-smoke/
