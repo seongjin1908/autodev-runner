@@ -89,7 +89,7 @@ def interpret(reply, name, original):
     value=obj["content"]
     if not 8<=len(obj["reason"])<=650 or value==original or not value.endswith("\n"):
         raise SafeBlock("no_valid_edit")
-    if not 100<=len(value)<=15000 or abs(len(value)-len(original))>5000:
+    if not 70<=len(value)<=15000 or abs(len(value)-len(original))>5000:
         raise SafeBlock("oversized_edit")
     strip=lambda x:re.sub(r"\s+","",re.sub(r"(?m)^\s*//.*$","",x))
     if strip(value)==strip(original):
