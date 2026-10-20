@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/worklink
-          ref: 9585339dc417f880b6d4526a07bf92dc6a6f9c63
+          ref: a0c2f166945ceb0fc13ad4c062e4de9355f50e28
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -58,7 +58,7 @@ jobs:
         working-directory: target
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "9585339dc417f880b6d4526a07bf92dc6a6f9c63"
+          test "$(git rev-parse HEAD)" = "a0c2f166945ceb0fc13ad4c062e4de9355f50e28"
           echo "WORKLINK source reference verified."
 
       - name: Install baseline dependencies
@@ -104,6 +104,6 @@ jobs:
       - name: Confirm independently validated candidate
         shell: bash
         run: |
-          echo "WORKLINK latest open PR #9 candidate (NOT merged): 9585339dc417f880b6d4526a07bf92dc6a6f9c63" >> "$GITHUB_STEP_SUMMARY"
+          echo "WORKLINK latest open PR #9 candidate (NOT merged): a0c2f166945ceb0fc13ad4c062e4de9355f50e28" >> "$GITHUB_STEP_SUMMARY"
           echo "Immutable WORKLINK PR #9 dependency bootstrap, TypeScript, contract and Vite build PASS only when every prior step succeeds." >> "$GITHUB_STEP_SUMMARY"
           echo "No SMS, live payments, real jobs, user accounts, private user data, or production deployment was attempted. Product repository CI failure is NOT treated as passing." >> "$GITHUB_STEP_SUMMARY"
