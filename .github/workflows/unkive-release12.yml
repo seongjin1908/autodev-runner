@@ -124,7 +124,7 @@ jobs:
 
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
