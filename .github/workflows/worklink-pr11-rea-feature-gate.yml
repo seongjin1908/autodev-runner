@@ -141,3 +141,130 @@ jobs:
           echo '- Pinned source 72559fe75937f918ac9a1630cf34cd377cc2036c' >> "$GITHUB_STEP_SUMMARY"
           echo '- Product tests, typecheck, build and REA owned-source analysis completed only if preceding steps passed.' >> "$GITHUB_STEP_SUMMARY"
           echo '- External REA competitor decompilation: NOT performed. No payment, launch, or merge.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  # Separate optional gate for WORKLINK's existing Draft PR13 at an immutable
+  # reviewed SHA. This does not rewrite the already-proven PR11 REA result.
+  # No runner secret is exposed to executed product tests.
+  verify-pr13:
+    name: WORKLINK PR13 pinned tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require private checkout token
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Private checkout permission not configured"; exit 20; }
+
+      - name: Checkout private WORKLINK PR13 reviewed source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target-pr13
+
+      - name: Set up Node for deterministic local-only tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify immutable source and required tests
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "6bab5e9c7cf331438076ed515ae4287d4b45a7db"
+          test -f tests/pilot-cross-account-security.test.mjs
+          test -f tests/pilot-static-server.test.mjs
+          test -f src/lib/pilot-api.mjs
+          echo "WORKLINK PR13 source pin and test paths: PASS"
+
+      - name: Install without lifecycle scripts or tracked lockfile modifications
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm install --no-package-lock --ignore-scripts --no-audit --no-fund >/tmp/wl13-install.log 2>&1; then
+            echo "::error::WORKLINK PR13 dependency bootstrap failed; private logs withheld"
+            exit 21
+          fi
+          echo "WORKLINK PR13 dependency bootstrap: PASS"
+
+      - name: Four synthetic actors and origin isolation
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! node --test tests/pilot-cross-account-security.test.mjs >/tmp/wl13-actors.log 2>&1; then
+            echo "::error::WORKLINK PR13 cross-account tests failed; private logs withheld"
+            exit 22
+          fi
+          echo "WORKLINK PR13 four-actor authorization: PASS"
+
+      - name: Original Linux file symlink and SPA fallback security
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! node --test tests/pilot-static-server.test.mjs >/tmp/wl13-symlink.log 2>&1; then
+            echo "::error::WORKLINK PR13 static-server symlink tests failed; private logs withheld"
+            exit 23
+          fi
+          if grep -Eq '(^|[[:space:]])# skipped [1-9]' /tmp/wl13-symlink.log; then
+            echo "::error::WORKLINK PR13 symlink test skipped; cannot call it verified"
+            exit 24
+          fi
+          echo "WORKLINK PR13 Linux static containment: PASS, no SKIP"
+
+      - name: All existing domain tests
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm test >/tmp/wl13-suite.log 2>&1; then
+            echo "::error::WORKLINK PR13 full npm tests failed; private logs withheld"
+            exit 25
+          fi
+          if grep -Eq '(^|[[:space:]])# skipped [1-9]' /tmp/wl13-suite.log; then
+            echo "::error::WORKLINK PR13 full npm tests contain skipped checks"
+            exit 26
+          fi
+          echo "WORKLINK PR13 Linux full npm suite: PASS, no SKIP"
+
+      - name: TypeScript check
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm run typecheck >/tmp/wl13-typecheck.log 2>&1; then
+            echo "::error::WORKLINK PR13 typecheck failed; private logs withheld"
+            exit 27
+          fi
+          echo "WORKLINK PR13 TypeScript: PASS"
+
+      - name: Build browser bundle
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm run build >/tmp/wl13-build.log 2>&1; then
+            echo "::error::WORKLINK PR13 Vite build failed; private logs withheld"
+            exit 28
+          fi
+          echo "WORKLINK PR13 Vite build: PASS"
+
+      - name: Record constrained gate result
+        shell: bash
+        run: |
+          echo '### WORKLINK PR13 Linux independent gate' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Immutable private source: 6bab5e9c7cf331438076ed515ae4287d4b45a7db' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No-skip local authorization/static security tests, npm suite, TS, Vite: PASS only if prior steps succeeded.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Does not test Playwright on runner, live hiring/auth/payment or close 7 dev advisories.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No PR merge, deployment, production auth, source artifact or private logs shared.' >> "$GITHUB_STEP_SUMMARY"
