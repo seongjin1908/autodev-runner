@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: afe79dd27b22ecd0fe8715f187b8d6424e6669f9
+            ref: 61d8ca88e51af7de27d8d709cb43e3b406427d5d
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,6 +50,12 @@ jobs:
           npx --no-install tsc -p scripts/tsconfig-paid-ai-context.json
           npx --no-install esbuild scripts/unkive-paid-ai-context-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/paid-ai-context.cjs
           node release-test-results/paid-ai-context.cjs
+      - name: Verify mock payment terminal state and same-order PDF re-entry
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: |
+          node scripts/check-unkive-order-resume.mjs
+          node scripts/check-unkive-backend-recovery.mjs
       - name: Retain exact same-case customer report text
         uses: actions/upload-artifact@v4
         if: always()
