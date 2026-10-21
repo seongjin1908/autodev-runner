@@ -122,6 +122,45 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  release-operations-smoke:
+    name: Frozen source typecheck, build and checkout fulfillment contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout fixed source read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 142a7e1cd9e07d64885c84887d936c7a55abeb8d
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install existing dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Typecheck actual frontend
+        working-directory: target
+        run: npx --no-install tsc --noEmit
+      - name: Compile real backend and production frontend with isolated API client
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/backend-bundle.mjs
+          npx --no-install vite build --config scripts/vite-release-test.mjs
+      - name: Verify four-tier pricing, purchase rights, delivery and PayApp contract offline
+        working-directory: target
+        run: |
+          node scripts/check-unkive-daangn-pricing.mjs
+          node scripts/check-unkive-delivery.mjs
+          node scripts/check-unkive-payapp-vbank.mjs
+          node scripts/check-unkive-alimtalk.mjs
+
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
     if: github.event_name == 'workflow_dispatch'
