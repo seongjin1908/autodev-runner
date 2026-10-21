@@ -401,9 +401,13 @@ jobs:
             echo "Isolated Playwright install unavailable; browser compatibility not evaluated."
             exit 0
           fi
-          if ! "$PY" -m playwright install chromium >/tmp/wl-preview-browser.log 2>&1; then
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || true)
+          if test -n "$CHROME" && test -x "$CHROME"; then
+            export WORKLINK_BROWSER_EXECUTABLE="$CHROME"
+            echo "Using preinstalled GitHub runner Chrome; no browser download."
+          elif ! "$PY" -m playwright install chromium >/tmp/wl-preview-browser.log 2>&1; then
             echo "VISUAL_COMPATIBILITY=NOT_RUN_BROWSER" >> "$GITHUB_ENV"
-            echo "Chromium download unavailable; browser compatibility not evaluated."
+            echo "Chrome unavailable and Chromium download failed; browser compatibility not evaluated."
             exit 0
           fi
           npm run preview -- --host 127.0.0.1 --port 4173 --strictPort >/tmp/wl-preview-server.log 2>&1 &
