@@ -523,6 +523,11 @@ jobs:
         shell: bash
         working-directory: target-pr14
         run: |
+          # WORKLINK has no committed lock; npm audit requires a local lock for
+          # resolving the dependency tree. The runner checkout is disposable.
+          if ! npm install --package-lock-only --ignore-scripts --no-audit --no-fund >/tmp/wl14-lock.log 2>&1; then
+            echo "::error::Temporary audit lock resolution failed"; exit 44
+          fi
           npm audit --json >/tmp/wl14-audit.json 2>/tmp/wl14-audit.err || :
           npm audit --omit=dev --json >/tmp/wl14-runtime.json 2>/tmp/wl14-runtime.err || :
           node --input-type=commonjs - <<'NODE'
