@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 142a7e1cd9e07d64885c84887d936c7a55abeb8d
+            ref: 9f025d2428ae3f013d73a083a5ac17d6dbc7e92f
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 142a7e1cd9e07d64885c84887d936c7a55abeb8d
+          ref: 9f025d2428ae3f013d73a083a5ac17d6dbc7e92f
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -163,6 +163,9 @@ jobs:
       - name: Enforce reviewed admin QA contract and fail-closed KRW cost guard
         working-directory: target
         run: node scripts/check-unkive-admin-live-qa.mjs
+      - name: Enforce immutable production operational source contract
+        working-directory: target
+        run: node scripts/production-contract-check.mjs
       - name: Verify honest real AI and competitor evidence gates with fictional self-tests only
         working-directory: target
         run: |
@@ -195,7 +198,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 142a7e1cd9e07d64885c84887d936c7a55abeb8d
+          ref: 9f025d2428ae3f013d73a083a5ac17d6dbc7e92f
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
