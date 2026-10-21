@@ -268,3 +268,127 @@ jobs:
           echo '- No-skip local authorization/static security tests, npm suite, TS, Vite: PASS only if prior steps succeeded.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Does not test Playwright on runner, live hiring/auth/payment or close 7 dev advisories.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No PR merge, deployment, production auth, source artifact or private logs shared.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  # Opt-in evaluation, not a production dependency change or vulnerability waiver.
+  audit-probe-pr13:
+    name: WORKLINK development-advisory compatibility probe
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require token for private source checkout
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Private checkout not configured"; exit 30; }
+
+      - name: Checkout immutable private WORKLINK source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target-advisory
+
+      - name: Set up Node 24 for throwaway npm resolution
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Check source SHA and create temp-only baseline and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C target-advisory rev-parse HEAD)" = 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          mkdir -p "$RUNNER_TEMP/wl-audit-baseline" "$RUNNER_TEMP/wl-audit-candidate"
+          cp -a target-advisory/. "$RUNNER_TEMP/wl-audit-baseline/"
+          cp -a target-advisory/. "$RUNNER_TEMP/wl-audit-candidate/"
+          echo "Original source untouched; two independent copies created in runner temp."
+
+      - name: Resolve and audit unmodified baseline tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-baseline"
+          if ! npm install --package-lock-only --ignore-scripts --no-audit --no-fund >/tmp/wl-baseline-install.log 2>&1; then
+            echo "::error::Unable to resolve baseline dependency tree; details withheld"; exit 31
+          fi
+          npm audit --json >"$RUNNER_TEMP/wl-baseline-audit.json" 2>/tmp/wl-baseline-audit.err || :
+          npm audit --omit=dev --json >"$RUNNER_TEMP/wl-runtime-audit.json" 2>/tmp/wl-runtime-audit.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs'),p=process.env.RUNNER_TEMP;
+          for(const [name,file] of [['baseline','wl-baseline-audit.json'],['runtime-only','wl-runtime-audit.json']]){
+            let v;try{v=JSON.parse(fs.readFileSync(p+'/'+file,'utf8'))}catch{process.exit(32)}
+            if(!v.metadata?.vulnerabilities || !v.vulnerabilities)process.exit(33)
+            const m=v.metadata.vulnerabilities;
+            console.log(name+': '+JSON.stringify({total:m.total,high:m.high,moderate:m.moderate,critical:m.critical,
+              braces:Boolean(v.vulnerabilities.braces),parser:Boolean(v.vulnerabilities['postcss-selector-parser'])}))
+          }
+          NODE
+
+      - name: Try PostCSS selector parser 7.1.6 ONLY in candidate copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-candidate"
+          npm pkg set "overrides.postcss-selector-parser=7.1.6"
+          if ! npm install --ignore-scripts --no-audit --no-fund >/tmp/wl-candidate-install.log 2>&1; then
+            echo "PATCH_PROBE=RESOLUTION_FAILED" >> "$GITHUB_ENV"
+            echo "NO-GO: Candidate dependency graph could not resolve."
+            exit 0
+          fi
+          echo "PATCH_PROBE=RESOLVED" >> "$GITHUB_ENV"
+          npm audit --json >"$RUNNER_TEMP/wl-candidate-audit.json" 2>/tmp/wl-candidate-audit.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs'),p=process.env.RUNNER_TEMP;
+          const v=JSON.parse(fs.readFileSync(p+'/wl-candidate-audit.json','utf8'));
+          if(!v.metadata?.vulnerabilities || !v.vulnerabilities)process.exit(34);
+          const m=v.metadata.vulnerabilities;
+          console.log('candidate: '+JSON.stringify({total:m.total,high:m.high,moderate:m.moderate,critical:m.critical,
+            braces:Boolean(v.vulnerabilities.braces),parser:Boolean(v.vulnerabilities['postcss-selector-parser'])}));
+          NODE
+
+      - name: Test candidate compatibility without suppressing failures
+        if: env.PATCH_PROBE == 'RESOLVED'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-candidate"
+          if ! npm test >/tmp/wl-candidate-test.log 2>&1; then
+            echo "PATCH_COMPATIBILITY=FAILED_TESTS" >> "$GITHUB_ENV"
+            echo "NO-GO: candidate fails existing tests."
+            exit 0
+          fi
+          if ! npm run typecheck >/tmp/wl-candidate-ts.log 2>&1; then
+            echo "PATCH_COMPATIBILITY=FAILED_TYPECHECK" >> "$GITHUB_ENV"
+            echo "NO-GO: candidate fails TypeScript."
+            exit 0
+          fi
+          if ! npm run build >/tmp/wl-candidate-build.log 2>&1; then
+            echo "PATCH_COMPATIBILITY=FAILED_BUILD" >> "$GITHUB_ENV"
+            echo "NO-GO: candidate fails Vite build."
+            exit 0
+          fi
+          echo "PATCH_COMPATIBILITY=PASS" >> "$GITHUB_ENV"
+          echo "Candidate full test/typecheck/build: PASS; NOT approved for installation."
+
+      - name: Report temporary evaluation without source uploads
+        shell: bash
+        run: |
+          echo '### WORKLINK dev advisory temporary parser patch' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Source: immutable 6bab5e9c7cf331438076ed515ae4287d4b45a7db' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Candidate installation: ${PATCH_PROBE:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test/typecheck/build: ${PATCH_COMPATIBILITY:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Audit aggregate counts appear in step log; no raw audit files or source artifacts uploaded.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Existing WORKLINK repo, PRs, package files, CI and deployment unchanged.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- braces has no official fix as of this check; retain its separate risk gate.' >> "$GITHUB_STEP_SUMMARY"
