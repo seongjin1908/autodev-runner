@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 61d8ca88e51af7de27d8d709cb43e3b406427d5d
+            ref: 117d9b29334258b6f4c36da44e28a5060242d9f6
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,6 +50,12 @@ jobs:
           npx --no-install tsc -p scripts/tsconfig-paid-ai-context.json
           npx --no-install esbuild scripts/unkive-paid-ai-context-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/paid-ai-context.cjs
           node release-test-results/paid-ai-context.cjs
+      - name: Verify all 24 by 4 customer paragraphs without PDF regeneration
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: |
+          npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition.cjs
+          node -e "require('./release-test-results/report-composition.cjs').reportCompositionCheck().catch(e => { console.error(e); process.exitCode=1; })"
       - name: Verify mock payment terminal state and same-order PDF re-entry
         if: matrix.version.label == 'candidate'
         working-directory: target
@@ -67,6 +73,7 @@ jobs:
 
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -77,7 +84,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 61d8ca88e51af7de27d8d709cb43e3b406427d5d
+          ref: 117d9b29334258b6f4c36da44e28a5060242d9f6
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
