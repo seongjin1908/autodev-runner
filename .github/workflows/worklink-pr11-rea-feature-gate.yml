@@ -444,3 +444,160 @@ jobs:
           echo '- Audit aggregate counts appear in step log; no raw audit files or source artifacts uploaded.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing WORKLINK repo, PRs, package files, CI and deployment unchanged.' >> "$GITHUB_STEP_SUMMARY"
           echo '- braces has no official fix as of this check; retain its separate risk gate.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  # Dedicated private WORKLINK dependency patch branch, separate from test-only
+  # PR13 and feature PR11. Exactly one package.json change; no merge/deploy.
+  verify-postcss-pr14:
+    name: WORKLINK PR14 parser patch actual-commit gate
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require private repository checkout access
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Private checkout token absent"; exit 41; }
+
+      - name: Checkout actual WORKLINK PR14 dependency patch
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: b8fa5a76cc7ea6cff95a13093d09c18cedb53381
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target-pr14
+
+      - name: Checkout independently reviewed PR13 test files
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: tests-pr13
+
+      - name: Set up pinned Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify exact original commit and overlay tests (not product)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C target-pr14 rev-parse HEAD)" = "b8fa5a76cc7ea6cff95a13093d09c18cedb53381"
+          test "$(git -C tests-pr13 rev-parse HEAD)" = "6bab5e9c7cf331438076ed515ae4287d4b45a7db"
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs');
+          const p=JSON.parse(fs.readFileSync('target-pr14/package.json','utf8'));
+          if(p.overrides?.['postcss-selector-parser']!=='7.1.6'||Object.keys(p.overrides).length!==1) process.exit(42);
+          console.log('Only intended parser 7.1.6 override confirmed');
+          NODE
+          mkdir -p target-pr14/scripts
+          cp tests-pr13/tests/pilot-cross-account-security.test.mjs target-pr14/tests/
+          cp tests-pr13/tests/pilot-static-server.test.mjs target-pr14/tests/
+          cp tests-pr13/scripts/worklink_browser_smoke.py target-pr14/scripts/
+          echo "Test files overlaid in throwaway runner checkout only"
+
+      - name: Install actual PR14 dependency graph without install scripts
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          if ! npm install --no-package-lock --ignore-scripts --no-audit --no-fund >/tmp/wl14-install.log 2>&1; then
+            echo "::error::Patch dependency resolution failed (private logs withheld)"; exit 43
+          fi
+          echo "Actual PR14 dependency install: PASS"
+
+      - name: Audit actual PR14 installed dependency tree
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          npm audit --json >/tmp/wl14-audit.json 2>/tmp/wl14-audit.err || :
+          npm audit --omit=dev --json >/tmp/wl14-runtime.json 2>/tmp/wl14-runtime.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs');
+          for(const [name,file] of [['patched','/tmp/wl14-audit.json'],['runtime','/tmp/wl14-runtime.json']]){
+            let d;try{d=JSON.parse(fs.readFileSync(file,'utf8'))}catch{process.exit(44)}
+            if(!d.metadata?.vulnerabilities||!d.vulnerabilities)process.exit(45);
+            const v=d.metadata.vulnerabilities;
+            console.log(name+' '+JSON.stringify({total:v.total,high:v.high,moderate:v.moderate,critical:v.critical,braces:!!d.vulnerabilities.braces,parser:!!d.vulnerabilities['postcss-selector-parser']}));
+            if(name==='patched'&&(v.moderate>0||v.critical>0||!!d.vulnerabilities['postcss-selector-parser']))process.exit(46);
+          }
+          NODE
+
+      - name: Full original plus PR13 actor and symlink tests
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          if ! npm test >/tmp/wl14-test.log 2>&1; then
+            echo "::error::Full test suite failed (details withheld)"; exit 47
+          fi
+          if grep -Eq '(^|[[:space:]])# skipped [1-9]' /tmp/wl14-test.log; then
+            echo "::error::Security test skipped, cannot pass"; exit 48
+          fi
+          echo "Full tests including PR13 actor/symlink tests: PASS without skips"
+
+      - name: TypeScript and Vite build for real patched SHA
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          npm run typecheck >/tmp/wl14-ts.log 2>&1 || { echo "::error::TypeScript failed"; exit 49; }
+          npm run build >/tmp/wl14-build.log 2>&1 || { echo "::error::Vite build failed"; exit 50; }
+          echo "PR14 typecheck and build: PASS"
+
+      - name: Set up isolated Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Actual patched mobile demo browser twice
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/wl14-venv"
+          PY="$RUNNER_TEMP/wl14-venv/bin/python"
+          "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.57.0 >/tmp/wl14-pip.log 2>&1 || {
+            echo "::error::Local Playwright not available"; exit 51;
+          }
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || true)
+          if test -z "$CHROME"; then
+            echo "::error::Local Chrome missing, cannot claim browser verification"; exit 52
+          fi
+          export WORKLINK_BROWSER_EXECUTABLE="$CHROME"
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort >/tmp/wl14-preview.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then ready=1; break; fi
+            sleep 1
+          done
+          if test "$ready" != 1; then echo "::error::Local preview unavailable"; exit 53; fi
+          for iteration in 1 2; do
+            if ! "$PY" scripts/worklink_browser_smoke.py >/tmp/wl14-smoke.log 2>&1; then
+              echo "::error::Patched browser smoke failed, private logs withheld"; exit 54
+            fi
+          done
+          echo "Actual PR14 local Chrome Playwright mobile smoke: 5/5 twice PASS"
+
+      - name: Minimal public summary, no private source artifacts
+        shell: bash
+        run: |
+          echo '### WORKLINK PR14 exact source patch check' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Source: b8fa5a76cc7ea6cff95a13093d09c18cedb53381' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Override: postcss-selector-parser@7.1.6' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Full tests, types, build and mobile demo twice: PASS (only if every preceding step passed)' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Residual braces findings NOT patched; private Actions startup remains separate.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No merge, deployment, payments or public source artifacts.' >> "$GITHUB_STEP_SUMMARY"
