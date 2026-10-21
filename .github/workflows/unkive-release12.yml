@@ -134,7 +134,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 46034303c34c23c379cc6e4d963baefcddfcbdd9
+          ref: 426c551a8ab2f8ed48f0eeb0433e1f242a6dd49f
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -160,6 +160,11 @@ jobs:
           node scripts/check-unkive-delivery.mjs
           node scripts/check-unkive-payapp-vbank.mjs
           node scripts/check-unkive-alimtalk.mjs
+      - name: Enforce production contract and fail-closed admin live QA pricing guard
+        working-directory: target
+        run: |
+          node scripts/production-contract-check.mjs
+          node scripts/check-unkive-admin-live-qa.mjs
       - name: Verify honest real AI and competitor evidence gates with fictional self-tests only
         working-directory: target
         run: |
