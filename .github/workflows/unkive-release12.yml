@@ -160,6 +160,24 @@ jobs:
           node scripts/check-unkive-delivery.mjs
           node scripts/check-unkive-payapp-vbank.mjs
           node scripts/check-unkive-alimtalk.mjs
+      - name: Verify honest real AI and competitor evidence gates with fictional self-tests only
+        working-directory: target
+        run: |
+          node scripts/unkive-real-ai-output-audit.mjs --self-test
+          node scripts/unkive-competitor-blind-gate.mjs --self-test
+          node scripts/unkive-real-ai-output-audit.mjs --status > release-test-results/real-ai-evidence-status.json
+          node scripts/unkive-competitor-blind-gate.mjs --status > release-test-results/competitor-evidence-status.json
+          node -e "const f=require('fs');for(const p of ['real-ai-evidence-status.json','competitor-evidence-status.json']){const d=JSON.parse(f.readFileSync('release-test-results/'+p));if(!d.verdict.endsWith('NOT_EVALUATED'))process.exitCode=1;console.log('EVIDENCE_PENDING',p,d.verdict)}"
+      - name: Retain transparent evidence readiness snapshot without customer records
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-frozen-evidence-gates
+          path: |
+            target/release-test-results/real-ai-evidence-status.json
+            target/release-test-results/competitor-evidence-status.json
+          if-no-files-found: ignore
+          retention-days: 7
 
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
