@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: c056e1aaa03fec932b0703095c795196224c5bb5
+            ref: 9ba1ca6e0cf34eda499b041bde40f703968421b8
     steps:
       - uses: actions/checkout@v4
         with:
