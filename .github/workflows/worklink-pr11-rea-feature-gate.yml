@@ -382,6 +382,53 @@ jobs:
           echo "PATCH_COMPATIBILITY=PASS" >> "$GITHUB_ENV"
           echo "Candidate full test/typecheck/build: PASS; NOT approved for installation."
 
+      - name: Configure Python for isolated candidate demo browser check
+        if: env.PATCH_COMPATIBILITY == 'PASS'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Playwright mobile demo compatibility on parser candidate
+        if: env.PATCH_COMPATIBILITY == 'PASS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-candidate"
+          python -m venv "$RUNNER_TEMP/wl-preview-venv"
+          PY="$RUNNER_TEMP/wl-preview-venv/bin/python"
+          if ! "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.57.0 >/tmp/wl-preview-pip.log 2>&1; then
+            echo "VISUAL_COMPATIBILITY=NOT_RUN_PYPI" >> "$GITHUB_ENV"
+            echo "Isolated Playwright install unavailable; browser compatibility not evaluated."
+            exit 0
+          fi
+          if ! "$PY" -m playwright install chromium >/tmp/wl-preview-browser.log 2>&1; then
+            echo "VISUAL_COMPATIBILITY=NOT_RUN_BROWSER" >> "$GITHUB_ENV"
+            echo "Chromium download unavailable; browser compatibility not evaluated."
+            exit 0
+          fi
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort >/tmp/wl-preview-server.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then ready=1; break; fi
+            sleep 1
+          done
+          if test "$ready" != 1; then
+            echo "VISUAL_COMPATIBILITY=NOT_RUN_SERVER" >> "$GITHUB_ENV"
+            echo "Vite local preview not ready; browser comparison not evaluated."
+            exit 0
+          fi
+          for n in 1 2; do
+            if ! "$PY" scripts/worklink_browser_smoke.py >/tmp/wl-preview-smoke.log 2>&1; then
+              echo "VISUAL_COMPATIBILITY=FAILED_UI" >> "$GITHUB_ENV"
+              echo "NO-GO: patched candidate mobile UI smoke failed (test logs withheld)."
+              exit 0
+            fi
+          done
+          echo "VISUAL_COMPATIBILITY=PASS" >> "$GITHUB_ENV"
+          echo "Patched candidate: 5/5 local demo Playwright cases PASS twice."
+
       - name: Report temporary evaluation without source uploads
         shell: bash
         run: |
@@ -389,6 +436,7 @@ jobs:
           echo '- Source: immutable 6bab5e9c7cf331438076ed515ae4287d4b45a7db' >> "$GITHUB_STEP_SUMMARY"
           echo "- Candidate installation: ${PATCH_PROBE:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Test/typecheck/build: ${PATCH_COMPATIBILITY:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mobile Playwright candidate twice: ${VISUAL_COMPATIBILITY:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
           echo '- Audit aggregate counts appear in step log; no raw audit files or source artifacts uploaded.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing WORKLINK repo, PRs, package files, CI and deployment unchanged.' >> "$GITHUB_STEP_SUMMARY"
           echo '- braces has no official fix as of this check; retain its separate risk gate.' >> "$GITHUB_STEP_SUMMARY"
