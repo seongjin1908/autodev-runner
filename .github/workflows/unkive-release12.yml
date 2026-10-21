@@ -78,6 +78,50 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  browser-pdf-reentry:
+    name: Existing Playwright PDF token, stale-response and reconnect regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout candidate read-only at the same exact commit
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 142a7e1cd9e07d64885c84887d936c7a55abeb8d
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install source dependencies and isolated browser test package
+        working-directory: target
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+          npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Build synthetic free fixture and isolated storefront dependencies
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          node scripts/check-unkive-free-editorial.mjs
+      - name: Execute actual Chromium paid PDF re-entry without a payment or model call
+        working-directory: target
+        env:
+          UNKIVE_PDF_SESSION_ONLY: '1'
+        run: node scripts/unkive-release-e2e.mjs
+      - name: Retain browser regression outputs if generated
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-browser-pdf-reentry
+          path: target/release-test-results/*e2e*.json
+          if-no-files-found: ignore
+          retention-days: 7
+
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
     if: github.event_name == 'workflow_dispatch'
