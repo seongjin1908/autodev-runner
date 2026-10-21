@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 34fd7adcd26d8feb8d300f539252faa7d00c0c7e
+            ref: a9f7a1e92cc202e20ce2088341556cd7f951bb1e
     steps:
       - uses: actions/checkout@v4
         with:
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 34fd7adcd26d8feb8d300f539252faa7d00c0c7e
+          ref: a9f7a1e92cc202e20ce2088341556cd7f951bb1e
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
