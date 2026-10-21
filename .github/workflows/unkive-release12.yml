@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 0514b59ff38811b348a47b881129b5589b79ac38
+            ref: 4d65c6fc4d7ec510f2501c26b8b677b8086fb863
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +43,13 @@ jobs:
           mkdir -p release-test-results
           npx --no-install esbuild scripts/unkive-release12-content-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/release12.cjs
           node release-test-results/release12.cjs
+      - name: Test real paid AI prompt routing with local SDK stub
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: |
+          npx --no-install tsc -p scripts/tsconfig-paid-ai-context.json
+          npx --no-install esbuild scripts/unkive-paid-ai-context-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/paid-ai-context.cjs
+          node release-test-results/paid-ai-context.cjs
       - name: Retain exact same-case customer report text
         uses: actions/upload-artifact@v4
         if: always()
