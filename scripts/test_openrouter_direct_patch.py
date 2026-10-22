@@ -119,6 +119,91 @@ class DirectFreeCodingTests(unittest.TestCase):
             finally:
                 os.chdir(cwd)
 
+    def test_fenced_and_chunked_json_are_exactly_validated(self):
+        import json
+        original="export function count(x: number) { return x; }\n"
+        revised="export function count(x: number) { return Math.max(0, x); }\n"
+        obj={"path":"backend/affiliate.ts","content":revised,
+             "reason":"Prevent negative values in the bounded numeric conversion"}
+        raw=json.dumps(obj)
+        def reply(content, finish_reason="stop"):
+            return {"choices":[{"finish_reason":finish_reason,"message":{"content":content}}]}
+        self.assertEqual(direct.interpret(reply(raw),"backend/affiliate.ts",original),revised)
+        self.assertEqual(direct.interpret(reply("```json\n"+raw+"\n```"),"backend/affiliate.ts",original),revised)
+        self.assertEqual(direct.interpret(
+            reply([{"type":"text","text":raw[:20]},{"type":"text","text":raw[20:]}]),
+            "backend/affiliate.ts",original),revised)
+        for bad in (raw+"\nunsafe commentary",raw+"\n"+raw,
+                    [{"type":"image_url","image_url":{"url":"https://invalid.local"}}]):
+            with self.subTest(bad=str(bad)[:30]):
+                with self.assertRaises(direct.SafeBlock):
+                    direct.interpret(reply(bad),"backend/affiliate.ts",original)
+        with self.assertRaisesRegex(direct.SafeBlock,"model_output_truncated"):
+            direct.interpret(reply(raw,"length"),"backend/affiliate.ts",original)
+        with self.assertRaises(direct.SafeBlock):
+            direct.interpret(reply(raw.replace("backend/affiliate.ts",".github/workflows/ci.yml")),
+                             "backend/affiliate.ts",original)
+
+    def test_cyber_guardian_can_select_only_reviewed_owned_gateway_source(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            subprocess.run(["git","init","-q",d],check=True,capture_output=True)
+            safe=root/"gateway"/"server.js"
+            safe.parent.mkdir(parents=True)
+            safe.write_text("export function check(v) { return v; }\n" +
+                            "// guarded lab-only source\n"*37,encoding="utf8")
+            secrets=root/".github"/"workflows"/"evil.js"
+            secrets.parent.mkdir(parents=True)
+            secrets.write_text("export const blocked = true;\n"*60,encoding="utf8")
+            subprocess.run(["git","-C",d,"add","."],check=True,capture_output=True)
+            cwd=Path.cwd()
+            try:
+                os.chdir(root)
+                name,_=direct.candidate_file(root,"cyber-guardian")
+                self.assertEqual(name,"gateway/server.js")
+                with self.assertRaisesRegex(direct.SafeBlock,"no_small_approved_source"):
+                    direct.candidate_file(root,"worklink")
+            finally:
+                os.chdir(cwd)
+
+    def test_json_mode_is_requested_only_for_verified_free_supported_model(self):
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            path=root/"backend"/"affiliate.ts"
+            path.parent.mkdir(parents=True)
+            original="export const trim = (s: string) => s.trim();\n"+"// public source\n"*45
+            edited=original.replace("s.trim()","s ? s.trim() : ''")
+            path.write_text(original,encoding="utf8")
+            responses=[]
+            cwd=Path.cwd()
+            try:
+                os.chdir(root)
+                for supported in ([],["response_format"]):
+                    path.write_text(original,encoding="utf8")
+                    def request(url,payload=None,key=None,timeout=30):
+                        if url.endswith("/models"):
+                            return {"data":[{"id":"minimax/minimax-m3.1-flash:free",
+                                             "pricing":{"prompt":"0","completion":"0"},
+                                             "supported_parameters":supported}]}
+                        responses.append(payload)
+                        return {"choices":[{"message":{"content":json.dumps({
+                            "path":"backend/affiliate.ts","content":edited,
+                            "reason":"Reject empty nullable input safely"})}}]}
+                    with patch.dict(os.environ,{"OPENROUTER_API_KEY":"synthetic-only-never-real",
+                                              "ALIAS":"pricecam",
+                                              "AUTODEV_OPENROUTER_RETRY_ONCE":"false"}):
+                        with patch.object(direct,"candidate_file",return_value=("backend/affiliate.ts",original)):
+                            with patch.object(direct,"request_json",side_effect=request):
+                                self.assertEqual(direct.run(),"backend/affiliate.ts")
+                self.assertNotIn("response_format",responses[0])
+                self.assertEqual(responses[1]["response_format"],{"type":"json_object"})
+                self.assertEqual(responses[1]["provider"],{"require_parameters":True})
+                self.assertTrue(all(p["model"]=="minimax/minimax-m3.1-flash:free"
+                                    and p["max_tokens"]<=6500 for p in responses))
+            finally:
+                os.chdir(cwd)
+
     def test_code_path_does_not_call_shell_or_write_credentials(self):
         content=(HERE/"openrouter_direct_patch.py").read_text()
         self.assertNotIn("shell=True",content)
