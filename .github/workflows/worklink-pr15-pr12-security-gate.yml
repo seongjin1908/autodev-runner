@@ -39,7 +39,12 @@ jobs:
           test "$(git rev-parse HEAD)" = "06d3f3b3f9578f65e4e63cace9f731bc30e7565c"
           node --check server/serve.mjs
           node --check server/pilot-host-policy.mjs
-          node --test tests/pilot-host-policy.test.mjs > /tmp/wl15-policy.log
+          if ! node --test tests/pilot-host-policy.test.mjs > /tmp/wl15-policy.log 2>&1; then
+            echo 'PR15 committed host-policy test failure (synthetic fixtures only):'
+            tail -n 45 /tmp/wl15-policy.log
+            exit 1
+          fi
+          grep -E '^# (tests|pass|fail|skipped)' /tmp/wl15-policy.log
           grep -Eq '# pass 3$' /tmp/wl15-policy.log
           grep -Eq '# fail 0$' /tmp/wl15-policy.log
           echo 'WORKLINK PR15 three pilot-host tests: PASS'
