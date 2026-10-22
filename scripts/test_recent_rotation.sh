@@ -44,8 +44,16 @@ branch="$(sed -n 's/^checkout_branch=//p' "$GITHUB_OUTPUT")"
 test -n "$first" && test -n "$repo" && test -n "$branch"
 export MOCK_RECENT_COMMIT_PATH="repos/$repo/commits/$branch"
 : > "$GITHUB_OUTPUT"
+set +e
 bash "$ROOT/scripts/select_target.sh" > "$TEMP/second.log" 2>&1
+code=$?
+set -e
 next="$(sed -n 's/^alias=//p' "$GITHUB_OUTPUT")"
-test -n "$next" && test "$next" != "$first"
 grep -q "Skipping recently modified automatic target" "$TEMP/second.log"
-echo "PASS: auto rotation moved from a recently changed $first to $next"
+# Launch-focus policy permits only Restore. If its source was recently
+# changed, fail closed rather than silently expanding to paused projects.
+test "$first" = restore-ai
+test "$code" -eq 4
+test -z "$next"
+grep -q "No accessible automatic development target" "$TEMP/second.log"
+echo "PASS: recently edited Restore is held; paused portfolio apps cannot receive a fallback run"
