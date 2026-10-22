@@ -121,8 +121,8 @@ class DirectFreeCodingTests(unittest.TestCase):
 
     def test_fenced_and_chunked_json_are_exactly_validated(self):
         import json
-        original="export function count(x: number) { return x; }\n"
-        revised="export function count(x: number) { return Math.max(0, x); }\n"
+        original="export function count(x: number) { return x; }\n"+"// original safe code\n"*8
+        revised=original.replace("return x;", "return Math.max(0, x);")
         obj={"path":"backend/affiliate.ts","content":revised,
              "reason":"Prevent negative values in the bounded numeric conversion"}
         raw=json.dumps(obj)
