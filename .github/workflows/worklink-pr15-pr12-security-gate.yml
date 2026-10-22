@@ -56,7 +56,8 @@ jobs:
           set -euo pipefail
           npm install --no-package-lock --ignore-scripts --no-audit --no-fund > /tmp/wl15-install.log 2>&1
           node --test --test-reporter=tap tests/*.test.mjs > /tmp/wl15-tests.log 2>&1 || { echo 'WORKLINK full tests FAIL'; tail -n 25 /tmp/wl15-tests.log; exit 1; }
-          grep -Eq '^# fail 0
+          grep -Eq '^# fail 0$' /tmp/wl15-tests.log
+          grep -Eq '^# skipped 0$' /tmp/wl15-tests.log
           npm run typecheck > /tmp/wl15-typecheck.log 2>&1 || { echo 'WORKLINK typecheck FAIL'; exit 1; }
           npm run build > /tmp/wl15-build.log 2>&1 || { echo 'WORKLINK build FAIL'; exit 1; }
           echo 'WORKLINK PR15 full Node tests/typecheck/build: PASS, no skips'
