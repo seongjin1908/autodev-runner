@@ -1,0 +1,114 @@
+name: WORKLINK four-PR security integration gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/worklink-integration-pr17-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: worklink-pr17-security-pinned
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    name: WORKLINK PR17 actual combined source, tests and risk inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Require existing private source checkout permission
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: test -n "$TOKEN"
+      - name: Checkout immutable WORKLINK integration source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 1de5216d02e58d066897f8f719d05b3982821def
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - name: Require exactly the reviewed source blobs
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "1de5216d02e58d066897f8f719d05b3982821def"
+          test "$(git hash-object server/operator.mjs)" = "e91e1f30487caea837f32c1f10016b5baf0595d0"
+          test "$(git hash-object tests/pilot-static-server.test.mjs)" = "6eb720ece6fe33fa133e224ce7dc32eef2321319"
+          test "$(git hash-object package.json)" = "6147e57a4c3e19e210b2d129d50296d4439f0a0f"
+          test "$(git hash-object server/pilot-host-policy.mjs)" = "e27cbc960af66f57d0244cd3b7b0eaf51419f501"
+          test "$(git hash-object server/serve.mjs)" = "b44a5451e4cc00775a3e7705d421ac062506dd53"
+          test "$(git hash-object tests/pilot-host-policy.test.mjs)" = "843944562888a9ad2137ebbb67bfafffde778427"
+          test ! -f package-lock.json
+          echo 'WORKLINK immutable security integration/source scope PASS'
+      - name: Existing tests and integrated security regressions
+        working-directory: target
+        shell: bash
+        env:
+          npm_config_ignore_scripts: 'true'
+        run: |
+          set -euo pipefail
+          npm install --no-package-lock --ignore-scripts --no-audit --no-fund > /tmp/wl17-install.log 2>&1 || { echo 'dependency bootstrap failed'; exit 10; }
+          node --test --test-reporter=tap tests/*.test.mjs > /tmp/wl17-tests.log 2>&1 || { echo 'integrated tests failed'; tail -n 35 /tmp/wl17-tests.log; exit 11; }
+          grep -Eq '^# fail 0$' /tmp/wl17-tests.log
+          grep -Eq '^# skipped 0$' /tmp/wl17-tests.log
+          grep -E '^# (tests|pass|fail|skipped)' /tmp/wl17-tests.log
+          npm run typecheck > /tmp/wl17-ts.log 2>&1 || { echo 'integrated TS check failed'; exit 12; }
+          npm run build > /tmp/wl17-build.log 2>&1 || { echo 'integrated Vite build failed'; exit 13; }
+          echo 'WORKLINK PR17 combined regression + TypeScript + Vite: PASS'
+      - name: Bounded dev/runtime advisory inventory
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > /tmp/wl17-audit.json 2>/tmp/wl17-audit.err || :
+          npm audit --omit=dev --json > /tmp/wl17-runtime-audit.json 2>/tmp/wl17-runtime-audit.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs = require('node:fs'), assert=require('node:assert/strict');
+          const full=JSON.parse(fs.readFileSync('/tmp/wl17-audit.json','utf8'));
+          const run=JSON.parse(fs.readFileSync('/tmp/wl17-runtime-audit.json','utf8'));
+          assert(full.metadata?.vulnerabilities && run.metadata?.vulnerabilities);
+          assert(!full.vulnerabilities?.['postcss-selector-parser'],'reviewed parser patch must survive integration');
+          assert.equal(run.metadata.vulnerabilities.total,0,'runtime package advisories must be zero');
+          console.log('WORKLINK dependency security',JSON.stringify({
+            full:full.metadata.vulnerabilities,runtime:run.metadata.vulnerabilities,
+            bracesOpen:Boolean(full.vulnerabilities?.braces)
+          }));
+          NODE
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Exactly one isolated mobile demo browser pass
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/worklink_browser_smoke.py
+          python -m venv "$RUNNER_TEMP/wl17-playwright"
+          PY="$RUNNER_TEMP/wl17-playwright/bin/python"
+          "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.57.0 > /tmp/wl17-pip.log 2>&1 || { echo 'Playwright install unavailable'; exit 20; }
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || true)
+          test -n "$CHROME" && test -x "$CHROME" || { echo 'Preinstalled local Chrome unavailable'; exit 21; }
+          export WORKLINK_BROWSER_EXECUTABLE="$CHROME"
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort > /tmp/wl17-preview.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 25); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" = 1 || { echo 'private preview unavailable'; exit 22; }
+          "$PY" scripts/worklink_browser_smoke.py > /tmp/wl17-browser.log 2>&1 || { echo 'mobile demo browser failed'; tail -n 18 /tmp/wl17-browser.log; exit 23; }
+          echo 'WORKLINK PR17 integration 5/5 mobile browser cases: PASS (once)'
+      - name: Scope and withheld-evidence reminder
+        if: always()
+        run: |
+          echo 'WORKLINK integration head 1de5216d02e58d066897f8f719d05b3982821def checked in read-only public runner.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This tests a private synthetic pilot; not evidence of phone ownership, labor legality, real employer vetting or real data protections.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No merge, deployment, real payment, paid provider, package lockfile or private source artifacts.' >> "$GITHUB_STEP_SUMMARY"
