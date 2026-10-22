@@ -66,6 +66,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # npm audit requires a lockfile, but product PR17 has none. Generate a
+          # throwaway dependency snapshot on the ephemeral runner only; do not commit it.
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund > /tmp/wl17-lock-resolve.log 2>&1 || { echo 'temporary audit graph unavailable'; exit 30; }
           npm audit --json > /tmp/wl17-audit.json 2>/tmp/wl17-audit.err || :
           npm audit --omit=dev --json > /tmp/wl17-runtime-audit.json 2>/tmp/wl17-runtime-audit.err || :
           node --input-type=commonjs - <<'NODE'
