@@ -34,6 +34,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
       - name: Install existing dependencies without lifecycle scripts
         working-directory: target
         run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
@@ -97,6 +101,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
       - name: Install source dependencies and isolated browser test package
         working-directory: target
         run: |
@@ -141,6 +149,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
       - name: Install existing dependencies without lifecycle scripts
         working-directory: target
         run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
@@ -209,6 +221,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
       - name: Install existing dependencies without lifecycle scripts
         working-directory: target
         run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
