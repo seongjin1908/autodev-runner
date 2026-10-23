@@ -532,10 +532,10 @@
   ],
   "release_focus": {
     "effective_date": "2026-10-23",
-    "mode": "single_launch_lane_after_saju",
+    "mode": "saju_independent_restore_central_scheduled",
     "primary": "saju-core (independent user-owned writer, centrally locked)",
     "next": "restore-ai (release gates and existing PR reconciliation before new feature batches)",
-    "scheduled_code_generation": "paused until pending Restore AI PR and zero-cost model reliability gates pass",
+    "scheduled_code_generation": "central 30-minute Restore-only free-model coding; fail closed on pending generated PRs or invalid source; only merged source is launched",
     "other_projects": "maintenance/security/CI only; no scheduled feature coding from controller",
     "policy": "no paid AI, no unapproved merges, no production deployment"
   }
