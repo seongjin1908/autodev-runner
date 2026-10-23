@@ -15,16 +15,26 @@ class ReleaseFocusTests(unittest.TestCase):
     def test_release_focus_preserves_all_targets_and_saju_lock(self):
         enabled=[p for p in PROJECTS if p.get("auto_enabled") and int(p.get("auto_weight",0))>0
                  and not p.get("dedicated_schedule_only",False)]
-        focus=sum(p["auto_weight"] for p in enabled if p["alias"] in {"pricecam","fault-intel"})
-        total=sum(p["auto_weight"] for p in enabled)
-        self.assertGreaterEqual(focus/total,0.7)
-        self.assertEqual(sum(p.get("auto_enabled",False) for p in PROJECTS),13)
+        # No new scheduled batches for paused portfolio apps. Restore is the
+        # only *eligible* candidate; the actual cron job is intentionally held
+        # until its pending release PR and free-provider blockers are cleared.
+        self.assertEqual([p["alias"] for p in enabled],["restore-ai"])
+        self.assertEqual(sum(p.get("auto_enabled",False) for p in PROJECTS),1)
+        self.assertTrue(all(p["auto_weight"]==0 for p in PROJECTS
+                            if p["alias"]!="restore-ai" and not p.get("auto_enabled")))
+        focus=json.loads((ROOT/"config/projects.json").read_text())["release_focus"]
+        self.assertEqual(focus["next"], "restore-ai (release gates and existing PR reconciliation before new feature batches)")
         for p in PROJECTS:
             if p["repository"]=="seongjin1908/daangn-saju-autodev":
                 self.assertFalse(p["auto_enabled"])
                 self.assertTrue(p.get("external_worker_lock"))
         wf=(ROOT/".github/workflows/autodev.yml").read_text()
         self.assertIn("cron: '17,47 * * * *'",wf)
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", wf)
+        self.assertIn("if: github.event_name == 'workflow_dispatch'",
+                      (ROOT/".github/workflows/creative-studio-fast-autodev.yml").read_text())
+        self.assertIn("github.event_name == 'workflow_dispatch'",
+                      (ROOT/".github/workflows/worklink-free-dispatch.yml").read_text())
         event_triggers=wf.split("on:",1)[1].split("permissions:",1)[0]
         self.assertIn("  schedule:",event_triggers)
         self.assertIn("  workflow_dispatch:",event_triggers)
@@ -70,7 +80,8 @@ exit 6
             self.assertNotIn("Selected target: pricecam",p.stdout)
             self.assertNotIn("Selected target: fault-intel",p.stdout)
             self.assertNotIn("Selected target: saju",p.stdout)
-            self.assertIn("alias=",output.read_text())
+            self.assertIn("Selected target: restore-ai",p.stdout)
+            self.assertIn("alias=restore-ai",output.read_text())
 
     def test_direct_fast_path_skips_expensive_opencode(self):
         with tempfile.TemporaryDirectory() as directory:

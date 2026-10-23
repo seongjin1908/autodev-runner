@@ -55,6 +55,10 @@ concurrency:
 
 jobs:
   develop:
+    # Temporary release-focus hold: scheduled free-model attempts were consuming quota
+    # without validated source changes. Resume only after Restore PR and provider gates.
+    # A manual owner dispatch remains possible for an explicitly reviewed target.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:

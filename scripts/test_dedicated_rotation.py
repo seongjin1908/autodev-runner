@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify dedicated workflows are scheduled but excluded from central auto rotation."""
+"""Verify release-focus rotation, dedicated manual lane and Saju exclusion."""
 import json
 import os
 from pathlib import Path
@@ -20,10 +20,11 @@ selector = (root / "scripts/select_target.sh").read_text(encoding="utf-8")
 assert "not p.get('dedicated_schedule_only', False)" in selector
 for alias, (workflow_name, target_marker) in dedicated.items():
     p = projects[alias]
-    assert p["auto_enabled"] is True and p["auto_weight"] > 0, alias
+    assert p["auto_enabled"] is False and p["auto_weight"] == 0, alias
     assert p["dedicated_schedule_only"] is True, alias
     workflow = (root / workflow_name).read_text(encoding="utf-8")
     assert "cron:" in workflow and target_marker in workflow, alias
+    assert "if: github.event_name == 'workflow_dispatch'" in workflow, alias
 
 # Paused saju jobs must be inert on schedule AND manual dispatch; the separate
 # user-owned development repo is never selected by the central controller.
@@ -43,10 +44,12 @@ central = [
     if p["auto_enabled"] and p["auto_weight"] > 0
     and not p.get("dedicated_schedule_only", False)
 ]
-assert central and len(central) >= 10
+assert [p["alias"] for p in central] == ["restore-ai"]
+assert central[0]["auto_weight"] == 1
 assert not {p["alias"] for p in central}.intersection(dedicated)
-assert sum(p["auto_weight"] for p in central) >= 30
-assert sum(p["auto_weight"] for p in central if p["alias"] in {"pricecam","fault-intel"}) / sum(p["auto_weight"] for p in central) >= 0.70
+for name in ("worklink-free-dispatch.yml","autodev.yml"):
+    workflow=(root / ".github/workflows" / name).read_text(encoding="utf-8")
+    assert "github.event_name == 'workflow_dispatch'" in workflow, name
 
 # Automatic selection excludes dedicated lanes, but explicit/manual selection
 # still resolves them for their own cron workflows and user-directed dispatch.
@@ -78,4 +81,4 @@ for target in paused_saju:
         assert result.returncode != 0, target
         assert "Target is on HOLD:" in result.stderr, (target, result.stderr)
 
-print("PASS: Saju lanes are held, dedicated Creative Studio is selectable, central rotation intact")
+print("PASS: Saju locked, Restore sole candidate, other feature coding scheduled jobs held")

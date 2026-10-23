@@ -51,8 +51,8 @@
       "prompt_file": "prompts/pricecam.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40,
-      "auto_enabled": true,
-      "auto_weight": 16,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 99,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
@@ -60,7 +60,8 @@
       "branch_mode": "run_scoped",
       "source_branch": "main",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "face-lab",
@@ -71,8 +72,8 @@
       "prompt_file": "prompts/face-lab.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40,
-      "auto_enabled": true,
-      "auto_weight": 2,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 98,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
@@ -80,7 +81,8 @@
       "branch_mode": "run_scoped",
       "source_branch": "main",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "restore-ai",
@@ -92,15 +94,16 @@
       "recent_change_guard_minutes": 8,
       "max_changed_files": 35,
       "auto_enabled": true,
-      "auto_weight": 2,
-      "release_priority": 97,
+      "auto_weight": 1,
+      "release_priority": 100,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "source_branch": "main",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "next-launch: reconcile PR #18 and validate paid-order-to-delivery lifecycle before more features"
     },
     {
       "alias": "fault-intel",
@@ -111,8 +114,8 @@
       "prompt_file": "prompts/fault-intel.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 40,
-      "auto_enabled": true,
-      "auto_weight": 14,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 96,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
@@ -120,7 +123,8 @@
       "branch_mode": "run_scoped",
       "source_branch": "main",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "fortune-design",
@@ -258,8 +262,8 @@
       "prompt_file": "prompts/creative-studio.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 30,
-      "auto_enabled": true,
-      "auto_weight": 8,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 98,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 30,
@@ -267,7 +271,8 @@
       "branch_mode": "run_scoped",
       "source_branch": "main",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "saju-core",
@@ -302,15 +307,16 @@
       "prompt_file": "prompts/world-patch.md",
       "recent_change_guard_minutes": 20,
       "max_changed_files": 12,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 50,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 60,
       "max_branch_ahead": 35,
       "branch_mode": "fixed",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "second",
@@ -321,8 +327,8 @@
       "prompt_file": "prompts/second.md",
       "recent_change_guard_minutes": 10,
       "max_changed_files": 35,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 88,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 60,
@@ -330,7 +336,8 @@
       "branch_mode": "run_scoped",
       "source_branch": "main",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "cyber-guardian",
@@ -342,15 +349,16 @@
       "prompt_file": "prompts/cyber-guardian.md",
       "recent_change_guard_minutes": 10,
       "max_changed_files": 8,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 75,
       "failure_hold_threshold": 2,
       "failure_hold_minutes": 120,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "todaypick",
@@ -362,15 +370,16 @@
       "prompt_file": "prompts/todaypick.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 20,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 35,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "jjin",
@@ -402,15 +411,16 @@
       "prompt_file": "prompts/ddd-revenue.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 20,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 34,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "ddd-rfq",
@@ -422,15 +432,16 @@
       "prompt_file": "prompts/ddd-rfq.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 20,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 33,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "fundos",
@@ -442,15 +453,16 @@
       "prompt_file": "prompts/fundos.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 16,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 30,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
       "alias": "motion-grid",
@@ -502,19 +514,29 @@
       "prompt_file": "prompts/worklink.md",
       "recent_change_guard_minutes": 15,
       "max_changed_files": 25,
-      "auto_enabled": true,
-      "auto_weight": 1,
+      "auto_enabled": false,
+      "auto_weight": 0,
       "release_priority": 92,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 120,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "not-verified-for-worklink",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     }
   ],
   "auto_rotation": [
     "face-lab",
     "fault-intel"
-  ]
+  ],
+  "release_focus": {
+    "effective_date": "2026-10-23",
+    "mode": "single_launch_lane_after_saju",
+    "primary": "saju-core (independent user-owned writer, centrally locked)",
+    "next": "restore-ai (release gates and existing PR reconciliation before new feature batches)",
+    "scheduled_code_generation": "paused until pending Restore AI PR and zero-cost model reliability gates pass",
+    "other_projects": "maintenance/security/CI only; no scheduled feature coding from controller",
+    "policy": "no paid AI, no unapproved merges, no production deployment"
+  }
 }

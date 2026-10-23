@@ -17,7 +17,8 @@ concurrency:
 
 jobs:
   dispatch:
-    if: github.repository == 'seongjin1908/autodev-runner'
+    # WORKLINK remains in security/CI maintenance while Saju and Restore launch.
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
