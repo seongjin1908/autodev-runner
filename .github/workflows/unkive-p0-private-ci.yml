@@ -93,6 +93,7 @@ jobs:
         run: |
           node scripts/check-unkive-content-review.mjs
           node scripts/check-unkive-offline-editorial-benchmark.mjs
+          node scripts/unkive-offline-overlap-review.mjs
 
       - name: Verify free chart grounding and eight-interest editorial quality
         working-directory: target
@@ -162,6 +163,16 @@ jobs:
           python -m pip install PyMuPDF==1.26.5
           python scripts/check-unkive-pdf-layout.py
 
+      - name: Generate and validate full 24-chart x 3-tier PDF matrix
+        working-directory: target
+        timeout-minutes: 10
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition-check.cjs
+          node -e "require('./release-test-results/report-composition-check.cjs').reportCompositionCheck().catch(e => { console.error(e); process.exitCode=1; })"
+          node scripts/check-unkive-pdf-matrix.mjs
+          python scripts/check-unkive-pdf-matrix.py
+
       - name: Retain synthetic content review outputs
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,3 +182,10 @@ jobs:
           path: |
             target/release-test-results/content-review.json
             target/release-test-results/content-review.md
+            # Retain the 80-report / 400-question corpus actually tested, so
+            # each flagged cross-profile pair can be independently inspected.
+            target/release-test-results/offline-editorial-samples.json
+            target/release-test-results/offline-overlap-review.json
+            target/release-test-results/offline-overlap-review.md
+            target/release-test-results/pdf-matrix/
+            target/release-test-results/report-composition-review.json
