@@ -47,9 +47,10 @@ central = [
 assert [p["alias"] for p in central] == ["restore-ai"]
 assert central[0]["auto_weight"] == 1
 assert not {p["alias"] for p in central}.intersection(dedicated)
-for name in ("worklink-free-dispatch.yml","autodev.yml"):
-    workflow=(root / ".github/workflows" / name).read_text(encoding="utf-8")
-    assert "github.event_name == 'workflow_dispatch'" in workflow, name
+worklink=(root / ".github/workflows/worklink-free-dispatch.yml").read_text(encoding="utf-8")
+assert "github.event_name == 'workflow_dispatch'" in worklink
+controller=(root / ".github/workflows/autodev.yml").read_text(encoding="utf-8")
+assert "if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'" in controller
 
 # Automatic selection excludes dedicated lanes, but explicit/manual selection
 # still resolves them for their own cron workflows and user-directed dispatch.
@@ -81,4 +82,4 @@ for target in paused_saju:
         assert result.returncode != 0, target
         assert "Target is on HOLD:" in result.stderr, (target, result.stderr)
 
-print("PASS: Saju locked, Restore sole candidate, other feature coding scheduled jobs held")
+print("PASS: Saju locked, Restore scheduled sole coding lane, other scheduled feature writers held")
