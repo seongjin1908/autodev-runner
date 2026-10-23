@@ -1,0 +1,110 @@
+name: SajuMyeongkwae Fast Editorial QA
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/unkive-editorial-fast.yml'
+      - 'config/unkive-editorial-fast-ref.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sajomyeongkwae-fast-editorial-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout isolated QA controls
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate immutable target SHA
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="$(tr -d '\r\n' < config/unkive-editorial-fast-ref.txt)"
+          if ! [[ "$ref" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Fast QA requires a pinned 40-character source SHA."
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Require configured private repository access
+        env:
+          REPO_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          if [ -z "$REPO_TOKEN" ]; then
+            echo "::error::Private repository checkout secret is not configured."
+            exit 1
+          fi
+
+      - name: Checkout pinned source read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ steps.target.outputs.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install existing dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+
+      - name: Isolated natural PDF page regression before expensive editorial matrix
+        working-directory: target
+        run: |
+          node scripts/check-unkive-pdf.mjs
+          python -m pip install PyMuPDF==1.26.5
+          python scripts/check-unkive-pdf-layout.py
+
+      - name: Verify immutable production contract and TypeScript
+        working-directory: target
+        run: |
+          node scripts/production-contract-check.mjs
+          npx --no-install tsc --noEmit
+
+      - name: Test paid personalization and content differentiation
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          node scripts/check-unkive-paid-quality.mjs
+          node scripts/check-unkive-paid-ai-context.mjs
+          node scripts/check-unkive-personalization.mjs
+          node scripts/check-unkive-content-review.mjs
+          node scripts/check-unkive-offline-editorial-benchmark.mjs
+          node scripts/unkive-offline-overlap-review.mjs
+
+      - name: Test free customer interpretations and Korea-time daily fortune
+        working-directory: target
+        run: |
+          node scripts/check-unkive-free-editorial.mjs
+          node scripts/check-unkive-today.mjs
+          node scripts/check-unkive-past-reflection.mjs
+          node scripts/check-unkive-paid-report-search.mjs
+
+      - name: Upload synthetic editorial evidence for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fast-editorial-${{ steps.target.outputs.ref }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            target/release-test-results/content-review.json
+            target/release-test-results/content-review.md
+            target/release-test-results/offline-editorial-samples.json
+            target/release-test-results/offline-overlap-review.json
+            target/release-test-results/offline-overlap-review.md
