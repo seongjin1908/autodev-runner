@@ -1,0 +1,67 @@
+name: Free model patch source eligibility offline
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate-free-patch-source-gate.yml'
+      - 'scripts/openrouter_direct_patch.py'
+      - 'scripts/test_openrouter_direct_patch.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-check:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout own reviewed control source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout pinned private WORKLINK code read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: df6eeba5b0aba205eeec022fd168c2a7330593ac
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target-worklink
+      - name: Checkout pinned private Guardian code read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/cyber-guardian-ai
+          ref: ff6cac2a0384e109b4f05df8142e8391293ec892
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target-cyber
+      - name: Prove actual private source is eligible without a provider request
+        run: |
+          python3 - <<'PY'
+          import importlib.util,os
+          from pathlib import Path
+          import subprocess
+          module=Path("scripts/openrouter_direct_patch.py").resolve()
+          spec=importlib.util.spec_from_file_location("patch",module)
+          code=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(code)
+          repo=Path.cwd()
+          for label,sha,alias in (
+              ("target-worklink","df6eeba5b0aba205eeec022fd168c2a7330593ac","worklink"),
+              ("target-cyber","ff6cac2a0384e109b4f05df8142e8391293ec892","cyber-guardian")
+          ):
+              os.chdir(repo/label)
+              assert subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()==sha
+              path,source=code.candidate_file(Path.cwd(),alias)
+              assert 600<=len(source.encode())<=5600 and path.startswith(("server/","gateway/","src/","backend/","app/","lib/"))
+              if alias=="cyber-guardian": assert path=="gateway/server.js"
+              assert "private" not in path.lower()
+              print(f"{alias}: reviewed tracked source selection PASS ({len(source)} characters)")
+              os.chdir(repo)
+          PY
+      - name: Run tests against mock provider response only
+        run: |
+          python3 scripts/test_openrouter_direct_patch.py
+          python3 scripts/test_openrouter_free_fallback.py
+          python3 -m py_compile scripts/openrouter_direct_patch.py
+          echo 'Private source source-selection and all fake-provider tests PASS. Zero live API requests, writes, merges or deployments.'
