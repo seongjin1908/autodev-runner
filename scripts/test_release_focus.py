@@ -16,8 +16,8 @@ class ReleaseFocusTests(unittest.TestCase):
         enabled=[p for p in PROJECTS if p.get("auto_enabled") and int(p.get("auto_weight",0))>0
                  and not p.get("dedicated_schedule_only",False)]
         # No new scheduled batches for paused portfolio apps. Restore is the
-        # only *eligible* candidate; the actual cron job is intentionally held
-        # until its pending release PR and free-provider blockers are cleared.
+        # only eligible scheduled candidate; generated PRs still require review
+        # and free-only model responses remain fail-closed.
         self.assertEqual([p["alias"] for p in enabled],["restore-ai"])
         self.assertEqual(sum(p.get("auto_enabled",False) for p in PROJECTS),1)
         self.assertTrue(all(p["auto_weight"]==0 for p in PROJECTS
@@ -30,7 +30,7 @@ class ReleaseFocusTests(unittest.TestCase):
                 self.assertTrue(p.get("external_worker_lock"))
         wf=(ROOT/".github/workflows/autodev.yml").read_text()
         self.assertIn("cron: '17,47 * * * *'",wf)
-        self.assertIn("if: github.event_name == 'workflow_dispatch'", wf)
+        self.assertIn("if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'", wf)
         self.assertIn("if: github.event_name == 'workflow_dispatch'",
                       (ROOT/".github/workflows/creative-studio-fast-autodev.yml").read_text())
         self.assertIn("github.event_name == 'workflow_dispatch'",
