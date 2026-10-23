@@ -1,0 +1,69 @@
+name: Restore exclusive scheduler gate
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/restore-exclusive-scheduler-check.yml'
+      - '.github/workflows/autodev.yml'
+      - 'config/projects.json'
+      - 'scripts/test_release_focus.py'
+      - 'scripts/test_dedicated_rotation.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout proposed public runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify central single Restore coding target and scheduled workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          projects=json.loads(Path('config/projects.json').read_text())['projects']
+          enabled=[x['alias'] for x in projects if x.get('auto_enabled') and x.get('auto_weight',0)>0]
+          assert enabled==['restore-ai'], enabled
+          for x in projects:
+              if x['alias'].startswith('saju'):
+                  assert x.get('external_worker_lock') and not x.get('auto_enabled')
+          ctrl=Path('.github/workflows/autodev.yml').read_text()
+          assert "if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'" in ctrl
+          assert "cron: '17,47 * * * *'" in ctrl
+          print('PASS: central scheduled Restore-only coding; Saju locked')
+          PY
+
+      - name: Checkout immutable private native-worker switch
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/restore-ai-autodev
+          ref: 5e1da51b94ec3fa0858fc362e4c10145f2f218ea
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: native
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Require native hourly job to be manual-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('native/.github/workflows/autodev.yml').read_text()
+          assert "cron: \"17 * * * *\"" in src
+          assert "workflow_dispatch:" in src
+          assert "jobs:\n  autodev:\n" in src
+          job=src.split("jobs:\n  autodev:\n",1)[1].split("\n  # end of autodev",1)[0]
+          assert "    if: github.event_name == 'workflow_dispatch'" in job
+          assert "    runs-on: ubuntu-latest" in job
+          print('PASS: private native hourly schedule cannot start a second code writer')
+          PY
