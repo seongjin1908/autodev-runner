@@ -206,6 +206,8 @@ jobs:
             target/release-test-results/competitor-evidence-status.json
             target/release-test-results/appdeploy-release-parity.json
             target/release-test-results/appdeploy-isolated-manifest.json
+            target/release-test-results/appdeploy-isolated-source/**
+            !target/release-test-results/appdeploy-isolated-source/dist/**
           if-no-files-found: ignore
           retention-days: 7
 
