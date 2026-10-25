@@ -181,6 +181,13 @@ jobs:
       - name: Verify AppDeploy whole-source closure and rollback contract
         working-directory: target
         run: node scripts/check-appdeploy-release-parity.mjs
+      - name: Compile the generated complete isolated AppDeploy source bundle
+        working-directory: target
+        run: |
+          npx --no-install esbuild release-test-results/appdeploy-isolated-source/backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/appdeploy-isolated-backend.mjs
+          (cd release-test-results/appdeploy-isolated-source && ../../node_modules/.bin/vite build)
+          test -s release-test-results/appdeploy-isolated-backend.mjs
+          test -s release-test-results/appdeploy-isolated-source/dist/index.html
       - name: Verify honest real AI and competitor evidence gates with fictional self-tests only
         working-directory: target
         run: |
@@ -198,6 +205,7 @@ jobs:
             target/release-test-results/real-ai-evidence-status.json
             target/release-test-results/competitor-evidence-status.json
             target/release-test-results/appdeploy-release-parity.json
+            target/release-test-results/appdeploy-isolated-manifest.json
           if-no-files-found: ignore
           retention-days: 7
 
