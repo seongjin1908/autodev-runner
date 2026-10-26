@@ -228,7 +228,9 @@ class DirectFreeCodingTests(unittest.TestCase):
                                      "pricing":{"prompt":"0","completion":"0"}}]}
                 called.append(payload["model"])
                 return {"choices":[{"message":{"content":json.dumps({
-                    "path":"desktop/teach.py","content":edited,
+                    "path":"desktop/teach.py",
+                    "find":"    return value.strip()\n",
+                    "replace":"    return value.strip() if value else ''\n",
                     "reason":"Handle an empty user-provided replay field safely"
                 })}}]}
             cwd=Path.cwd()
