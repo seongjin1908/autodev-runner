@@ -1,0 +1,273 @@
+name: SajuMyeongkwae 12 fixed-question editorial comparison
+on:
+  pull_request:
+    paths:
+      - .github/workflows/unkive-release12.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-twelve:
+    name: ${{ matrix.version.label }} same twelve Q1 / four tiers
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - label: baseline
+            ref: da9cf033eee27db3b2c32c1587df063f23a63717
+          - label: candidate
+            ref: b8c09c3f0eda7ff29dc03ed0f8f99cdfb5282339
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout pinned private analysis code read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: ${{ matrix.version.ref }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install existing dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Generate fixed 12 chart / question snapshots without model calls
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/unkive-release12-content-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/release12.cjs
+          node release-test-results/release12.cjs
+      - name: Test real paid AI prompt routing with local SDK stub
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: |
+          npx --no-install tsc -p scripts/tsconfig-paid-ai-context.json
+          npx --no-install esbuild scripts/unkive-paid-ai-context-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/paid-ai-context.cjs
+          node release-test-results/paid-ai-context.cjs
+      - name: Verify all 24 by 4 customer paragraphs without PDF regeneration
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: |
+          npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition.cjs
+          node -e "require('./release-test-results/report-composition.cjs').reportCompositionCheck().catch(e => { console.error(e); process.exitCode=1; })"
+      - name: Compare actual free, Standard and Premium synthetic customer answers
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: node scripts/check-unkive-content-review.mjs
+      - name: Verify mock payment terminal state and same-order PDF re-entry
+        if: matrix.version.label == 'candidate'
+        working-directory: target
+        run: |
+          node scripts/check-unkive-order-resume.mjs
+          node scripts/check-unkive-backend-recovery.mjs
+      - name: Retain exact same-case customer report text
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-release12-${{ matrix.version.label }}
+          path: |
+            target/release-test-results/release12-content.json
+            target/release-test-results/content-review.json
+            target/release-test-results/content-review.md
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser-pdf-reentry:
+    name: Existing Playwright PDF token, stale-response and reconnect regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout candidate read-only at the same exact commit
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b8c09c3f0eda7ff29dc03ed0f8f99cdfb5282339
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install source dependencies and isolated browser test package
+        working-directory: target
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+          npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Build synthetic free fixture and isolated storefront dependencies
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          node scripts/check-unkive-free-editorial.mjs
+      - name: Execute actual Chromium paid PDF re-entry without a payment or model call
+        working-directory: target
+        env:
+          UNKIVE_PDF_SESSION_ONLY: '1'
+        run: node scripts/unkive-release-e2e.mjs
+      - name: Retain browser regression outputs if generated
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-browser-pdf-reentry
+          path: target/release-test-results/*e2e*.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  release-operations-smoke:
+    name: Frozen source typecheck, build and checkout fulfillment contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout fixed source read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b8c09c3f0eda7ff29dc03ed0f8f99cdfb5282339
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install existing dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Typecheck actual frontend
+        working-directory: target
+        run: npx --no-install tsc --noEmit
+      - name: Compile real backend and production frontend with isolated API client
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/backend-bundle.mjs
+          npx --no-install vite build --config scripts/vite-release-test.mjs
+      - name: Verify four-tier pricing, purchase rights, delivery and PayApp contract offline
+        working-directory: target
+        run: |
+          node scripts/check-unkive-daangn-pricing.mjs
+          node scripts/check-unkive-delivery.mjs
+          node scripts/check-unkive-payapp-vbank.mjs
+          node scripts/check-unkive-alimtalk.mjs
+      - name: Enforce reviewed admin QA contract and fail-closed KRW cost guard
+        working-directory: target
+        run: node scripts/check-unkive-admin-live-qa.mjs
+      - name: Enforce immutable production operational source contract
+        working-directory: target
+        run: node scripts/production-contract-check.mjs
+      - name: Verify AppDeploy whole-source closure and rollback contract
+        working-directory: target
+        run: node scripts/check-appdeploy-release-parity.mjs
+      - name: Compile the generated complete isolated AppDeploy source bundle
+        working-directory: target
+        run: |
+          npx --no-install esbuild release-test-results/appdeploy-isolated-source/backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/appdeploy-isolated-backend.mjs
+          (cd release-test-results/appdeploy-isolated-source && ../../node_modules/.bin/vite build)
+          test -s release-test-results/appdeploy-isolated-backend.mjs
+          test -s release-test-results/appdeploy-isolated-source/dist/index.html
+      - name: Verify honest real AI and competitor evidence gates with fictional self-tests only
+        working-directory: target
+        run: |
+          node scripts/check-unkive-paid-quality.mjs
+          node scripts/unkive-real-ai-output-audit.mjs --self-test
+          node scripts/unkive-competitor-blind-gate.mjs --self-test
+          node scripts/unkive-real-ai-output-audit.mjs --status > release-test-results/real-ai-evidence-status.json
+          node scripts/unkive-competitor-blind-gate.mjs --status > release-test-results/competitor-evidence-status.json
+          node -e "const f=require('fs');for(const p of ['real-ai-evidence-status.json','competitor-evidence-status.json']){const d=JSON.parse(f.readFileSync('release-test-results/'+p));if(!d.verdict.endsWith('NOT_EVALUATED'))process.exitCode=1;console.log('EVIDENCE_PENDING',p,d.verdict)}"
+      - name: Retain transparent evidence readiness snapshot without customer records
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-frozen-evidence-gates
+          path: |
+            target/release-test-results/real-ai-evidence-status.json
+            target/release-test-results/competitor-evidence-status.json
+            target/release-test-results/appdeploy-release-parity.json
+            target/release-test-results/appdeploy-isolated-manifest.json
+            target/release-test-results/appdeploy-production-source-manifest.json
+            target/release-test-results/appdeploy-isolated-source/**
+            !target/release-test-results/appdeploy-isolated-source/dist/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  release-candidate-96-pdf:
+    name: Frozen candidate 24 charts x 4 actual PDF render and inspection
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact frozen source without write credentials
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b8c09c3f0eda7ff29dc03ed0f8f99cdfb5282339
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          # Cache downloaded npm packages across pinned-SHA CI runs.
+          # Every install/build/check still executes; this is not node_modules reuse.
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install existing dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Inspect full 24-by-4 report composition from the actual source
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/unkive-report-composition-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/report-composition.cjs
+          node -e "require('./release-test-results/report-composition.cjs').reportCompositionCheck().catch(e => { console.error(e); process.exitCode=1; })"
+      - name: Render exactly 96 synthetic PDFs with existing Korean fonts
+        working-directory: target
+        run: node scripts/check-unkive-pdf-matrix.mjs
+      - name: Verify all 96 rendered PDF text, page layout and bookmarks
+        working-directory: target
+        run: |
+          python -m pip install --disable-pip-version-check PyMuPDF==1.26.5
+          python scripts/check-unkive-pdf-matrix.py
+      - name: Retain human-reviewable PDF sample and complete inspection record
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: saju-candidate-96-pdf-audit
+          path: |
+            target/release-test-results/pdf-matrix/inspection.json
+            target/release-test-results/pdf-matrix/manifest.json
+            target/release-test-results/pdf-matrix/premium-repetition-audit.json
+            target/release-test-results/report-composition-review.json
+            target/release-test-results/pdf-matrix/00-P001.pdf
+            target/release-test-results/pdf-matrix/00-P002.pdf
+            target/release-test-results/pdf-matrix/00-P005.pdf
+            target/release-test-results/pdf-matrix/00-P004.pdf
+            target/release-test-results/pdf-matrix/23-P004.pdf
+          if-no-files-found: ignore
+          retention-days: 7
