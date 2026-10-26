@@ -15,15 +15,17 @@ class ReleaseFocusTests(unittest.TestCase):
     def test_release_focus_preserves_all_targets_and_saju_lock(self):
         enabled=[p for p in PROJECTS if p.get("auto_enabled") and int(p.get("auto_weight",0))>0
                  and not p.get("dedicated_schedule_only",False)]
-        # No new scheduled batches for paused portfolio apps. Restore is the
-        # only eligible scheduled candidate; generated PRs still require review
-        # and free-only model responses remain fail-closed.
-        self.assertEqual([p["alias"] for p in enabled],["restore-ai"])
-        self.assertEqual(sum(p.get("auto_enabled",False) for p in PROJECTS),1)
-        self.assertTrue(all(p["auto_weight"]==0 for p in PROJECTS
-                            if p["alias"]!="restore-ai" and not p.get("auto_enabled")))
+        # Windows alpha now gets 4/5 standard slots, Restore keeps 1/5.
+        # All other scheduled coding lanes stay disabled, and Saju remains
+        # independently owned and locked.
+        self.assertEqual([p["alias"] for p in enabled],["fastbrowse","restore-ai"])
+        self.assertEqual(sum(bool(p.get("auto_enabled")) for p in PROJECTS),2)
+        weights={p["alias"]:int(p["auto_weight"]) for p in enabled}
+        self.assertEqual(weights,{"fastbrowse":4,"restore-ai":1})
+        self.assertTrue(all(int(p["auto_weight"])==0 for p in PROJECTS
+                            if p["alias"] not in {"fastbrowse","restore-ai"}))
         focus=json.loads((ROOT/"config/projects.json").read_text())["release_focus"]
-        self.assertEqual(focus["next"], "restore-ai (release gates and existing PR reconciliation before new feature batches)")
+        self.assertTrue(focus["next"].startswith("fastbrowse (Windows opt-in command"))
         for p in PROJECTS:
             if p["repository"]=="seongjin1908/daangn-saju-autodev":
                 self.assertFalse(p["auto_enabled"])
@@ -53,6 +55,7 @@ if [[ "$1" == "pr" && "$2" == "list" ]]; then
     shift
   done
   case "$repo" in
+    seongjin1908/fastbrowse-os) echo '[{"headRefName":"autodev/fastbrowse/pending"}]' ;;
     seongjin1908/pricecam-autodev) echo '[{"headRefName":"autodev/pricecam/pending"}]' ;;
     seongjin1908/fault-intelligence) echo '[{"headRefName":"autodev/fault-intel/pending"}]' ;;
     *) echo '[]' ;;
@@ -73,7 +76,8 @@ exit 6
             env=dict(os.environ,GH_TOKEN="synthetic-gh-test-no-network",
                      TARGET="auto",GITHUB_OUTPUT=str(output),
                      PATH=str(tmp)+":"+os.environ["PATH"],
-                     GITHUB_RUN_ID="1234",GITHUB_RUN_ATTEMPT="1")
+                     GITHUB_RUN_ID="1234",GITHUB_RUN_ATTEMPT="1",
+                     AUTODEV_ROTATION_SLOT_SECONDS="9999999999")
             p=subprocess.run(["bash",str(ROOT/"scripts/select_target.sh")],
                              cwd=ROOT,env=env,text=True,capture_output=True,timeout=20)
             self.assertEqual(p.returncode,0,p.stderr[-1200:])
