@@ -215,7 +215,8 @@ jobs:
 
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
-    if: github.event_name == 'workflow_dispatch'
+    # Run the previously omitted full matrix only on this isolated candidate PR.
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'test/sajumyeongkwae-editorial-gates-20261027'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
