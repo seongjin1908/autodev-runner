@@ -1,3 +1,4 @@
 One-time FastBrowse AutoDev kickoff after GitHub billing account unlock confirmation. 2026-10-26.
 FastBrowse restricted repository access was updated by the owner; request one guarded verification run.
 Second guarded run: fix Starlette TestClient httpx2 dependency, compact source patch mode and controller regression verification.
+Third guarded regression run: corrected compact patch fallback tests, one-minute FastBrowse collision guard and HTTPX2 baseline fix.
