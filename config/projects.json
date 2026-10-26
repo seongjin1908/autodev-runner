@@ -91,7 +91,7 @@
       "base_branch": "main",
       "validation": "python -m compileall -q desktop && python -m pytest tests -q && (cd browser-api && PYTHONPATH=. python -m pytest tests -q)",
       "prompt_file": "prompts/fastbrowse.md",
-      "recent_change_guard_minutes": 5,
+      "recent_change_guard_minutes": 1,
       "max_changed_files": 12,
       "auto_enabled": true,
       "auto_weight": 4,
