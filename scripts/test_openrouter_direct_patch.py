@@ -144,6 +144,69 @@ class DirectFreeCodingTests(unittest.TestCase):
             direct.interpret(reply(raw.replace("backend/affiliate.ts",".github/workflows/ci.yml")),
                              "backend/affiliate.ts",original)
 
+    def test_fastbrowse_selects_only_owned_desktop_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            subprocess.run(["git","init","-q",d],check=True,capture_output=True)
+            safe=root/"desktop"/"teach.py"
+            safe.parent.mkdir(parents=True)
+            safe.write_text("def safe_recording():\n    return True\n" +
+                            "# user-approved local replay only\n"*26, encoding="utf8")
+            unsafe=root/".github"/"workflows"/"bad.py"
+            unsafe.parent.mkdir(parents=True)
+            unsafe.write_text("unsafe=True\n"*90,encoding="utf8")
+            subprocess.run(["git","-C",d,"add","."],check=True,capture_output=True)
+            cwd=Path.cwd()
+            try:
+                os.chdir(root)
+                name,source=direct.candidate_file(root,"fastbrowse")
+                self.assertEqual(name,"desktop/teach.py")
+                self.assertIn("safe_recording",source)
+            finally:
+                os.chdir(cwd)
+
+    def test_disappeared_free_model_uses_verified_zero_price_fallback(self):
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            file=root/"desktop"/"teach.py"
+            file.parent.mkdir(parents=True)
+            initial="def example(value):\n    return value.strip()\n" + "# safe approved click\n"*30
+            edited=initial.replace("return value.strip()", "return value.strip() if value else ''")
+            file.write_text(initial,encoding="utf8")
+            called=[]
+            def request(url,payload=None,key=None,timeout=30):
+                if url.endswith("/models"):
+                    return {"data":[{"id":"qwen/qwen3-coder:free",
+                                     "pricing":{"prompt":"0","completion":"0"}}]}
+                called.append(payload["model"])
+                return {"choices":[{"message":{"content":json.dumps({
+                    "path":"desktop/teach.py","content":edited,
+                    "reason":"Handle an empty user-provided replay field safely"
+                })}}]}
+            cwd=Path.cwd()
+            try:
+                os.chdir(root)
+                with patch.dict(os.environ,{
+                    "OPENROUTER_API_KEY":"synthetic-only-never-real",
+                    "ALIAS":"fastbrowse",
+                    "AUTODEV_OPENROUTER_FREE_MODEL":"openrouter/minimax/minimax-m3.1-flash:free"
+                }):
+                    with patch.object(direct,"request_json",side_effect=request):
+                        with patch.object(direct,"candidate_file",return_value=("desktop/teach.py",initial)):
+                            self.assertEqual(direct.run(),"desktop/teach.py")
+                self.assertEqual(called,["qwen/qwen3-coder:free"])
+                self.assertEqual(file.read_text(encoding="utf8"),edited)
+            finally:
+                os.chdir(cwd)
+
+    def test_refuses_fallback_when_catalog_only_advertises_paid_models(self):
+        catalog={"data":[{"id":x,"pricing":{"prompt":"0.01","completion":"0"}}
+                         for x in direct.APPROVED.values()]}
+        for name in direct.APPROVED.values():
+            with self.assertRaises(direct.SafeBlock):
+                direct.zero_priced(catalog,name)
+
     def test_cyber_guardian_can_select_only_reviewed_owned_gateway_source(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d)
