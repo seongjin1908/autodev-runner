@@ -44,8 +44,8 @@ central = [
     if p["auto_enabled"] and p["auto_weight"] > 0
     and not p.get("dedicated_schedule_only", False)
 ]
-assert [p["alias"] for p in central] == ["restore-ai"]
-assert central[0]["auto_weight"] == 1
+assert [p["alias"] for p in central] == ["fastbrowse", "restore-ai"]
+assert {p["alias"]:p["auto_weight"] for p in central} == {"fastbrowse":4, "restore-ai":1}
 assert not {p["alias"] for p in central}.intersection(dedicated)
 worklink=(root / ".github/workflows/worklink-free-dispatch.yml").read_text(encoding="utf-8")
 assert "github.event_name == 'workflow_dispatch'" in worklink
@@ -82,4 +82,4 @@ for target in paused_saju:
         assert result.returncode != 0, target
         assert "Target is on HOLD:" in result.stderr, (target, result.stderr)
 
-print("PASS: Saju locked, Restore scheduled sole coding lane, other scheduled feature writers held")
+print("PASS: Saju locked, FastBrowse accelerated 4:1 central rotation with Restore, dedicated writers held")
