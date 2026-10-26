@@ -149,8 +149,7 @@ class DirectFreeCodingTests(unittest.TestCase):
         source=("def safe_step(value):\n"
                 "    if value is None:\n"
                 "        return None\n"
-                "    return value\n"
-                "# reviewed local action boundary\n"*15)
+                "    return value\n") + "# reviewed local action boundary\n"*15
         old="    if value is None:\n        return None\n"
         new="    if value is None:\n        raise ValueError('Missing target')\n"
         response={"choices":[{"message":{"content":json.dumps({
@@ -175,7 +174,8 @@ class DirectFreeCodingTests(unittest.TestCase):
     def test_fastbrowse_compact_patch_rejects_comment_only_and_newline_loss(self):
         import json
         source=("def safe_replay():\n    return True\n" +
-                "# Reviewed safe action\n"*30)
+                "# Reviewed safe action\n" +
+                "# Other approved local boundary\n"*29)
         def reply(old,new):
             return {"choices":[{"message":{"content":json.dumps({
                 "path":"desktop/teach.py","find":old,"replace":new,
@@ -186,9 +186,10 @@ class DirectFreeCodingTests(unittest.TestCase):
                                                 "# New comment only\n"),
                                          "desktop/teach.py",source)
         with self.assertRaisesRegex(direct.SafeBlock,"invalid_patch_result"):
-            direct.interpret_exact_patch(reply("# Reviewed safe action\n"*30,
-                                                "# Existing safety text"),
-                                         "desktop/teach.py",source)
+            direct.interpret_exact_patch(reply(
+                "# Reviewed safe action\n"+"# Other approved local boundary\n"*29,
+                "# Existing safety text"),
+                "desktop/teach.py",source)
 
     def test_fastbrowse_selects_only_owned_desktop_files(self):
         with tempfile.TemporaryDirectory() as d:
