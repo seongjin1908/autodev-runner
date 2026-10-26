@@ -22,6 +22,7 @@ on:
           - face-lab
           - face-lab-design
           - restore-ai
+          - fastbrowse
           - restore-ai-design
           - fault-intel
           - fault-intel-design
