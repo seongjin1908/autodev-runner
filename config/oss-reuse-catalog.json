@@ -251,6 +251,10 @@
       "i18next",
       "maplibre",
       "playwright"
+    ],
+    "fastbrowse": [
+      "playwright",
+      "opa"
     ]
   }
 }
