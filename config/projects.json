@@ -1,6 +1,27 @@
 {
   "projects": [
     {
+      "alias": "coston-partner-hub",
+      "repository": "seongjin1908/ddd-revenue-os",
+      "work_branch": "autodev/coston-partner-hub/run-scoped",
+      "base_branch": "feat/coston-partner-hub-20261027",
+      "source_branch": "feat/coston-partner-hub-20261027",
+      "validation": "cd partner-hub && npm run check",
+      "prompt_file": "prompts/coston-partner-hub.md",
+      "recent_change_guard_minutes": 15,
+      "max_changed_files": 8,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 95,
+      "failure_hold_threshold": 2,
+      "failure_hold_minutes": 180,
+      "max_branch_ahead": 0,
+      "branch_mode": "run_scoped",
+      "rea_codex_workspace": "not-configured",
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "GitHub-only Partner Hub source; no production deploy, no live payouts, reviewed PR to existing feature branch, no new schedules"
+    },
+    {
       "alias": "fortune",
       "repository": "seongjin1908/practical-calculator-factory",
       "work_branch": "fortune-cloud-autopilot",
