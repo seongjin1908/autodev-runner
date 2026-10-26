@@ -297,6 +297,13 @@ for p in paths:
     # WORLD PATCH edits are scoped to the isolated original-series module.
     if __import__('os').environ.get('ALIAS','') == 'world-patch' and not p.startswith('brands/world-patch/'):
         blocked.append(p)
+    # COSTON Partner Hub is a separate, high-risk financial ledger workstream.
+    # The free model cannot edit unrelated DDD core, workflows, manifests or payment secrets.
+    if __import__('os').environ.get('ALIAS','') == 'coston-partner-hub' and not p.startswith((
+        'partner-hub/src/', 'partner-hub/integrations/',
+        'partner-hub/tests/', 'partner-hub/public/', 'partner-hub/docs/',
+    )):
+        blocked.append(p)
 if blocked:
     print('Guard blocked sensitive/workflow changes: ' + ', '.join(blocked))
     raise SystemExit(2)
