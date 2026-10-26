@@ -23,5 +23,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Run deterministic controller tests on the exact main branch,
+          # independently of the free AI model call.
+          gh workflow run control-plane-check.yml --repo "$GITHUB_REPOSITORY" --ref main
           gh workflow run autodev.yml --repo "$GITHUB_REPOSITORY" --ref main -f target=fastbrowse
           echo "FastBrowse guarded central AutoDev dispatch was accepted."
