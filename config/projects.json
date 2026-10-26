@@ -85,6 +85,26 @@
       "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
     },
     {
+      "alias": "fastbrowse",
+      "repository": "seongjin1908/fastbrowse-os",
+      "work_branch": "agent/windows-interruptible-waits-20261026",
+      "base_branch": "main",
+      "validation": "python -m compileall -q desktop && python -m pytest tests -q && (cd browser-api && PYTHONPATH=. python -m pytest tests -q)",
+      "prompt_file": "prompts/fastbrowse.md",
+      "recent_change_guard_minutes": 5,
+      "max_changed_files": 12,
+      "auto_enabled": true,
+      "auto_weight": 2,
+      "release_priority": 98,
+      "failure_hold_threshold": 3,
+      "failure_hold_minutes": 10,
+      "max_branch_ahead": 90,
+      "branch_mode": "fixed",
+      "rea_codex_workspace": "not-configured",
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "release_focus_note": "Priority Windows desktop AI sidebar, safe GUI operations, semantic teach replay, minimal dependency startup, P0 fixes. Accumulate only in existing Draft PR #5 until reviewed."
+    },
+    {
       "alias": "restore-ai",
       "repository": "seongjin1908/restore-ai-autodev",
       "work_branch": "autodev/restore-ai/run-scoped",
