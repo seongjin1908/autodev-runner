@@ -191,6 +191,7 @@ jobs:
       - name: Verify honest real AI and competitor evidence gates with fictional self-tests only
         working-directory: target
         run: |
+          node scripts/check-unkive-paid-quality.mjs
           node scripts/unkive-real-ai-output-audit.mjs --self-test
           node scripts/unkive-competitor-blind-gate.mjs --self-test
           node scripts/unkive-real-ai-output-audit.mjs --status > release-test-results/real-ai-evidence-status.json
