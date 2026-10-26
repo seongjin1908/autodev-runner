@@ -68,6 +68,11 @@ install_baseline_dependencies() {
   if [[ -f requirements.txt ]]; then
     python -m pip install -r requirements.txt >>/tmp/autodev-install.log 2>&1
   fi
+  # FastBrowse contains desktop and browser API Python tests. Installing only a
+  # top-level requirements.txt made its baseline fail before any repair agent ran.
+  if [[ "${ALIAS:-}" == "fastbrowse" ]]; then
+    python -m pip install -r requirements-dev.txt -r browser-api/requirements.txt >>/tmp/autodev-install.log 2>&1
+  fi
 }
 
 install_started="$(date +%s)"
@@ -86,7 +91,7 @@ echo "Baseline validation completed (exit $BASELINE_RC)."
 # Direct free API runs do not need OpenCode, model listing or REA initialization.
 # Avoid global CLI installation and repeated provider timeouts on every 30-min job.
 if [[ "${AUTODEV_DIRECT_FREE_ONLY:-false}" == "true" ]]; then
-  if (( BASELINE_RC != 0 )); then
+  if (( BASELINE_RC != 0 )) && [[ "${ALIAS:-}" != "fastbrowse" ]]; then
     echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
     echo "AUTODEV_FAILURE_REASON=baseline_failed" >> "$GITHUB_ENV"
     echo "::error::Baseline validation failed; do not generate unrelated code."
@@ -99,6 +104,11 @@ if [[ "${AUTODEV_DIRECT_FREE_ONLY:-false}" == "true" ]]; then
   {
     printf 'Target: %s\n' "$ALIAS"
     cat "$ROOT_DIR/$PROMPT_FILE"
+    if (( BASELINE_RC != 0 )) && [[ "${ALIAS:-}" == "fastbrowse" ]]; then
+      printf '\n# P0: baseline test failure (repair the root cause before new features)\n'
+      # Local runner file only: never echo source or full private traceback to public job output.
+      tail -n 80 /tmp/autodev-baseline.log
+    fi
     printf '\nDo not modify protected files or activate paid APIs.\n'
   } > /tmp/autodev-prompt.txt
   echo "AUTODEV_FAILURE_REASON=direct_provider_pending" >> "$GITHUB_ENV"
