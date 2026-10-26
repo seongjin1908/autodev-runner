@@ -144,6 +144,52 @@ class DirectFreeCodingTests(unittest.TestCase):
             direct.interpret(reply(raw.replace("backend/affiliate.ts",".github/workflows/ci.yml")),
                              "backend/affiliate.ts",original)
 
+    def test_fastbrowse_compact_patch_unique_anchor_and_no_file_rewrite(self):
+        import json
+        source=("def safe_step(value):\n"
+                "    if value is None:\n"
+                "        return None\n"
+                "    return value\n"
+                "# reviewed local action boundary\n"*15)
+        old="    if value is None:\n        return None\n"
+        new="    if value is None:\n        raise ValueError('Missing target')\n"
+        response={"choices":[{"message":{"content":json.dumps({
+            "path":"desktop/teach.py","find":old,"replace":new,
+            "reason":"Never replay without a valid selected target"
+        })}}]}
+        output=direct.interpret_exact_patch(response,"desktop/teach.py",source)
+        self.assertIn("raise ValueError('Missing target')",output)
+        self.assertEqual(output.count("def safe_step"),1)
+        with self.assertRaisesRegex(direct.SafeBlock,"unauthorized_edit_path"):
+            direct.interpret_exact_patch(response,"desktop/planner.py",source)
+        with self.assertRaisesRegex(direct.SafeBlock,"patch_anchor_not_unique"):
+            direct.interpret_exact_patch(response,"desktop/teach.py",source.replace(
+                "# reviewed local action boundary\n",
+                old+"# reviewed local action boundary\n"))
+        bad={"choices":[{"message":{"content":json.dumps({
+            "path":"desktop/teach.py","find":"x","replace":"y","reason":"bad"
+        })}}]}
+        with self.assertRaisesRegex(direct.SafeBlock,"patch_fragment_oversized"):
+            direct.interpret_exact_patch(bad,"desktop/teach.py",source)
+
+    def test_fastbrowse_compact_patch_rejects_comment_only_and_newline_loss(self):
+        import json
+        source=("def safe_replay():\n    return True\n" +
+                "# Reviewed safe action\n"*30)
+        def reply(old,new):
+            return {"choices":[{"message":{"content":json.dumps({
+                "path":"desktop/teach.py","find":old,"replace":new,
+                "reason":"Change the target safely"
+            })}}]}
+        with self.assertRaisesRegex(direct.SafeBlock,"comment_only_edit"):
+            direct.interpret_exact_patch(reply("# Reviewed safe action\n",
+                                                "# New comment only\n"),
+                                         "desktop/teach.py",source)
+        with self.assertRaisesRegex(direct.SafeBlock,"invalid_patch_result"):
+            direct.interpret_exact_patch(reply("# Reviewed safe action\n"*30,
+                                                "# Existing safety text"),
+                                         "desktop/teach.py",source)
+
     def test_fastbrowse_selects_only_owned_desktop_files(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d)
