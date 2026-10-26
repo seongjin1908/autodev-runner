@@ -94,15 +94,15 @@
       "recent_change_guard_minutes": 5,
       "max_changed_files": 12,
       "auto_enabled": true,
-      "auto_weight": 2,
-      "release_priority": 98,
+      "auto_weight": 4,
+      "release_priority": 100,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 10,
       "max_branch_ahead": 90,
       "branch_mode": "fixed",
       "rea_codex_workspace": "not-configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "Priority Windows desktop AI sidebar, safe GUI operations, semantic teach replay, minimal dependency startup, P0 fixes. Accumulate only in existing Draft PR #5 until reviewed."
+      "release_focus_note": "FastBrowse launch sprint: 4 of 5 standard central rotation slots at existing 30-min schedule, not extra Actions runs. Focus Windows deterministic command -> Notepad save -> teach/replay and verification. GitHub billing lock still blocks all cloud runners until account owner resolves it."
     },
     {
       "alias": "restore-ai",
