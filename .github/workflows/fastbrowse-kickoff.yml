@@ -1,0 +1,27 @@
+# Single-use, low-cost kickoff for FastBrowse after GitHub billing unlock.
+# It dispatches the existing guarded AutoDev; it does not run a parallel writer.
+name: FastBrowse one-time AutoDev kickoff
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/fastbrowse-kickoff-20261026.txt'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    if: github.event.head_commit.message == 'Kick off verified FastBrowse auto-development'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Start existing guarded FastBrowse worker
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run autodev.yml --repo "$GITHUB_REPOSITORY" --ref main -f target=fastbrowse
+          echo "FastBrowse guarded central AutoDev dispatch was accepted."
