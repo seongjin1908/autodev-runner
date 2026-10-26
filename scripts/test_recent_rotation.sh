@@ -50,10 +50,11 @@ code=$?
 set -e
 next="$(sed -n 's/^alias=//p' "$GITHUB_OUTPUT")"
 grep -q "Skipping recently modified automatic target" "$TEMP/second.log"
-# Launch-focus policy permits only Restore. If its source was recently
-# changed, fail closed rather than silently expanding to paused projects.
-test "$first" = restore-ai
-test "$code" -eq 4
-test -z "$next"
-grep -q "No accessible automatic development target" "$TEMP/second.log"
-echo "PASS: recently edited Restore is held; paused portfolio apps cannot receive a fallback run"
+# Accelerated rotation allows ONLY FastBrowse/Restore. A recently modified
+# candidate must route to the other active lane, never to paused projects.
+[[ "$first" == fastbrowse || "$first" == restore-ai ]]
+test "$code" -eq 0
+test -n "$next"
+test "$first" != "$next"
+[[ "$next" == fastbrowse || "$next" == restore-ai ]]
+echo "PASS: recent target safely rotates to the other approved active lane"
