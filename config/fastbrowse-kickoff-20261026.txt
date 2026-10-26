@@ -1,1 +1,2 @@
 One-time FastBrowse AutoDev kickoff after GitHub billing account unlock confirmation. 2026-10-26.
+FastBrowse restricted repository access was updated by the owner; request one guarded verification run.
