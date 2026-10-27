@@ -82,6 +82,21 @@ jobs:
         working-directory: target
         run: npm run check
 
+      - name: Local D1 and private synthetic HTTP photo flow (no paid providers)
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations apply DB --local
+          npx wrangler dev --local --ip 127.0.0.1 --port 8787 --log-level error > /tmp/restore-smoke-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 35); do
+            if curl -fsS http://127.0.0.1:8787/health >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          RESTORE_LOCAL_SMOKE_ORIGIN=http://127.0.0.1:8787 node scripts/local_photo_flow_smoke.mjs
+
       - name: Report scope
         if: always()
         run: |
