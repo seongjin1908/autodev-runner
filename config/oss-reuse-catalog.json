@@ -143,6 +143,9 @@
     }
   ],
   "projects": {
+    "coston-partner-hub": [
+      "playwright"
+    ],
     "fortune": [
       "i18next",
       "playwright"

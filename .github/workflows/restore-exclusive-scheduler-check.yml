@@ -23,7 +23,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Verify central single Restore coding target and scheduled workflow
+      - name: Verify approved central coding targets and bounded schedule
         shell: bash
         run: |
           set -euo pipefail
@@ -32,14 +32,16 @@ jobs:
           from pathlib import Path
           projects=json.loads(Path('config/projects.json').read_text())['projects']
           enabled=[x['alias'] for x in projects if x.get('auto_enabled') and x.get('auto_weight',0)>0]
-          assert enabled==['restore-ai'], enabled
+          assert enabled==['coston-partner-hub','fastbrowse','restore-ai'], enabled
+          weights={x['alias']:x['auto_weight'] for x in projects if x['alias'] in enabled}
+          assert weights=={'coston-partner-hub':1,'fastbrowse':4,'restore-ai':1}, weights
           for x in projects:
               if x['alias'].startswith('saju'):
                   assert x.get('external_worker_lock') and not x.get('auto_enabled')
           ctrl=Path('.github/workflows/autodev.yml').read_text()
           assert "if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'" in ctrl
-          assert "cron: '17,47 * * * *'" in ctrl
-          print('PASS: central scheduled Restore-only coding; Saju locked')
+          assert "cron: '17 */2 * * *'" in ctrl
+          print('PASS: approved central 2-hour 4:1:1 rotation; Saju locked')
           PY
 
       - name: Checkout immutable private native-worker switch

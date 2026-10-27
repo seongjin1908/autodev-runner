@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The rotation must find another eligible target instead of wasting a
-# half-hour scheduled run on a recently edited source branch.
+# two-hour scheduled run on a recently edited source branch.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMP="$(mktemp -d)"
@@ -50,11 +50,12 @@ code=$?
 set -e
 next="$(sed -n 's/^alias=//p' "$GITHUB_OUTPUT")"
 grep -q "Skipping recently modified automatic target" "$TEMP/second.log"
-# Accelerated rotation allows ONLY FastBrowse/Restore. A recently modified
-# candidate must route to the other active lane, never to paused projects.
-[[ "$first" == fastbrowse || "$first" == restore-ai ]]
+# Approved 4:1:1 rotation includes Partner Hub, FastBrowse and Restore.
+# A recently modified target must reroute only to another approved lane.
+approved=' coston-partner-hub fastbrowse restore-ai '
+[[ "$approved" == *" $first "* ]]
 test "$code" -eq 0
 test -n "$next"
 test "$first" != "$next"
-[[ "$next" == fastbrowse || "$next" == restore-ai ]]
+[[ "$approved" == *" $next "* ]]
 echo "PASS: recent target safely rotates to the other approved active lane"
