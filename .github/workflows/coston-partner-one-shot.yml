@@ -22,6 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      - uses: actions/checkout@v4
+      - name: Verify source picker stays inside Partner Hub
+        run: |
+          python3 -m py_compile scripts/openrouter_direct_patch.py
+          python3 -m unittest discover -s tests -p test_coston_source_picker.py -v
       - name: Dispatch existing guarded free-AI developer for Partner Hub
         env:
           GH_TOKEN: ${{ github.token }}
