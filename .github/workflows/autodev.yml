@@ -1,11 +1,11 @@
 name: Central Zero-Budget AutoDev
 
-# AutoDev runs only on the 30-minute timer or an explicit manual action.
+# AutoDev runs on a low-frequency 2-hour timer or an explicit manual action.
 # A controller source merge should run Control Plane Check, NOT re-launch costly
 # stale OpenCode/Gemini batch generation.
 on:
   schedule:
-    - cron: '17,47 * * * *'
+    - cron: '17 */2 * * *'
   workflow_dispatch:
     inputs:
       target:
@@ -205,7 +205,7 @@ jobs:
         run: bash scripts/develop_target.sh
 
       - name: Optional strictly zero-priced OpenRouter direct coding (manual or bounded schedule)
-        # Every 30 min: at most 48 scheduled calls/day. Manual explicit retry only.
+        # Every 2 hours: at most 12 scheduled calls/day. Manual explicit retry only.
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.token.outputs.configured == 'true' && env.SKIP_TARGET != 'true' && env.BATCH_READY != 'true'
         env:
           OPENROUTER_API_KEY: ${{ secrets.AUTODEV_OPENROUTER_FREE_API_KEY }}
