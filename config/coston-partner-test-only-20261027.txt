@@ -3,3 +3,5 @@ Target: seongjin1908/ddd-revenue-os@feat/coston-partner-hub-20261027
 Why: per-repository Actions jobs had no executable steps; the central runner Actions still runs.
 Tests: cd partner-hub && npm run check (Node 22, no external dependencies)
 Scope: test-only; no AI provider, commit, PR merge, deploy or transfer.
+
+Regression run 2: provider-scoped capture + owner partner suspension state controls, expected original Hub feature branch tests >=32.
