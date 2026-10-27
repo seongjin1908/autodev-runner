@@ -58,6 +58,13 @@ if [[ "${AUTODEV_OPENROUTER_DIRECT_FIRST:-false}" == "true" ]]; then
     OPENROUTER_ISSUE=direct_no_valid_edit
     SAFE_REASON="$(grep -E "^direct_free_code_blocked:[a-z_]+$" /tmp/autodev-openrouter-direct.log | head -n 1 || true)"
     echo "::warning::OpenRouter direct API produced no approved edit (exit $OPENROUTER_RC; $SAFE_REASON)."
+    # Persist the actual provider failure for report_target.sh and the PR-backed
+    # failure hold. Otherwise the direct path remains stuck at status=running
+    # and every scheduled run retries the same unavailable/truncated response.
+    FAILURE_REASON="${SAFE_REASON#direct_free_code_blocked:}"
+    if [[ -z "$SAFE_REASON" ]]; then FAILURE_REASON="direct_provider_no_valid_edit"; fi
+    echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
+    echo "AUTODEV_FAILURE_REASON=$FAILURE_REASON" >> "$GITHUB_ENV"
   fi
 else
 # Already-installed OpenCode CLI, with provider credentials isolated from npm and baseline tests.
@@ -98,6 +105,10 @@ if [[ "$OPENROUTER_ISSUE" == auth_block || "$OPENROUTER_ISSUE" == billing_block 
 fi
 if [[ -z "$(git status --porcelain --untracked-files=all)" ]]; then
   echo "OpenRouter fallback produced no file edits; do not mark as development."
+  if [[ "$OPENROUTER_ISSUE" != "direct_no_valid_edit" ]]; then
+    echo "AUTODEV_RUN_STATUS=failed" >> "$GITHUB_ENV"
+    echo "AUTODEV_FAILURE_REASON=provider_no_file_edits" >> "$GITHUB_ENV"
+  fi
   exit 0
 fi
 if ! python3 - "$MAX_CHANGED_FILES" <<'PY'
