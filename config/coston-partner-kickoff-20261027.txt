@@ -8,3 +8,5 @@ Validation: cd partner-hub && npm run check
 AI: existing free-model pool only, no paid fallback
 Output: run-scoped GitHub review PR targeting existing Coston feature branch
 Release: do NOT merge to main, deploy, or enable payout.
+
+Retry 2: source picker can now reach nested partner-hub/integrations and partner-hub/src; local scope tests must pass before free AI dispatch.
