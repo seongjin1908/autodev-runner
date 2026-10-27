@@ -82,6 +82,73 @@ jobs:
         working-directory: target
         run: npm run check
 
+      - name: Verify staged Cloudflare Worker configuration with synthetic identifiers (dry run only)
+        working-directory: target
+        shell: bash
+        env:
+          RESTORE_STAGING_D1_ID: '12345678-1234-4123-8123-123456789abc'
+          RESTORE_STAGING_PUBLIC_ORIGIN: 'https://restore-ai-private-staging.example-workers.workers.dev'
+          RESTORE_STAGING_TEAM_DOMAIN: 'https://restore-test.cloudflareaccess.com'
+          RESTORE_STAGING_ACCESS_AUD: 'abcdefghijklmnopabcdefghijklmnop'
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          set -euo pipefail
+          npm run staging:preflight
+          npm run staging:prepare
+          node scripts/validate_staging_deploy_config.mjs
+          ./node_modules/.bin/wrangler deploy --dry-run --config wrangler.staging.jsonc --outdir .wrangler-staging-test
+          rm -f wrangler.staging.jsonc
+
+      - name: Local-only simulated D1 migrations
+        working-directory: target
+        shell: bash
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+        run: npm run db:migrate:smoke
+
+      - name: Start local-only Worker, R2 and Queue
+        working-directory: target
+        shell: bash
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+        run: |
+          set -euo pipefail
+          npm run dev:smoke > wrangler-local-smoke.log 2>&1 &
+          echo $! > wrangler-local-smoke.pid
+          for i in $(seq 1 40); do
+            if curl --noproxy '*' -fsS --max-time 2 http://127.0.0.1:8787/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Local Worker failed to start"
+          tail -n 40 wrangler-local-smoke.log
+          exit 1
+
+      - name: Real HTTP synthetic photo order, demo pay, queue, private download
+        working-directory: target
+        shell: bash
+        env:
+          RESTORE_LOCAL_SMOKE_ORIGIN: 'http://127.0.0.1:8787'
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+        run: npm run test:smoke:local
+
+      - name: Shut down local worker
+        if: always()
+        working-directory: target
+        shell: bash
+        run: |
+          if [ -f wrangler-local-smoke.pid ]; then
+            kill "$(cat wrangler-local-smoke.pid)" || true
+          fi
+
       - name: Report scope
         if: always()
         run: |
