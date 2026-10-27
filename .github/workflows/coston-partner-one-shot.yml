@@ -1,0 +1,37 @@
+name: Coston Partner Hub single-run kickoff
+
+# Dedicated one-time trigger for the EXISTING free/guarded AutoDev controller.
+# Creating the sentinel triggers only the dispatch job, not a second AI writer.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/coston-partner-kickoff-20261027.txt'
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: coston-partner-hub-one-shot-kickoff
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event.head_commit.message == 'Kick off Coston Partner Hub guarded AutoDev once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Dispatch existing guarded free-AI developer for Partner Hub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run autodev.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f target=coston-partner-hub
+          echo "Coston Partner Hub workflow dispatch requested."
+          echo "The dispatch alone is NOT proof of code creation."
+          echo "Required evidence: fresh validated commit and review PR; no auto-merge or deploy."
