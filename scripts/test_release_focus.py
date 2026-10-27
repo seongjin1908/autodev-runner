@@ -15,15 +15,15 @@ class ReleaseFocusTests(unittest.TestCase):
     def test_release_focus_preserves_all_targets_and_saju_lock(self):
         enabled=[p for p in PROJECTS if p.get("auto_enabled") and int(p.get("auto_weight",0))>0
                  and not p.get("dedicated_schedule_only",False)]
-        # Windows alpha now gets 4/5 standard slots, Restore keeps 1/5.
+        # Approved slots: FastBrowse 4/6, Restore 1/6, Partner Hub 1/6.
         # All other scheduled coding lanes stay disabled, and Saju remains
         # independently owned and locked.
-        self.assertEqual([p["alias"] for p in enabled],["fastbrowse","restore-ai"])
-        self.assertEqual(sum(bool(p.get("auto_enabled")) for p in PROJECTS),2)
+        self.assertEqual([p["alias"] for p in enabled],["coston-partner-hub","fastbrowse","restore-ai"])
+        self.assertEqual(sum(bool(p.get("auto_enabled")) for p in PROJECTS),3)
         weights={p["alias"]:int(p["auto_weight"]) for p in enabled}
-        self.assertEqual(weights,{"fastbrowse":4,"restore-ai":1})
+        self.assertEqual(weights,{"coston-partner-hub":1,"fastbrowse":4,"restore-ai":1})
         self.assertTrue(all(int(p["auto_weight"])==0 for p in PROJECTS
-                            if p["alias"] not in {"fastbrowse","restore-ai"}))
+                            if p["alias"] not in {"coston-partner-hub","fastbrowse","restore-ai"}))
         focus=json.loads((ROOT/"config/projects.json").read_text())["release_focus"]
         self.assertTrue(focus["next"].startswith("fastbrowse (Windows opt-in command"))
         for p in PROJECTS:
@@ -31,7 +31,7 @@ class ReleaseFocusTests(unittest.TestCase):
                 self.assertFalse(p["auto_enabled"])
                 self.assertTrue(p.get("external_worker_lock"))
         wf=(ROOT/".github/workflows/autodev.yml").read_text()
-        self.assertIn("cron: '17,47 * * * *'",wf)
+        self.assertIn("cron: '17 */2 * * *'",wf)
         self.assertIn("if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'", wf)
         self.assertIn("if: github.event_name == 'workflow_dispatch'",
                       (ROOT/".github/workflows/creative-studio-fast-autodev.yml").read_text())
