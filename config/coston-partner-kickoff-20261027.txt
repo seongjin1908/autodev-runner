@@ -1,0 +1,10 @@
+ONE-TIME GITHUB ACTIONS KICKOFF — 2026-10-27
+Target: coston-partner-hub
+Workflow: .github/workflows/coston-partner-one-shot.yml
+Dispatcher: central AutoDev workflow_dispatch target=coston-partner-hub
+Development code: seongjin1908/ddd-revenue-os@feat/coston-partner-hub-20261027
+Write scope: partner-hub/src, partner-hub/integrations, partner-hub/tests, partner-hub/public, partner-hub/docs only
+Validation: cd partner-hub && npm run check
+AI: existing free-model pool only, no paid fallback
+Output: run-scoped GitHub review PR targeting existing Coston feature branch
+Release: do NOT merge to main, deploy, or enable payout.
