@@ -1,0 +1,37 @@
+name: Coston Partner Hub independent source verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - config/coston-partner-test-only-20261027.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coston-partner-test-only-verification
+  cancel-in-progress: false
+
+jobs:
+  test-only:
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event.head_commit.message == 'Verify latest Coston Partner Hub code once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read existing owned Hub draft branch without persisting credentials
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: feat/coston-partner-hub-20261027
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run only existing no-dependency Hub regression and syntax suite
+        working-directory: hub/partner-hub
+        run: npm run check
+      - name: Explicitly prohibit deployment in this job
+        run: |
+          echo 'Verification complete; no source writes, bank transfers or deployment performed.'
