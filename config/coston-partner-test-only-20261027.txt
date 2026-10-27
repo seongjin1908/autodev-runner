@@ -7,3 +7,5 @@ Scope: test-only; no AI provider, commit, PR merge, deploy or transfer.
 Regression run 2: provider-scoped capture + owner partner suspension state controls, expected original Hub feature branch tests >=32.
 
 Test run 3: Fortune integration.
+
+CI check 4.
