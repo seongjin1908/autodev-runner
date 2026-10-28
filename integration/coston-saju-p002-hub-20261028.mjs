@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {openDb} from '../hub/partner-hub/src/database.mjs';
-import {makeEngine} from '../hub/partner-hub/src/engine.mjs';
-import {makeReferral,mac,verifyMerchant} from '../hub/partner-hub/src/security.mjs';
+import {openDb} from '../../hub/partner-hub/src/database.mjs';
+import {makeEngine} from '../../hub/partner-hub/src/engine.mjs';
+import {makeReferral,mac,verifyMerchant} from '../../hub/partner-hub/src/security.mjs';
 import {sajuP002OriginalOrderEvent,sajuP002VerifiedPayAppCapture,
-  sajuP002SignedHubMessage} from '../saju/affiliate/saju-p002-payapp-bridge.mjs';
+  sajuP002SignedHubMessage} from '../../saju/affiliate/saju-p002-payapp-bridge.mjs';
 
-const premium=readFileSync(new URL('../premium/backend/index.ts',import.meta.url),'utf8');
-const price=readFileSync(new URL('../premium/shared/domestic-catalog.ts',import.meta.url),'utf8');
+const premium=readFileSync(new URL('../../premium/backend/index.ts',import.meta.url),'utf8');
+const price=readFileSync(new URL('../../premium/shared/domestic-catalog.ts',import.meta.url),'utf8');
 assert.match(premium,/async function finalizePayAppVerifiedOrder/);
 assert.match(premium,/paymentProviderEventId: providerEventId/);
 assert.match(premium,/merchantAuthVerified === true/);
