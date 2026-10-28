@@ -69,6 +69,14 @@ jobs:
           python -m py_compile tools/oss_image_cli.py scripts/oss_image_cli_test.py
           python scripts/oss_image_cli_test.py
 
+      - name: Verify source-coherent photo fusion on synthetic known-truth fixtures
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check numpy==2.2.6 Pillow==11.3.0
+          python scripts/source_supported_fusion_test.py
+
       - name: Node 22
         uses: actions/setup-node@v4
         with:
