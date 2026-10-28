@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: fe7a6b7c933eb3919a65e9de862759723dcea4c7
+          ref: b2232200adbed3b3c257d85c15445b535d79e64e
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -36,6 +36,12 @@ jobs:
       - name: Execute real generated policy overlay TS compilation and 15 assertions
         working-directory: target
         run: node scripts/check-p002-production-policy.mjs
+      - name: Verify P002 actual TIMING model envelope fails closed on 502 and incomplete JSON
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/p002-timing-fault-injection.ts --bundle --platform=node --format=cjs --packages=external --outfile=release-test-results/p002-timing-fault.cjs
+          node release-test-results/p002-timing-fault.cjs
       - name: Verify paid order and PayApp recovery with isolated SDK only
         working-directory: target
         run: |
@@ -94,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: fe7a6b7c933eb3919a65e9de862759723dcea4c7
+          ref: b2232200adbed3b3c257d85c15445b535d79e64e
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
