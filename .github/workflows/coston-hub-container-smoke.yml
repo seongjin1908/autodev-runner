@@ -1,0 +1,87 @@
+name: Coston Hub one-shot production container smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - config/coston-hub-container-smoke-trigger.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coston-hub-container-one-shot
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event.head_commit.message == 'Check Coston Hub production image once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact GitHub Hub feature branch (no persisted token)
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: feat/coston-partner-hub-20261027
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - name: Build real production Docker image
+        run: docker build -f hub/partner-hub/Dockerfile -t coston-hub-smoke hub/partner-hub
+      - name: Test production health, fail-closed TLS, and mounted SQLite persistence
+        shell: bash
+        run: |
+          set -euo pipefail
+          store="$(mktemp -d)"
+          cid=""
+          cleanup() {
+            if [[ -n "$cid" ]]; then docker rm -f "$cid" >/dev/null 2>&1 || true; fi
+            rm -rf "$store"
+          }
+          trap cleanup EXIT
+
+          launch() {
+            docker run -d --rm --name coston-hub-smoke-instance \
+              -p 127.0.0.1:4178:4178 \
+              -v "$store:/data" \
+              -e NODE_ENV=production \
+              -e PORT=4178 \
+              -e RAILWAY_ENVIRONMENT_ID=local-volume-smoke \
+              -e RAILWAY_VOLUME_MOUNT_PATH=/data \
+              -e DB_PATH=/data/partner-hub.sqlite \
+              -e PARTNER_ORIGIN=https://partners.invalid \
+              -e AUTH_SECRET=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+              -e REFERRAL_SECRET=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+              -e BUYER_IDENTITY_SECRET=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \
+              -e BANK_AES_KEY=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
+              -e OWNER_EMAIL=operator@example.invalid \
+              -e RESEND_API_KEY=disabled-no-outbound-messages \
+              -e EMAIL_FROM=no-reply@example.invalid \
+              -e PARTNER_TERMS_APPROVED=NO \
+              -e PARTNER_REFERRALS_ENABLED=NO \
+              -e ALLOW_MANUAL_PAYOUT=NO \
+              -e EMAIL_CAPTURE=NO \
+              coston-hub-smoke
+          }
+          wait_for_health() {
+            for i in $(seq 1 35); do
+              if curl -fsS http://127.0.0.1:4178/api/health > "$store/health.json"; then return 0; fi
+              sleep 1
+            done
+            docker logs "$cid" || true
+            return 1
+          }
+          cid="$(launch)"
+          wait_for_health
+          test -f "$store/partner-hub.sqlite"
+          test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:4178/api/me)" = 403
+          grep -q '"bankTransfersEnabled":false' "$store/health.json"
+          docker rm -f "$cid" >/dev/null
+          cid=""
+          cid="$(launch)"
+          wait_for_health
+          test -f "$store/partner-hub.sqlite"
+          docker rm -f "$cid" >/dev/null
+          cid=""
+          echo "Production container: health 200, non-TLS API 403, persistent SQLite across restart PASS"
+          echo "No external mail, payment, merchant delivery, payout, deployed Railway service or live credentials used."
