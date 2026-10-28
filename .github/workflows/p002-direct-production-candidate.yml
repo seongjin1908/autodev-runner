@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 8630051d67fb491ec1843c51f6ea5615f305d0bb
+          ref: b77646f3cf05f03ec5878f15903cfd99929d05dd
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -78,6 +78,11 @@ jobs:
         run: |
           npx --no-install esbuild scripts/p002-consumed-one-shot-lock-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/p002-one-shot-lock.cjs
           node release-test-results/p002-one-shot-lock.cjs
+      - name: Prove independently approved P002 one-run QA requires old consumed slot and cannot be replayed
+        working-directory: target
+        run: |
+          npx --no-install esbuild scripts/p002-owner-recheck-security-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/p002-owner-recheck-security.cjs
+          node release-test-results/p002-owner-recheck-security.cjs
       - name: Test full AppDeploy source closure without deploying the app
         working-directory: target
         run: |
