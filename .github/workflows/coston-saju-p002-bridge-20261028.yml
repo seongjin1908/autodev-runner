@@ -1,0 +1,50 @@
+name: Saju Premium P002 isolated PayApp Partner Hub contract
+on:
+  push:
+    branches: [test/coston-saju-premium-p002-bridge-20261028]
+    paths:
+      - config/coston-saju-premium-p002-20261028.txt
+      - .github/workflows/coston-saju-p002-bridge-20261028.yml
+      - integration/coston-saju-p002-hub-20261028.mjs
+permissions:
+  contents: read
+jobs:
+  synthetic-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: c36144f405b17dba6e64957fab46b880ba4a7859
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: saju
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: 7c61954c3297cb85e47f09ae339db020ecfc6064
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: fa85d7675079ffd9c602588095d0df35a23810ac
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: premium
+      - uses: actions/checkout@v4
+        with:
+          ref: test/coston-saju-premium-p002-bridge-20261028
+          persist-credentials: false
+          path: runner
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Isolated P002 PayApp anti-forgery test cases
+        run: node --test saju/tests/saju-p002-payapp-bridge.test.mjs
+      - name: Cross-repository synthetic Hub ledger contract and refund reversal
+        run: node --experimental-strip-types runner/integration/coston-saju-p002-hub-20261028.mjs
+      - name: No deployment, no live merchant payments, no real KYC
+        run: echo 'Pure synthetic tests only. No provider calls or transfers.'
