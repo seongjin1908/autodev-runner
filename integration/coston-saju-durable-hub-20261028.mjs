@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {openDb} from '../../hub/partner-hub/src/database.mjs';
 import {makeEngine} from '../../hub/partner-hub/src/engine.mjs';
-import {makeReferral,mac,verifyMerchant} from '../../hub/partner-hub/src/security.mjs';
+import {makeReferral,mac} from '../../hub/partner-hub/src/security.mjs';
+import {createServer} from '../../hub/partner-hub/src/server.mjs';
+import {sajuP002SignedHubMessage} from '../../saju/affiliate/saju-p002-payapp-bridge.mjs';
 import {sajuP002OriginalOrderEvent,sajuP002VerifiedPayAppCapture}
   from '../../saju/affiliate/saju-p002-payapp-bridge.mjs';
 import {enqueueSajuP002HubEvent,flushSajuP002HubOutbox}
@@ -44,8 +46,17 @@ const hubDb=openDb(),outboxDb=durableDb(),mail=new Map();
 const hub=makeEngine(hubDb,cfg,{sendEmail:async(e,code)=>mail.set(e,code)});
 const orderId='saju-durable-synthetic-1',uuid='32039ab7-19a2-456d-a8b1-28164997cf2c';
 const request='112233445566',date='20261028123456';
+let httpServer;
 const sha=s=>createHash('sha256').update(s).digest('hex');
 try{
+  // Run the real Hub HTTP router, not merely the engine's event function.
+  // Loopback only: no public network, Railway, provider or payment.
+  httpServer=createServer({...cfg,origin:'http://127.0.0.1:4178'},hubDb,async()=>{});
+  await new Promise((resolve,reject)=>{
+    httpServer.once('error',reject);
+    httpServer.listen(0,'127.0.0.1',resolve);
+  });
+  const url='http://127.0.0.1:'+httpServer.address().port+'/api/merchant/events';
   await hub.loginRequest('partner@example.test');
   const logged=hub.loginVerify('partner@example.test',mail.get('partner@example.test'));
   const partner=hub.join(logged.token,logged.csrf,{
@@ -63,13 +74,16 @@ try{
       pay_state:'4',var1:orderId,var2:uuid,mul_no:request,price:'19900',pay_date:date}}};
   const original=sajuP002OriginalOrderEvent({orderId,order:unpaid,referralToken:token});
   const capture=sajuP002VerifiedPayAppCapture({orderId,order:paid,relayState:relay});
-  const now={value:1793189000000},calls=[];
-  const sender=async(_url,req)=>{
-    verifyMerchant(secret,req.headers['x-coston-timestamp'],req.body,
-      req.headers['x-coston-signature'],Math.floor(now.value/1000));
-    const event=JSON.parse(req.body),result=hub.event('saju',req.body,event);
-    calls.push(result.status);
-    return {ok:true,json:async()=>result};
+  const now={value:Date.now()},calls=[];
+  const sender=async(target,req)=>{
+    assert.equal(target,'https://synthetic-hub.example.test/api/merchant/events');
+    // The client's production URL remains HTTPS-only; the injected test
+    // transport maps the exact signed HTTP request to an ephemeral loopback.
+    const res=await fetch(url,{method:'POST',headers:req.headers,
+      body:req.body,signal:req.signal});
+    const result=await res.json();
+    calls.push(result.status||('http_'+res.status));
+    return {ok:res.ok,json:async()=>result};
   };
   const config={db:outboxDb,enabled:true,
     hubUrl:'https://synthetic-hub.example.test',merchantSecret:secret,
@@ -85,6 +99,26 @@ try{
   assert.equal(hubDb.prepare('SELECT COUNT(*) n FROM sales').get().n,1);
   assert.equal(hubDb.prepare('SELECT COUNT(*) n FROM ledger').get().n,0);
   assert.equal(outboxDb.rows().every(x=>x.state==='DELIVERED'),true);
+  // Test the *actual* HTTP idempotent replay receipt and signature guard.
+  const signed=sajuP002SignedHubMessage(capture,secret,Math.floor(now.value/1000));
+  const duplicate=await fetch(url,{method:'POST',headers:signed.headers,body:signed.body});
+  assert.equal(duplicate.status,200);
+  assert.equal((await duplicate.json()).status,'duplicate');
+  const invalid=await fetch(url,{method:'POST',headers:{
+    ...signed.headers,'x-coston-signature':'0'.repeat(64)},body:signed.body});
+  assert.equal(invalid.ok,false,'Bad merchant HMAC must not be accepted');
+  const wrongMerchant=await fetch(url,{method:'POST',headers:{
+    ...signed.headers,'x-merchant-app':'unregistered'},body:signed.body});
+  assert.equal(wrongMerchant.status,401);
+  const changed=JSON.stringify({...capture,amountMinor:1});
+  const forged=sajuP002SignedHubMessage({...capture,amountMinor:1},
+    secret,Math.floor(now.value/1000));
+  assert.equal(forged.body,changed);
+  const replayConflict=await fetch(url,{method:'POST',
+    headers:forged.headers,body:forged.body});
+  assert.equal(replayConflict.status,409,'Changed payload with same event ID must conflict');
+  assert.equal(hubDb.prepare('SELECT COUNT(*) n FROM sales').get().n,1);
+  assert.equal(hubDb.prepare('SELECT COUNT(*) n FROM ledger').get().n,0);
   // Deliberately simulated evidence; not provider KYC.
   const verified={type:'BUYER_VERIFIED',eventId:'synthetic-buyer-1',orderId,
     customerHash:mac(cfg.buyerSecret,'synthetic-independent-buyer@example.test'),
@@ -99,5 +133,8 @@ try{
   assert.equal(hub.event('saju',JSON.stringify(refund),refund).status,'refund_recorded');
   assert.deepEqual(hubDb.prepare('SELECT amount FROM ledger ORDER BY rowid').all().map(x=>x.amount),[5970,-5970]);
   assert.equal(hubDb.prepare('SELECT COUNT(*) n FROM payouts').get().n,0);
-  console.log('PASS: durable DB → signed transport → Hub order/capture → no-KYC lock → synthetic buyer proof → 5970 KRW PENDING → refund reversal → no payout');
-}finally{hubDb.close();}
+  console.log('PASS: REAL loopback HTTP /api/merchant/events + HMAC rejection + replay 409 + durable DB → capture/no KYC → synthetic buyer proof 5970 KRW PENDING → full refund reversal → zero payout');
+}finally{
+  if(httpServer)await new Promise((resolve,reject)=>httpServer.close(err=>err?reject(err):resolve()));
+  hubDb.close();
+}
