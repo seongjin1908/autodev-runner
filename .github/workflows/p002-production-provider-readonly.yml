@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - scripts/p002-production-provider-readonly.mjs
+      - scripts/p002-railway-relay-public-get-readonly.mjs
       - .github/workflows/p002-production-provider-readonly.yml
   workflow_dispatch:
 permissions:
@@ -27,6 +28,8 @@ jobs:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: target/package.json
+      - name: Verify actual P002 Railway merchant catalog and anonymous-deny, GET only
+        run: node scripts/p002-railway-relay-public-get-readonly.mjs
       - name: Install Chromium only for non-charging public GET requests
         working-directory: target
         run: |
