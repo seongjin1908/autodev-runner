@@ -17,3 +17,5 @@ Test round 6: email request quotas, suspended partner accrual, SKU capture bindi
 Test round 7: corrected synchronous OTP cap assertions.
 
 Test round 8: bounded delivery timeouts and mid-page event recovery.
+
+Test round 9: HTTP merchant SKU/provider errors return 400.
