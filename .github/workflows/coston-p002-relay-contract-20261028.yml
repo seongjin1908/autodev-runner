@@ -1,0 +1,32 @@
+name: Coston P002 relay protocol independent regression
+on:
+  push:
+    branches: [test/coston-p002-relay-contract-20261028]
+    paths:
+      - .github/workflows/coston-p002-relay-contract-20261028.yml
+permissions:
+  contents: read
+jobs:
+  merchant-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 811f0dbaabb3aedbd02f77f05f5ba9bf101f9668
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: merchant
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Offline PayApp Relay contract and merchant recovery regression
+        working-directory: merchant
+        run: node --test tests/coston-p002-merchant-hook.test.mjs tests/coston-p002-paid-scan.test.mjs tests/coston-payapp-created-scan.test.mjs tests/coston-payapp-relay-preflight.test.mjs
+      - name: Confirm affiliate OFF and no provider credentials used
+        working-directory: merchant
+        run: |
+          grep -F 'const COSTON_P002_AFFILIATE_ENABLED = false;' backend/index.ts
+          grep -F 'const COSTON_P002_REFERRAL_CAPTURE_ENABLED = false;' src/App.tsx
+          echo 'All tests are local mocks, no PayApp registration, real payment, refund, payout, AppDeploy deployment or Railway writes.'
