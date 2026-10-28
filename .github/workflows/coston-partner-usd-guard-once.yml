@@ -1,0 +1,30 @@
+name: Coston Partner Hub USD payout guard independent verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - config/coston-partner-usd-guard-20261028.txt
+permissions:
+  contents: read
+jobs:
+  regression:
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event.head_commit.message == 'Verify Coston Partner Hub USD payout guard once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout isolated Hub fix branch (no persisted credentials)
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: 3dea67cbeca789b1072fedae1346ad79356eea94
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run complete no-dependency Partner Hub syntax and regression suite
+        working-directory: hub/partner-hub
+        run: npm run check
+      - name: Verify no deployment or transfer action
+        run: echo 'Test only; no deployment or payout performed.'

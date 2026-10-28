@@ -1,0 +1,2 @@
+Pin under test: seongjin1908/ddd-revenue-os@3dea67cbeca789b1072fedae1346ad79356eea94
+Read-only source verification; no deployment.
