@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: seongjin1908/ddd-revenue-os
-          ref: d30975ea1861beb8b0630501ed3e82be27110f93
+          ref: dcf27937263d6e62d3322983ddab32af5edec849
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: hub
