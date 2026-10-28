@@ -18,6 +18,7 @@ try{
     const page=await context.newPage();
     const routeNames=[];
     const statusResponses=[];
+    const publicCatalog=[];
     const javascriptErrors=[];
     let mutationsBlocked=0;
     page.on('pageerror',error=>javascriptErrors.push(error.message.slice(0,150)));
@@ -30,14 +31,20 @@ try{
       const request=response.request();
       const url=new URL(response.url()),method=request.method().toUpperCase();
       const type=response.headers()['content-type']||'';
-      if(method==='GET' && (url.pathname.includes('payapp')||url.pathname.includes('api'))&&type.includes('application/json')){
+      if(method==='GET' && (url.pathname.includes('payapp')||url.pathname.includes('products'))&&type.includes('application/json')){
         try {
           const data=await response.json();
-          // Report only allowlisted operational booleans, never record customer content.
+          // Report only allowlisted operational booleans or public SKU prices. No private content.
           if(data && data.provider==='PAYAPP' && typeof data.enabled==='boolean'){
             statusResponses.push({configured:!!data.configured,enabled:!!data.enabled,
               relayReady:!!data.relayReady,reason:typeof data.reason==='string'?data.reason:'NONE',
               chargesEnabledByThisCheck:!!data.chargesEnabledByThisCheck});
+          }
+          if(Array.isArray(data?.products) && url.pathname.endsWith('/api/products')){
+            publicCatalog.push(data.products.map(item=>({
+              sku:String(item.code||'').slice(0,8),
+              price:typeof item.price==='number'?item.price:null
+            })));
           }
         }catch{} // Ignore non-JSON or SDK streaming payloads.
       }
@@ -65,6 +72,7 @@ try{
         ? 'POSSIBLE':body.includes('PayApp 준비 중')?'WAITING':'NOT_DETERMINED',
       payAppServerStatus:knownStatus||'NOT_OBSERVED_WITH_READONLY_BROWSER',
       statusObserved:!!knownStatus,
+      activeDomesticCatalog:publicCatalog.at(-1)||'NOT_OBSERVED',
       mutationsBlocked,
       actualMutations:totalActualMutations,
       actualCharges:0,realAiCalls:0,
