@@ -125,7 +125,7 @@ try {
   assert.equal(realWrites,0);
   assert.ok(blockedWrites>=4,'Expected analytics POST to be intercepted during load');
   console.log('P002_STAGING_LIVE_BROWSER_READONLY_PASS',JSON.stringify({
-    version:'1793200752789',liveProducts:true,scenarios:report,
+    version:'1793203142273',liveProducts:true,scenarios:report,
     writesPrevented:blockedWrites,realWrites,paidProviderCalls:0,modelCalls:0,
     uiFreeReading:'OFFLINE_SYNTHETIC_FIXTURE'
   }));
