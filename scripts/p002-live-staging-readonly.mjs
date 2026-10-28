@@ -83,6 +83,11 @@ try {
     }
     const articles=page.locator('.final-product-grid > article');
     assert.equal(await articles.count(),3,'Live staging product UI does not show exactly three SKUs');
+    const compareCopy = await page.locator('.product-choice-heading p').innerText();
+    assert.match(compareCopy,/Premium은 5년 흐름/);
+    assert.match(compareCopy,/Signature는 명식별 핵심 분석/);
+    assert.doesNotMatch(compareCopy,/Master는 7년|Master 사주|Master 전체 분석/,
+      'Inactive Master is still presented as a currently purchasable product');
     const amounts=await articles.evaluateAll(nodes=>nodes.map(node=>({
       tier:node.querySelector('.product-tier')?.textContent?.trim()||'',
       price:node.querySelector('strong.price')?.textContent?.trim()||'',
@@ -108,7 +113,7 @@ try {
   assert.equal(realWrites,0);
   assert.ok(blockedWrites>=4,'Expected analytics POST to be intercepted during load');
   console.log('P002_STAGING_LIVE_BROWSER_READONLY_PASS',JSON.stringify({
-    version:'1793198694319',liveProducts:true,scenarios:report,
+    version:'1793199897688',liveProducts:true,scenarios:report,
     writesPrevented:blockedWrites,realWrites,paidProviderCalls:0,modelCalls:0,
     uiFreeReading:'OFFLINE_SYNTHETIC_FIXTURE'
   }));
