@@ -1,0 +1,47 @@
+name: P002 deployed-staging readonly browser audit
+on:
+  pull_request:
+    paths:
+      - scripts/p002-live-staging-readonly.mjs
+      - .github/workflows/p002-live-staging-readonly.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  live-staging-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact runner test code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout P002 release candidate for LOCAL synthetic free-reading fixture
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 6f2c0d5453c489a483d359040a94c8f4625b25df
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install offline fixture tooling and Chromium
+        working-directory: target
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+          npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Generate completely synthetic free reading without calling paid AI
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/unkive-launch-blockers-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/launch-blockers-data.cjs
+          node release-test-results/launch-blockers-data.cjs
+          test -s release-test-results/launch-free-30-samples.json
+      - name: Browser-check DEPLOYED staging v24; allow GET products only, intercept ALL mutations
+        run: node scripts/p002-live-staging-readonly.mjs
