@@ -43,3 +43,5 @@ New signed production HTTP merchant sale/refund tamper/replay and real SQLite re
 2026-10-28 payout kill switch regression for pre-existing READY records, cancellation and owner isolation.
 
 2026-10-28 restored Github Destiny missing brace, payout rail OFF test rerun.
+
+2026-10-28 PAYPAL payer email regex escaping corrected for both GitHub and deployed-source fixture.
