@@ -1,0 +1,139 @@
+name: P002 operating-policy isolated release regression
+on:
+  pull_request:
+    paths:
+      - .github/workflows/p002-policy-parity.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  p002-release-policy-check:
+    name: P002 operator-price overlay + protected offline fulfillment build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout runner workflow without write token
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact P002 policy Draft PR candidate
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b2232200adbed3b3c257d85c15445b535d79e64e
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install existing source dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Execute real generated policy overlay TS compilation and 15 assertions
+        working-directory: target
+        run: node scripts/check-p002-production-policy.mjs
+      - name: Verify P002 actual TIMING model envelope fails closed on 502 and incomplete JSON
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install esbuild scripts/p002-timing-fault-injection.ts --bundle --platform=node --format=cjs --packages=external --outfile=release-test-results/p002-timing-fault.cjs
+          node release-test-results/p002-timing-fault.cjs
+      - name: Verify paid order and PayApp recovery with isolated SDK only
+        working-directory: target
+        run: |
+          node scripts/check-unkive-premium-ai-recovery.mjs
+          node scripts/check-unkive-payapp-vbank.mjs
+          node scripts/check-unkive-backend-recovery.mjs
+      - name: Preserve unchanged operational source and one-shot AI QA gate
+        working-directory: target
+        run: |
+          node scripts/production-contract-check.mjs
+          node scripts/check-unkive-admin-live-qa.mjs
+          npx --no-install tsc --noEmit
+      - name: Prepare original safe AppDeploy full-source closure
+        working-directory: target
+        run: node scripts/check-appdeploy-release-parity.mjs
+      - name: Apply just the two reviewed policy files to isolated full-source snapshot
+        working-directory: target
+        run: |
+          cp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts release-test-results/appdeploy-isolated-source/shared/domestic-catalog.ts
+          cp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts release-test-results/appdeploy-isolated-source/shared/daangn-pricing.ts
+          cmp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts release-test-results/appdeploy-isolated-source/shared/domestic-catalog.ts
+          cmp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts release-test-results/appdeploy-isolated-source/shared/daangn-pricing.ts
+          test "$(node -p "require('./release-test-results/p002-operator-policy-overlay/manifest.json').type")" = "REVIEW_ONLY_NOT_DEPLOYABLE"
+      - name: Exercise actual authenticated order and fake PayApp callbacks on operator-policy backend
+        working-directory: target
+        run: |
+          cp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts shared/domestic-catalog.ts
+          cp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts shared/daangn-pricing.ts
+          node scripts/check-p002-operator-actual-routes.mjs
+      - name: Build fully closed isolated AppDeploy backend and frontend after policy integration
+        working-directory: target
+        run: |
+          npx --no-install esbuild release-test-results/appdeploy-isolated-source/backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/p002-policy-isolated-backend.mjs
+          (cd release-test-results/appdeploy-isolated-source && ../../node_modules/.bin/vite build)
+          test -s release-test-results/p002-policy-isolated-backend.mjs
+          test -s release-test-results/appdeploy-isolated-source/dist/index.html
+      - name: Keep a small non-sensitive policy test manifest only
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p002-policy-review-manifest
+          path: target/release-test-results/p002-operator-policy-overlay/manifest.json
+          if-no-files-found: ignore
+          retention-days: 3
+ 
+  p002-mobile-desktop-customer-flow:
+    name: P002 candidate mobile/desktop browser checkout and PDF regressions (mock only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout test workflow without write credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact reviewed P002 policy candidate read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b2232200adbed3b3c257d85c15445b535d79e64e
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install existing Vite dependencies and isolated Playwright
+        working-directory: target
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+          npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Apply exact reviewed operator policy only to isolated CI workspace
+        working-directory: target
+        run: |
+          node scripts/check-p002-production-policy.mjs
+          cp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts shared/domestic-catalog.ts
+          cp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts shared/daangn-pricing.ts
+          node scripts/check-unkive-free-editorial.mjs
+      - name: Verify actual Chromium checkout navigation, popup close and safe reopen, PDF/reconnect on mobile and desktop
+        working-directory: target
+        run: |
+          node scripts/p002-operator-browser-e2e.mjs
+          UNKIVE_PDF_SESSION_ONLY=1 node scripts/unkive-release-e2e.mjs
+      - name: Save synthetic browser results without real customer data
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p002-isolated-mobile-desktop-browser
+          path: |
+            target/release-test-results/*e2e*.json
+            target/release-test-results/launch-blockers-browser.json
+          if-no-files-found: ignore
+          retention-days: 3
