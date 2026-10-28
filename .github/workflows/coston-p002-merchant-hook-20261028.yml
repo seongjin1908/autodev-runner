@@ -1,0 +1,32 @@
+name: Coston P002 merchant original-order and authenticated relay hooks
+on:
+  push:
+    branches: [test/coston-p002-merchant-hook-20261028]
+    paths:
+      - .github/workflows/coston-p002-merchant-hook-20261028.yml
+      - config/coston-p002-merchant-hook-20261028.txt
+permissions:
+  contents: read
+jobs:
+  merchant-hook-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: f198a7e19ffa961bc19181e2ddea4572b9cfe56b
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: merchant
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Merchant original-order immutable referral + PayApp relay gating tests
+        working-directory: merchant
+        run: node --test tests/coston-p002-merchant-hook.test.mjs
+      - name: Confirm merchant affiliate integration remains hard OFF
+        working-directory: merchant
+        run: |
+          grep -F "const COSTON_P002_AFFILIATE_ENABLED = false;" backend/index.ts
+          echo 'Only synthetic in-memory DB tests; no AppDeploy, PayApp, Hub, customer or bank calls.'
