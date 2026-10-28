@@ -41,3 +41,5 @@ Check Railway production persisted volume guard and TLS/internal health path 202
 New signed production HTTP merchant sale/refund tamper/replay and real SQLite restart regression 2026-10-28.
 
 2026-10-28 payout kill switch regression for pre-existing READY records, cancellation and owner isolation.
+
+2026-10-28 restored Github Destiny missing brace, payout rail OFF test rerun.
