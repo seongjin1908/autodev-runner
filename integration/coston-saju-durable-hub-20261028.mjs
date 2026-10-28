@@ -13,22 +13,24 @@ function durableDb(){
   const m=n=>{if(!tables.has(n))tables.set(n,new Map());return tables.get(n)};
   return {
     get:async(n,ids)=>ids.map(id=>m(n).get(id)?structuredClone(m(n).get(id)):null),
-    tx:{add:(n,items)=>({n,items})},
-    transact:async ops=>ops.map(op=>op.items.map(item=>{
-      if(m(op.n).has(item.id))return null;
-      m(op.n).set(item.id,structuredClone(item));return item.id;
-    })),
+    tx:{
+      add:async(n,items)=>items.map(item=>{
+        if(m(n).has(item.id))return null;
+        m(n).set(item.id,structuredClone(item));return item.id;
+      }),
+      update:async(n,changes,{patch=false}={})=>changes.map(item=>{
+        const x=m(n).get(item.id);
+        if(!x||Object.entries(item.if||{}).some(([k,v])=>x[k]!==v))return false;
+        m(n).set(item.id,structuredClone(patch?{...x,...item.record}:item.record));
+        return true;
+      }),
+    },
     list:async(n,{limit=100,nextToken}={})=>{
       const all=[...m(n).values()],offset=nextToken?Number(nextToken):0;
       return {items:structuredClone(all.slice(offset,offset+limit)),
         nextToken:offset+limit<all.length?String(offset+limit):undefined};
     },
-    update:async(n,changes,{patch=false}={})=>changes.map(item=>{
-      const x=m(n).get(item.id);
-      if(!x||Object.entries(item.if||{}).some(([k,v])=>x[k]!==v))return false;
-      m(n).set(item.id,structuredClone(patch?{...x,...item.record}:item.record));
-      return true;
-    }),
+    update:async()=>{throw Error('legacy db.update must not be used for compare-and-swap');},
     rows:()=>[...m('coston_saju_p002_outbox').values()],
   };
 }
