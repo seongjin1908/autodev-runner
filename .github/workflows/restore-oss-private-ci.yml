@@ -82,6 +82,43 @@ jobs:
         working-directory: target
         run: npm run check
 
+      - name: Validate isolated staging safety without remote mutations
+        working-directory: target
+        run: npm run staging:preflight
+
+      - name: Apply isolated local D1 schema to disposable Wrangler simulator
+        working-directory: target
+        run: npm run db:migrate:smoke
+
+      - name: Exercise real HTTP upload, demo order, queue, private result download
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev:smoke > /tmp/restore-local-wrangler.log 2>&1 &
+          worker_pid=$!
+          cleanup() { kill "$worker_pid" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 45); do
+            if curl --noproxy '*' -fsS --max-time 2 http://127.0.0.1:8787/health >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$worker_pid" 2>/dev/null; then
+              echo "::error::Local Wrangler failed before loopback server could start"
+              tail -40 /tmp/restore-local-wrangler.log
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+            echo "::error::Local Wrangler health not ready (loopback only)"
+            tail -40 /tmp/restore-local-wrangler.log
+            exit 1
+          fi
+          RESTORE_LOCAL_SMOKE_ORIGIN=http://127.0.0.1:8787 npm run test:smoke:local
+
       - name: Report scope
         if: always()
         run: |
