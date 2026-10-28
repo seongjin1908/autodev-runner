@@ -172,6 +172,7 @@ jobs:
           node scripts/check-unkive-delivery.mjs
           node scripts/check-unkive-payapp-vbank.mjs
           node scripts/check-unkive-alimtalk.mjs
+          node scripts/check-unkive-premium-ai-recovery.mjs
       - name: Enforce reviewed admin QA contract and fail-closed KRW cost guard
         working-directory: target
         run: node scripts/check-unkive-admin-live-qa.mjs
