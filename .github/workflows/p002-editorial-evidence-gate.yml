@@ -32,6 +32,8 @@ jobs:
         working-directory: target
         run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
       - name: Strict 80-report multi-chart offline personalization and question benchmark
+        id: eighty
+        continue-on-error: true
         working-directory: target
         run: node scripts/check-unkive-offline-editorial-benchmark.mjs
       - name: Synthetic paid-question audits and finding code regressions
@@ -52,6 +54,13 @@ jobs:
         run: |
           node scripts/sajumyeongkwae-premium-blind-review.mjs --self-test
           node scripts/sajumyeongkwae-premium-blind-review.mjs --status
+      - name: Keep editorial release gate red if any answer regressed against baseline
+        if: always()
+        run: |
+          if [ "${{ steps.eighty.outcome }}" != "success" ]; then
+            echo "P002_EDITORIAL_LENGTH_BASELINE_FAIL: review real shortening, do not inflate quality score or deploy" >&2
+            exit 1
+          fi
       - name: Retain synthetic-only repetition metrics
         if: always()
         uses: actions/upload-artifact@v4
