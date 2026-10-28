@@ -55,7 +55,7 @@ jobs:
           npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/p002-direct-backend.mjs
           npx --no-install vite build --config scripts/vite-release-test.mjs
           test -s release-test-results/p002-direct-backend.mjs
-          test -s dist/index.html
+          test -s dist-test/index.html
       - name: Execute real admin domestic launch-readiness with historical database fixture
         working-directory: target
         run: |
