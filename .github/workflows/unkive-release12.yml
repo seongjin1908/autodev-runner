@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 6fc699e8c7c2c908da2ec842e7e6a66c70bc620a
+            ref: 2c2921d4157824c4356d58882102a0453be98291
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 6fc699e8c7c2c908da2ec842e7e6a66c70bc620a
+          ref: 2c2921d4157824c4356d58882102a0453be98291
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 6fc699e8c7c2c908da2ec842e7e6a66c70bc620a
+          ref: 2c2921d4157824c4356d58882102a0453be98291
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -230,7 +230,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 6fc699e8c7c2c908da2ec842e7e6a66c70bc620a
+          ref: 2c2921d4157824c4356d58882102a0453be98291
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
