@@ -20,7 +20,7 @@ jobs:
           npx playwright install chromium
       - name: Verify exact synthetic durable receipt on isolated app
         env:
-          QA_MODE: seed
+          QA_MODE: read
           QA_URL: https://coston-p002-db-isolation-qa-2v599p.v2.appdeploy.ai/
           QA_KEY: qa-20261028-commit-test-2c7f0a91d543f8b6
         run: |
