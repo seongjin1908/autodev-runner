@@ -1,0 +1,28 @@
+name: Coston Partner Hub launch OFF regression independent check
+on:
+  push:
+    branches: [main]
+    paths: [config/coston-partner-launch-off-20261028.txt]
+permissions:
+  contents: read
+jobs:
+  regression:
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event.head_commit.message == 'Verify Partner Hub launch OFF and refund safety once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: 7c61954c3297cb85e47f09ae339db020ecfc6064
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and full regression suite (no payment API calls)
+        working-directory: hub/partner-hub
+        run: npm run check
+      - name: Deployment and payout prohibited
+        run: echo 'Completed read-only tests. No deployment or payout performed.'
