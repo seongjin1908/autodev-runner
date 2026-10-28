@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 95ed26fd86aba525f2d6ffbfcf968b8e0067c849
+          ref: 199ffa4e089244c94d37edd3051b91beabcfba9e
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: merchant
@@ -24,7 +24,7 @@ jobs:
           node-version: '22'
       - name: Merchant original-order immutable referral + PayApp relay gating tests
         working-directory: merchant
-        run: node --test tests/coston-p002-merchant-hook.test.mjs
+        run: node --test tests/coston-p002-merchant-hook.test.mjs tests/coston-p002-paid-scan.test.mjs
       - name: Confirm merchant affiliate integration remains hard OFF
         working-directory: merchant
         run: |
