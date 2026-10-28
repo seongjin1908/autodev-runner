@@ -80,3 +80,52 @@ jobs:
           path: target/release-test-results/p002-operator-policy-overlay/manifest.json
           if-no-files-found: ignore
           retention-days: 3
+ 
+  p002-mobile-desktop-customer-flow:
+    name: P002 candidate mobile/desktop browser checkout and PDF regressions (mock only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout test workflow without write credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact reviewed P002 policy candidate read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: c1100cde6339dca4354b719dc44c6d63f7a6df96
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install existing Vite dependencies and isolated Playwright
+        working-directory: target
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+          npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Apply exact reviewed operator policy only to isolated CI workspace
+        working-directory: target
+        run: |
+          node scripts/check-p002-production-policy.mjs
+          cp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts shared/domestic-catalog.ts
+          cp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts shared/daangn-pricing.ts
+          node scripts/check-unkive-free-editorial.mjs
+      - name: Verify actual Chromium checkout navigation, popup close and safe reopen, PDF/reconnect on mobile and desktop
+        working-directory: target
+        run: node scripts/unkive-release-e2e.mjs
+      - name: Save synthetic browser results without real customer data
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p002-isolated-mobile-desktop-browser
+          path: |
+            target/release-test-results/*e2e*.json
+            target/release-test-results/launch-blockers-browser.json
+          if-no-files-found: ignore
+          retention-days: 3
