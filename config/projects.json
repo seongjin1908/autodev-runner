@@ -38,7 +38,10 @@
       "max_branch_ahead": 80,
       "branch_mode": "fixed",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "development_status": "hold",
+      "hold_reason": "user_requested_pause_2026-10-29_pricecam_jjin_calculators_build_ai",
+      "release_focus_note": "PAUSED BY USER: No new coding, tests as development, deployment, or manual/scheduled AutoDev until explicit user restart. Preserve existing repository, PRs and production."
     },
     {
       "alias": "saju",
@@ -82,7 +85,9 @@
       "source_branch": "main",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
+      "release_focus_note": "PAUSED BY USER: No new coding, tests as development, deployment, or manual/scheduled AutoDev until explicit user restart. Preserve existing repository, PRs and production.",
+      "development_status": "hold",
+      "hold_reason": "user_requested_pause_2026-10-29_pricecam_jjin_calculators_build_ai"
     },
     {
       "alias": "face-lab",
@@ -184,7 +189,10 @@
       "max_branch_ahead": 80,
       "branch_mode": "fixed",
       "rea_codex_workspace": "configured",
-      "rea_autodev_runtime": "not-used-by-opencode-worker"
+      "rea_autodev_runtime": "not-used-by-opencode-worker",
+      "development_status": "hold",
+      "hold_reason": "user_requested_pause_2026-10-29_pricecam_jjin_calculators_build_ai",
+      "release_focus_note": "PAUSED BY USER: No new coding, tests as development, deployment, or manual/scheduled AutoDev until explicit user restart. Preserve existing repository, PRs and production."
     },
     {
       "alias": "saju-design",
@@ -440,7 +448,8 @@
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "development_status": "hold",
-      "hold_reason": "user_requested_stop_2026-10-14"
+      "hold_reason": "user_requested_pause_2026-10-29_pricecam_jjin_calculators_build_ai",
+      "release_focus_note": "PAUSED BY USER: No new coding, tests as development, deployment, or manual/scheduled AutoDev until explicit user restart. Preserve existing repository, PRs and production."
     },
     {
       "alias": "ddd-revenue",
