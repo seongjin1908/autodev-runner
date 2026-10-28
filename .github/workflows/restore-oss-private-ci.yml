@@ -82,6 +82,33 @@ jobs:
         working-directory: target
         run: npm run check
 
+      - name: Synthetic private staging policy (no remote resources)
+        working-directory: target
+        run: npm run staging:preflight
+
+      - name: Local-only migrated D1 and HTTP order-to-download smoke
+        working-directory: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run db:migrate:smoke >/tmp/restore-local-migrate.log 2>&1
+          npm run dev:smoke >/tmp/restore-local-dev.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 45); do
+            if curl --silent --fail --max-time 2 http://127.0.0.1:8787/health >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo '::error::Loopback Worker did not become healthy (private logs withheld)'
+            exit 1
+          fi
+          npm run test:smoke:local
+
       - name: Report scope
         if: always()
         run: |
