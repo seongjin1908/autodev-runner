@@ -122,10 +122,35 @@ try {
       premium:find('PREMIUM').price,paymentRequests:0,unapprovedBackendWrites:realWrites});
     await context.close();
   }
+  // Private operator UI can be checked without credentials or activating AI.
+  const opsContext=await browser.newContext({viewport:{width:390,height:844},locale:'ko-KR'});
+  const opsPage=await opsContext.newPage();
+  opsPage.setDefaultTimeout(16000);
+  const opsErrors=[];
+  opsPage.on('pageerror',e=>opsErrors.push(e.message));
+  await opsPage.route('**/*',route=>{
+    const method=route.request().method().toUpperCase();
+    if(method==='GET'||method==='HEAD')return route.continue();
+    blockedWrites++;
+    return route.fulfill({status:200,contentType:'application/json',body:'{}'});
+  });
+  await opsPage.goto(base+'/?ops=1',{waitUntil:'domcontentloaded',timeout:30000});
+  const oldQa=opsPage.getByRole('button',{name:'실제 Premium AI 1건 실행(크레딧 사용)'});
+  const approvedRecheck=opsPage.getByRole('button',{name:'별도 승인 Premium 실AI 재검증 1건 (최대 3회 호출)'});
+  await approvedRecheck.waitFor();
+  assert.equal(await oldQa.isDisabled(),true,'original used one-shot must remain disabled');
+  assert.equal(await approvedRecheck.isEnabled(),true,'separate P002 recheck control missing');
+  assert.deepEqual(opsErrors,[],'private operator page JS errors');
+  console.log('P002_OWNER_APPROVED_RECHECK_LIVE_STAGING_UI_PASS',{
+    oldUsedControlDisabled:true,
+    newControlVisible:true,newControlNotClicked:true,
+    adminKeyNotRead:true,paidModelCalls:0,paymentCalls:0,
+  });
+  await opsContext.close();
   assert.equal(realWrites,0);
   assert.ok(blockedWrites>=4,'Expected analytics POST to be intercepted during load');
   console.log('P002_STAGING_LIVE_BROWSER_READONLY_PASS',JSON.stringify({
-    version:'1793203142273',liveProducts:true,scenarios:report,
+    version:'1793206537178',liveProducts:true,scenarios:report,
     writesPrevented:blockedWrites,realWrites,paidProviderCalls:0,modelCalls:0,
     uiFreeReading:'OFFLINE_SYNTHETIC_FIXTURE'
   }));
