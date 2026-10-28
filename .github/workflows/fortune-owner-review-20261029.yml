@@ -1,0 +1,35 @@
+name: One-shot Coston Fortune owner buyer evidence HTTP QA
+on:
+  push:
+    branches: [test/fortune-owner-review-20261029]
+    paths:
+      - .github/workflows/fortune-owner-review-20261029.yml
+  pull_request:
+    paths:
+      - .github/workflows/fortune-owner-review-20261029.yml
+permissions:
+  contents: read
+jobs:
+  owner-buyer-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: 78e2d3c6d3b9cf2e6b932945be886cde21aa225e
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run actual HTTP owner/partner buyer-evidence security tests and full Hub suite
+        working-directory: hub/partner-hub
+        run: npm run check
+      - name: Confirm public referral and payouts remain OFF
+        working-directory: hub/partner-hub
+        run: |
+          grep -Fx 'PARTNER_REFERRALS_ENABLED=NO' .env.example
+          grep -Fx 'ALLOW_MANUAL_PAYOUT=NO' .env.example
+          grep -F 'cashPayoutEnabled: false' integrations/appdeploy/fortune-affiliate.ts
