@@ -1,0 +1,38 @@
+name: Coston Restore affiliate causal delivery isolated verification
+on:
+  push:
+    branches: [test/coston-restore-causal-20261028]
+    paths:
+      - config/coston-restore-causal-20261028.txt
+      - .github/workflows/coston-restore-causal-20261028.yml
+permissions:
+  contents: read
+jobs:
+  verified-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/restore-ai-autodev
+          ref: 729a2eecfbdfd4d3e6ceb62abe0dc0b3dfd6aad1
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: restore
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install source-locked dependencies without optional scripts
+        working-directory: restore
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source affiliate order to payment to refund tests
+        working-directory: restore
+        run: node --experimental-strip-types --test scripts/coston_affiliate_test.mjs
+      - name: Full existing Restore regression/typecheck/security/migration/secret scan/dry build
+        working-directory: restore
+        run: npm run check
+      - name: Strict no deployment, remote migrations or transfers
+        run: echo 'Completed read-only QA only; no paid provider calls, deployments or bank transfers.'
