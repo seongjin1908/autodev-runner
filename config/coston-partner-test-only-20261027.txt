@@ -21,3 +21,5 @@ Test round 8: bounded delivery timeouts and mid-page event recovery.
 Test round 9: HTTP merchant SKU/provider errors return 400.
 
 Final QA run: 55 ledgers + frontend script syntax check after runtime warning inventory.
+
+Verify Hub CI after Fortune/Destiny AppDeploy merchant source additions 2026-10-28.
