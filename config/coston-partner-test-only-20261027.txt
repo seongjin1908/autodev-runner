@@ -9,3 +9,5 @@ Regression run 2: provider-scoped capture + owner partner suspension state contr
 Test run 3: Fortune integration.
 
 CI check 4.
+
+Test round 5: durable pagination cursor and 300-record starvation regressions.
