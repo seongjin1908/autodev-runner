@@ -13,3 +13,5 @@ CI check 4.
 Test round 5: durable pagination cursor and 300-record starvation regressions.
 
 Test round 6: email request quotas, suspended partner accrual, SKU capture binding.
+
+Test round 7: corrected synchronous OTP cap assertions.
