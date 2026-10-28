@@ -103,6 +103,18 @@ try {
     } else {
       assert.doesNotMatch(find('PREMIUM').promotion,/당근 10% 자동 할인/);
     }
+    if (spec.width === 390) {
+      // Isolated staging has no PayApp credentials; a product click must not
+      // persist an unpayable new order. No provider calls are allowed.
+      await page.locator('.final-product-grid article.premium-product button').click();
+      const message = await page.locator('#product-choice .signature-question-error').innerText();
+      assert.match(message,/새 주문은 만들지 않았습니다/);
+      assert.equal(await page.locator('section#payment').count(),0,
+        'Unpayable product choice incorrectly opened checkout');
+      const persistedOrder = await page.evaluate(()=>localStorage.getItem('saju_last_order'));
+      assert.equal(persistedOrder,null,'Unpayable order persisted in localStorage');
+      console.log('P002_STAGING_NO_PAYAPP_NEW_ORDER_GATE_PASS', {persistedOrders:0,realWrites:0});
+    }
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
     assert.ok(overflow<=1,'Unexpected horizontal overflow at '+spec.width+'px: '+overflow);
     assert.deepEqual(pageErrors,[], 'Staging browser JS errors: '+JSON.stringify(pageErrors));
@@ -113,7 +125,7 @@ try {
   assert.equal(realWrites,0);
   assert.ok(blockedWrites>=4,'Expected analytics POST to be intercepted during load');
   console.log('P002_STAGING_LIVE_BROWSER_READONLY_PASS',JSON.stringify({
-    version:'1793199897688',liveProducts:true,scenarios:report,
+    version:'1793200752789',liveProducts:true,scenarios:report,
     writesPrevented:blockedWrites,realWrites,paidProviderCalls:0,modelCalls:0,
     uiFreeReading:'OFFLINE_SYNTHETIC_FIXTURE'
   }));
