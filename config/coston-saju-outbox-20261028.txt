@@ -1,1 +1,1 @@
-Cross-repo pinned AppDeploy SDK-conforming source 3b76b29f17d03c81af9abd03b87165567d49e944 and Coston Hub HEAD 7c61954c3297cb85e47f09ae339db020ecfc6064. SDK db.tx.update CAS and unknown outcome recovery tests. No live requests.
+Pinned Saju source c84643db00ed631ade8139d85f8f48478800d6cf. Regression covers original Hub contract, real SDK-shaped fake, 650-row direct queue, checkpointed recovery. No live calls.
