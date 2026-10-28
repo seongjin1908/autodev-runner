@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: d713d11e31b7db9a8339a1eaf3ce423104abd4d2
+          ref: c1100cde6339dca4354b719dc44c6d63f7a6df96
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -59,6 +59,12 @@ jobs:
           cmp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts release-test-results/appdeploy-isolated-source/shared/domestic-catalog.ts
           cmp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts release-test-results/appdeploy-isolated-source/shared/daangn-pricing.ts
           test "$(node -p "require('./release-test-results/p002-operator-policy-overlay/manifest.json').type")" = "REVIEW_ONLY_NOT_DEPLOYABLE"
+      - name: Exercise actual authenticated order and fake PayApp callbacks on operator-policy backend
+        working-directory: target
+        run: |
+          cp release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts shared/domestic-catalog.ts
+          cp release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts shared/daangn-pricing.ts
+          node scripts/check-p002-operator-actual-routes.mjs
       - name: Build fully closed isolated AppDeploy backend and frontend after policy integration
         working-directory: target
         run: |
