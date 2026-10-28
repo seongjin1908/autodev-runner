@@ -25,3 +25,5 @@ Final QA run: 55 ledgers + frontend script syntax check after runtime warning in
 Verify Hub CI after Fortune/Destiny AppDeploy merchant source additions 2026-10-28.
 
 Regression after SQLite buyer_verified legacy schema migration 2026-10-28.
+
+First executable AppDeploy merchant SDK-adapter regression round 2026-10-28.
