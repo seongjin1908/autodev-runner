@@ -1,1 +1,1 @@
-Verify Saju HEAD 51f48aa1dd9505f3aa40c4c06b05b0cea86853df and Coston Hub HEAD 7c61954c3297cb85e47f09ae339db020ecfc6064. No live calls.
+Cross-repo pinned AppDeploy SDK-conforming source 3b76b29f17d03c81af9abd03b87165567d49e944 and Coston Hub HEAD 7c61954c3297cb85e47f09ae339db020ecfc6064. SDK db.tx.update CAS and unknown outcome recovery tests. No live requests.
