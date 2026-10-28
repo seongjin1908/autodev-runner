@@ -1,0 +1,92 @@
+name: P002 direct production-source candidate gate
+on:
+  pull_request:
+    paths:
+      - .github/workflows/p002-direct-production-candidate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  source-release-gate:
+    name: Exact deployable source / KR readiness / synthetic PayApp contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - name: Checkout runner without write credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact direct-source Premium release candidate read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 6d2d101d0e0a8ad4eed99907f55b97f338b0292b
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - name: Checkout independent reviewed operator overlay (test source only)
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b2232200adbed3b3c257d85c15445b535d79e64e
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: policy-audit
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Build reviewed policy overlay and compare byte-for-byte with proposed deployable source
+        run: |
+          (cd policy-audit && node scripts/prepare-p002-production-policy.mjs --self-test && node scripts/prepare-p002-production-policy.mjs)
+          cmp policy-audit/release-test-results/p002-operator-policy-overlay/shared/domestic-catalog.ts target/shared/domestic-catalog.ts
+          cmp policy-audit/release-test-results/p002-operator-policy-overlay/shared/daangn-pricing.ts target/shared/daangn-pricing.ts
+          echo 'P002_DIRECT_PRODUCTION_POLICY_BYTE_PARITY_PASS'
+      - name: Install existing dependencies without install scripts or paid calls
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Verify frontend source types and backend builds with actual candidate files
+        working-directory: target
+        run: |
+          mkdir -p release-test-results
+          npx --no-install tsc --noEmit
+          npx --no-install esbuild backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/p002-direct-backend.mjs
+          npx --no-install vite build --config scripts/vite-release-test.mjs
+          test -s release-test-results/p002-direct-backend.mjs
+          test -s dist/index.html
+      - name: Execute real admin domestic launch-readiness with historical database fixture
+        working-directory: target
+        run: |
+          npx --no-install esbuild scripts/p002-release-readiness-check.ts --bundle --platform=node --format=cjs --packages=external --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/p002-readiness-check.cjs
+          node release-test-results/p002-readiness-check.cjs
+      - name: Reuse independently reviewed actual order and PayApp fake callback suite
+        run: |
+          cp policy-audit/scripts/p002-operator-actual-routes-check.ts target/scripts/p002-operator-actual-routes-check.ts
+          cp policy-audit/scripts/check-p002-operator-actual-routes.mjs target/scripts/check-p002-operator-actual-routes.mjs
+          (cd target && node scripts/check-p002-operator-actual-routes.mjs)
+      - name: Validate paid AI failure/PayApp vbank and recovery regression on direct source
+        working-directory: target
+        run: |
+          node scripts/check-unkive-premium-ai-recovery.mjs
+          node scripts/check-unkive-payapp-vbank.mjs
+          node scripts/check-unkive-backend-recovery.mjs
+          node scripts/check-unkive-admin-live-qa.mjs
+      - name: Test full AppDeploy source closure without deploying the app
+        working-directory: target
+        run: |
+          node scripts/check-appdeploy-release-parity.mjs
+          npx --no-install esbuild release-test-results/appdeploy-isolated-source/backend/index.ts --bundle --platform=node --format=esm --packages=external --outfile=release-test-results/p002-appdeploy-backend.mjs
+          (cd release-test-results/appdeploy-isolated-source && ../../node_modules/.bin/vite build)
+          test -s release-test-results/appdeploy-isolated-source/dist/index.html
+      - name: Retain non-secret test manifests for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p002-direct-source-release-evidence
+          path: |
+            policy-audit/release-test-results/p002-operator-policy-overlay/manifest.json
+            target/release-test-results/appdeploy-isolated-manifest.json
+          if-no-files-found: ignore
+          retention-days: 3
