@@ -1,0 +1,36 @@
+name: Coston AppDeploy isolated snapshot durability (read only)
+on:
+  push:
+    branches: [test/coston-appdeploy-durability-20261028]
+    paths:
+      - .github/workflows/coston-appdeploy-durability-20261028.yml
+permissions:
+  contents: read
+jobs:
+  check-isolated-persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read fixed synthetic QA proof from isolated archived app only
+        env:
+          PROBE_URL: https://coston-p002-db-isolation-qa-2v599p.v2.appdeploy.ai/api/proof/persistence-on-demand?check=qa-p002-snapshot-readonly-d71c5e9a20261028
+        run: |
+          curl --fail --show-error --silent --max-time 25 --retry 0 "${PROBE_URL}" --output proof.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('proof.json','utf8'));
+          if (report.readOnly !== true || report.testOnly !== true) {
+            throw new Error('Isolated QA read-only response missing');
+          }
+          const checks = Object.entries(report.checks || {});
+          const results = Object.fromEntries(checks);
+          console.log('Synthetic cross-snapshot checks:', JSON.stringify(results));
+          if (checks.length !== 6 || checks.some(([,ok]) => ok !== true) ||
+              report.passed !== true || report.paymentProviderCalls !== 0 ||
+              report.bankTransfers !== 0 || report.partnerHubCalls !== 0) {
+            throw new Error('Isolated synthetic DB cross-snapshot durability failed');
+          }
+          console.log('PASS: existing v8 data is readable after v9 archive and v10 read-only redeploy');
+          NODE
+      - name: Scope notice
+        run: echo 'No AppDeploy source updates, no PayApp calls, no refund, no Hub post or payout.'
