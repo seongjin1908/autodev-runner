@@ -120,7 +120,7 @@
       "recent_change_guard_minutes": 1,
       "max_changed_files": 12,
       "auto_enabled": true,
-      "auto_weight": 4,
+      "auto_weight": 2,
       "release_priority": 100,
       "failure_hold_threshold": 2,
       "failure_hold_minutes": 360,
@@ -128,7 +128,7 @@
       "branch_mode": "fixed",
       "rea_codex_workspace": "not-configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "FastBrowse launch sprint: 4 of 5 standard central rotation slots at existing 30-min schedule, not extra Actions runs. Focus Windows deterministic command -> Notepad save -> teach/replay and verification. GitHub billing lock still blocks all cloud runners until account owner resolves it."
+      "release_focus_note": "Owner requested continued remote Windows AI assistant development; weight balanced to 2 while preserving existing PR #5 and offline safety tests. No paid APIs, release or external actions."
     },
     {
       "alias": "restore-ai",
@@ -303,7 +303,7 @@
     },
     {
       "alias": "creative-studio",
-      "dedicated_schedule_only": true,
+      "dedicated_schedule_only": false,
       "repository": "seongjin1908/creative-growth-studio",
       "work_branch": "autodev/creative-studio/run-scoped",
       "base_branch": "main",
@@ -311,9 +311,9 @@
       "prompt_file": "prompts/creative-studio.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 30,
-      "auto_enabled": false,
-      "auto_weight": 0,
-      "release_priority": 98,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 86,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 30,
       "max_branch_ahead": 0,
@@ -321,7 +321,7 @@
       "source_branch": "main",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
+      "release_focus_note": "Owner requested low-cost scheduled advertising/video-production code development. No paid video generation, ad spend, live posting or production deployment. Respect single-writer and existing PR #32."
     },
     {
       "alias": "saju-core",
@@ -398,16 +398,16 @@
       "prompt_file": "prompts/cyber-guardian.md",
       "recent_change_guard_minutes": 10,
       "max_changed_files": 8,
-      "auto_enabled": false,
-      "auto_weight": 0,
-      "release_priority": 75,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 88,
       "failure_hold_threshold": 2,
       "failure_hold_minutes": 120,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
+      "release_focus_note": "Owner requested low-cost scheduled GUARD/BLUE defensive development, synthetic and authorized local tests only. No network scans, external targets, offensive tooling, production deploy, or paid APIs."
     },
     {
       "alias": "todaypick",
@@ -419,16 +419,16 @@
       "prompt_file": "prompts/todaypick.md",
       "recent_change_guard_minutes": 30,
       "max_changed_files": 20,
-      "auto_enabled": false,
-      "auto_weight": 0,
-      "release_priority": 35,
+      "auto_enabled": true,
+      "auto_weight": 1,
+      "release_priority": 87,
       "failure_hold_threshold": 3,
       "failure_hold_minutes": 180,
       "max_branch_ahead": 0,
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "new feature autodev paused; maintenance/security checks and existing PRs preserved"
+      "release_focus_note": "Owner requested low-cost scheduled development. Preserve Blogger publishing lock; develop evidence/quality/indexability and safe handoff. Review pending PR #43 before another scoped write."
     },
     {
       "alias": "jjin",
@@ -581,12 +581,12 @@
     "fault-intel"
   ],
   "release_focus": {
-    "effective_date": "2026-10-26",
-    "mode": "fastbrowse_windows_alpha_accelerated_central_scheduled",
-    "primary": "saju-core (independent user-owned writer, centrally locked)",
-    "next": "fastbrowse (Windows opt-in command→Notepad result→safe Teach replay; existing Draft PR #5, no duplicate writers)",
-    "scheduled_code_generation": "Central workflow every 30 minutes; 4 FastBrowse slots and 1 Restore AI slot per 5 rotations; only 0-priced catalog-verified model and guarded PR updates; billing lock prevents current jobs until resolved",
-    "other_projects": "Restore AI retains one slot; Saju remains independently locked; others manual/security checks only",
-    "policy": "no paid AI, no unapproved merges, no production deployment"
+    "effective_date": "2026-10-29",
+    "mode": "balanced_low_cost_multi_project_central_scheduled",
+    "primary": "Release-safe balanced central rotation across FastBrowse OS, Restore AI, Coston Partner Hub, TodayPick, Cyber Guardian and Creative Growth Studio",
+    "next": "Prefer unblock/review existing PRs before new write lanes; scheduled selector skips held projects and unreviewed AutoDev PRs",
+    "scheduled_code_generation": "Central workflow schedule stays at 17 */2 * * * UTC (every two hours), with weights FastBrowse 2; Restore AI 1; Partner Hub 1; TodayPick 1; Cyber Guardian 1; Creative Studio 1. No added workflow runs, no paid model fallback, no auto-merge, no publishing, no production deployment.",
+    "other_projects": "Saju independently written; PriceCam, Jjin, calculators, BUILD AI remain user-paused; all other central targets stay disabled.",
+    "policy": "Zero-paid-API; existing GitHub Actions billing budget $15 remains unchanged; preserve review backlog, single writer, no billed generation or ad spend."
   }
 }
