@@ -31,3 +31,5 @@ First executable AppDeploy merchant SDK-adapter regression round 2026-10-28.
 Second real AppDeploy SDK fixture isolation test 2026-10-28.
 
 Causal merchant order-before-capture verification for AppDeploy source 2026-10-28.
+
+Check Railway production persisted volume guard and TLS/internal health path 2026-10-28.
