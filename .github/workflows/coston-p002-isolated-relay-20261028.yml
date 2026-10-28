@@ -1,0 +1,33 @@
+name: Coston P002 dedicated relay independent synthetic acceptance
+on:
+  push:
+    branches: [test/coston-p002-isolated-relay-20261028]
+    paths:
+      - .github/workflows/coston-p002-isolated-relay-20261028.yml
+permissions:
+  contents: read
+jobs:
+  isolated-relay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 75608333886ae671e6b9c71630977629db9e0212
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: merchant
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Offline isolated PayApp Relay acceptance — no provider traffic
+        working-directory: merchant
+        run: node --test tests/saju-p002-relay.test.mjs
+      - name: Verify merchant has affiliate OFF and no live Relay rewiring
+        working-directory: merchant
+        run: |
+          grep -F 'const COSTON_P002_AFFILIATE_ENABLED = false;' backend/index.ts
+          grep -F 'const COSTON_P002_REFERRAL_CAPTURE_ENABLED = false;' src/App.tsx
+          grep -F "const PAYAPP_RELAY_URL = 'https://fortune-payapp-relay-production.up.railway.app';" backend/index.ts
+          echo 'Synthetic offline tests only, zero real payments/refunds/deployments.'
