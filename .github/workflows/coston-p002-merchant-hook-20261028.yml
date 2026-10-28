@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: d18e1bd7abea236cf1ee0d8daaf89bb045177edf
+          ref: e7e24cff1a8dfce767a16457881684f157338b54
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: merchant
