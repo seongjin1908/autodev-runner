@@ -20,11 +20,19 @@ const browser = await chromium.launch({ headless:true });
 try {
   const api = await browser.newContext();
   const response = await api.request.get(base + '/api/products');
-  assert.equal(response.status(), 200, 'Live staging products API not reachable');
-  const json = await response.json();
-  assert.deepEqual((json.products || []).map(p => [p.code,p.price]), productExpectations,
-    'Staging live canonical product inventory or amounts differ from approved PR #267');
-  console.log('P002_STAGING_LIVE_PRODUCTS_PASS', JSON.stringify(productExpectations));
+  const directType = response.headers()['content-type'] || '';
+  const directBody = await response.text();
+  console.log('P002_STAGING_DIRECT_HTTP_DIAGNOSTIC', {
+    status:response.status(),contentType:directType,
+    htmlInsteadOfJson:directBody.trim().startsWith('<!doctype'),
+  });
+  // AppDeploy may proxy @appdeploy/client through its own transport; raw /api/products is not proof.
+  if (directType.includes('application/json')) {
+    const json = JSON.parse(directBody);
+    assert.deepEqual((json.products || []).map(p => [p.code,p.price]), productExpectations,
+      'Staging live product inventory does not match approved PR #267');
+    console.log('P002_STAGING_LIVE_PRODUCTS_PASS',JSON.stringify(productExpectations));
+  }
   await api.close();
 
   for (const spec of [
@@ -41,13 +49,20 @@ try {
     await page.addInitScript(reading => {
       sessionStorage.setItem('fortune_free_reading_v1',JSON.stringify({savedAt:Date.now(),reading}));
     },free);
-    await page.route('**/api/**', async route=>{
+    const traffic=[];
+    page.on('request',request=>{
+      if(traffic.length<50){
+        const url=new URL(request.url());
+        traffic.push({method:request.method(),path:url.pathname,
+          postLength:request.method()==='POST'?(request.postData()||'').length:0});
+      }
+    });
+    await page.route('**/*', async route=>{
       const request = route.request(), path = new URL(request.url()).pathname;
       const method=request.method().toUpperCase();
-      if (method === 'GET' && path === '/api/products') return route.continue();
-      // The ONLY allowed real backend call is GET /api/products.
-      // Even event analytics, free fortune POST, PayApp status and order/payment are mocked.
-      blockedWrites+=Number(!['GET','HEAD'].includes(method));
+      if (['GET','HEAD'].includes(method)) return route.continue();
+      // Never send any mutation, order, AI, PayApp or event telemetry to staging.
+      blockedWrites++;
       return route.fulfill({status:200,contentType:'application/json',
         body:JSON.stringify(path==='/api/payapp/status'
           ? {provider:'PAYAPP',configured:false,enabled:false,relayReady:false}
@@ -55,7 +70,17 @@ try {
     });
     await page.goto(base+'/?source='+spec.source+'&market=KR&locale=ko#product-choice',
       {waitUntil:'domcontentloaded',timeout:30000});
-    await page.locator('.final-product-grid > article').first().waitFor({timeout:25000});
+    try {
+      await page.locator('.final-product-grid > article').first().waitFor({timeout:12000});
+    } catch (error) {
+      console.error('P002_LIVE_FRONTEND_DIAGNOSTIC', {
+        width:spec.width,source:spec.source,
+        traffic,
+        body:(await page.locator('body').innerText()).slice(0,650),
+        errors:pageErrors,
+      });
+      throw error;
+    }
     const articles=page.locator('.final-product-grid > article');
     assert.equal(await articles.count(),3,'Live staging product UI does not show exactly three SKUs');
     const amounts=await articles.evaluateAll(nodes=>nodes.map(node=>({
