@@ -4,6 +4,9 @@ on:
     branches: [test/fortune-hub-refund-20261029]
     paths:
       - .github/workflows/fortune-hub-refund-20261029.yml
+  pull_request:
+    paths:
+      - .github/workflows/fortune-hub-refund-20261029.yml
 permissions:
   contents: read
 jobs:
