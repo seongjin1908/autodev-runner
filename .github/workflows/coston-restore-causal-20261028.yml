@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: seongjin1908/restore-ai-autodev
-          ref: 729a2eecfbdfd4d3e6ceb62abe0dc0b3dfd6aad1
+          ref: 7f4b159e20e44702098012761ce5c0363feea772
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: restore

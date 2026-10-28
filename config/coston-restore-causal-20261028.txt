@@ -1,2 +1,2 @@
-Pinned Restore affiliate source 729a2eecfbdfd4d3e6ceb62abe0dc0b3dfd6aad1
+Pinned Restore affiliate source 7f4b159e20e44702098012761ce5c0363feea772
 No production change, no remote migrations, no expenditure authorization.
