@@ -82,6 +82,30 @@ jobs:
         working-directory: target
         run: npm run check
 
+      - name: Offline pinned-Wrangler private staging dry-run
+        working-directory: target
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+          RESTORE_STAGING_D1_ID: '12345678-1234-4123-8123-123456789abc'
+          RESTORE_STAGING_PUBLIC_ORIGIN: 'https://restore-ai-private-staging.example.workers.dev'
+          RESTORE_STAGING_TEAM_DOMAIN: 'https://restore-test.cloudflareaccess.com'
+          RESTORE_STAGING_ACCESS_AUD: 'abcdefghijklmnopqrstuvwxyz123456'
+        run: |
+          set -euo pipefail
+          # Synthetic resource IDs, no Cloudflare auth, no remote write/provider use.
+          npm run staging:preflight
+          npm run staging:prepare
+          node scripts/validate_staging_deploy_config.mjs
+          node --input-type=module -e 'import{readFileSync}from"node:fs";const c=JSON.parse(readFileSync("wrangler.staging.jsonc","utf8"));if(c.preview_urls!==false||c.vars.DEMO_MODE!=="true"||c.vars.DAILY_AI_BUDGET_KRW!=="0")process.exit(2)'
+          tool_dir="$RUNNER_TEMP/restore-ci-staging-wrangler"
+          mkdir -p "$tool_dir"
+          npm install --prefix "$tool_dir" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund wrangler@4.152.0
+          "$tool_dir/node_modules/.bin/wrangler" --version
+          "$tool_dir/node_modules/.bin/wrangler" deploy --dry-run --config wrangler.staging.jsonc --outdir "$RUNNER_TEMP/restore-private-staging-dry-run"
+          echo "Private staging pinned-Wrangler dry-run PASS, no Cloudflare API call" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Local HTTP check of photo upload refusal and authenticated demo delivery
         working-directory: target
         shell: bash
