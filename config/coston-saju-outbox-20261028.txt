@@ -1,2 +1,1 @@
-Pinned Saju P002 affiliate outbox source 10c88b58c100ddf3c6660457b6fb06f218e3a937
-Correct causal delivery priority before payment.
+Verify Saju HEAD 51f48aa1dd9505f3aa40c4c06b05b0cea86853df and Coston Hub HEAD 7c61954c3297cb85e47f09ae339db020ecfc6064. No live calls.

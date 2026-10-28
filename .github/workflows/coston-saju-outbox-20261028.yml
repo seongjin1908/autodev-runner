@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/coston-saju-outbox-20261028.yml
       - config/coston-saju-outbox-20261028.txt
+      - integration/coston-saju-durable-hub-20261028.mjs
 permissions:
   contents: read
 jobs:
@@ -15,18 +16,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 10c88b58c100ddf3c6660457b6fb06f218e3a937
+          ref: 51f48aa1dd9505f3aa40c4c06b05b0cea86853df
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: saju
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: 7c61954c3297cb85e47f09ae339db020ecfc6064
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/checkout@v4
+        with:
+          ref: test/coston-saju-outbox-20261028
+          persist-credentials: false
+          path: runner
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test P002 verified PayApp and durable outbox with crash/replay/concurrency
+      - name: P002 PayApp, order-first durable transport, lease, replay and HOLD tests
         working-directory: saju
         run: node --test tests/saju-p002-payapp-bridge.test.mjs tests/saju-p002-durable-outbox.test.mjs
-      - name: Existing affiliate ledger and merchant proof guard regressions
+      - name: Existing affiliate ledger and merchant guard regressions
         working-directory: saju
         run: node --test tests/affiliate-ledger.test.mjs tests/affiliate-payment-guard.test.mjs
-      - name: Strict no real payments or deployments
-        run: echo 'Source-only synthetic validation. No AppDeploy, Railway, PayApp or Hub network.'
+      - name: Real Hub source synthetic DB-to-HMAC-to-ledger-to-refund contract
+        run: node runner/integration/coston-saju-durable-hub-20261028.mjs
+      - name: No live payments or deployments
+        run: echo 'In-memory synthetic contract only. No AppDeploy/Railway/PayApp network or payouts.'
