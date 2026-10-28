@@ -37,3 +37,5 @@ Check Railway production persisted volume guard and TLS/internal health path 202
 2026-10-28: net settled commission before delayed buyer verification and tier-specific refund accounting regression.
 
 2026-10-28 revalidate strict pre-KYC refund lock and exact Destiny historical tier cents.
+
+New signed production HTTP merchant sale/refund tamper/replay and real SQLite restart regression 2026-10-28.
