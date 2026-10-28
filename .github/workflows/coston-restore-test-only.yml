@@ -1,0 +1,45 @@
+name: Coston Restore Affiliate Independent Check
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/coston-restore-check-trigger.txt'
+permissions:
+  contents: read
+concurrency:
+  group: coston-restore-check-once
+  cancel-in-progress: false
+jobs:
+  test-only:
+    if: github.repository == 'seongjin1908/autodev-runner' && github.event.head_commit.message == 'Verify Coston Restore affiliate code'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/restore-ai-autodev
+          ref: feat/coston-affiliate-ledger-20261027
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies, no install scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Safe migration schema validation
+        run: npm run migration:check
+      - name: Shared affiliate ledger and payment-guard regressions
+        run: node --test tests/affiliate-ledger.test.mjs tests/affiliate-payment-guard.test.mjs
+      - name: Restore merchant event signing, capture and refunds
+        run: node --experimental-strip-types scripts/coston_affiliate_test.mjs
+      - name: Original Restore regression suite
+        run: npm run test:regression
+      - name: Existing payment and worker security regressions
+        run: npm run test:security
+      - name: Secret scan
+        run: npm run secret:scan
+      - name: Cloudflare worker dry build, no deployment
+        run: npm run build
