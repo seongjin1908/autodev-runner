@@ -1,0 +1,37 @@
+name: P002 actual production provider readiness — READONLY
+on:
+  pull_request:
+    paths:
+      - scripts/p002-production-provider-readonly.mjs
+      - .github/workflows/p002-production-provider-readonly.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: b9dd900577350e5e9ae75b05fbc35330903db810
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install Chromium only for non-charging public GET requests
+        working-directory: target
+        run: |
+          npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+          npm install --no-save --no-package-lock --no-audit --no-fund --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Read public production and staging readiness; intercept ALL write methods
+        run: node scripts/p002-production-provider-readonly.mjs
