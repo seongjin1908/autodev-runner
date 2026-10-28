@@ -47,3 +47,5 @@ New signed production HTTP merchant sale/refund tamper/replay and real SQLite re
 2026-10-28 PAYPAL payer email regex escaping corrected for both GitHub and deployed-source fixture.
 
 2026-10-28 latest PayPal buyer-verified, commission tiers, causal outbox and payout-off regression gate. Test-only, no deploy or transfers.
+
+2026-10-28 final rerun after owner-authenticated USD payout lock and USD $20 threshold regression, test-only with no deploy.
