@@ -1,0 +1,32 @@
+name: Coston PayApp CREATED-order checkpoint independent regression
+on:
+  push:
+    branches: [test/coston-payapp-created-cursor-20261028]
+    paths:
+      - .github/workflows/coston-payapp-created-cursor-20261028.yml
+permissions:
+  contents: read
+jobs:
+  payapp-created-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 4998404499beb7885cac99e1c01122215d7a0e05
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: merchant
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic PayApp original-order + affiliate cursor + general order recovery regressions
+        working-directory: merchant
+        run: node --test tests/coston-p002-merchant-hook.test.mjs tests/coston-p002-paid-scan.test.mjs tests/coston-payapp-created-scan.test.mjs
+      - name: Verify no affiliate activation or external payment calls
+        working-directory: merchant
+        run: |
+          grep -F "const COSTON_P002_AFFILIATE_ENABLED = false;" backend/index.ts
+          grep -F "const COSTON_P002_REFERRAL_CAPTURE_ENABLED = false;" src/App.tsx
+          echo 'Synthetic only: no PayApp, AppDeploy, Railway, customer database or bank calls.'
