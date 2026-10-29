@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 2c2921d4157824c4356d58882102a0453be98291
+            ref: dc4aab747aea71a2d052cded514f4822215041e5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 2c2921d4157824c4356d58882102a0453be98291
+          ref: dc4aab747aea71a2d052cded514f4822215041e5
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 2c2921d4157824c4356d58882102a0453be98291
+          ref: dc4aab747aea71a2d052cded514f4822215041e5
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -176,6 +176,18 @@ jobs:
       - name: Enforce reviewed admin QA contract and fail-closed KRW cost guard
         working-directory: target
         run: node scripts/check-unkive-admin-live-qa.mjs
+      - name: Verify integrated P002 payment protection and evidence gates without provider calls
+        working-directory: target
+        run: |
+          node --experimental-strip-types scripts/p002-causal-writing-contract.mjs
+          node scripts/p002-cross-profile-chapter-contract.mjs
+          node --experimental-strip-types scripts/p002-ten-god-guard-contract.mjs
+          node --experimental-strip-types scripts/p002-semantic-evidence-fallback-contract.mjs
+          node --experimental-strip-types scripts/p002-timing-evidence-contract.mjs
+          node --experimental-strip-types scripts/p002-promotion-contract.mjs
+          node --experimental-strip-types scripts/p002-orphan-payapp-guard.mjs
+          node --experimental-strip-types --test scripts/p002-railway-staged-contract-e2e.mjs
+          node --experimental-strip-types scripts/p002-post-payment-reversal-contract.mjs
       - name: Enforce immutable production operational source contract
         working-directory: target
         run: node scripts/production-contract-check.mjs
@@ -230,7 +242,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 2c2921d4157824c4356d58882102a0453be98291
+          ref: dc4aab747aea71a2d052cded514f4822215041e5
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
