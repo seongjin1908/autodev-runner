@@ -1,0 +1,33 @@
+name: One-shot Saju and Fortune-only Partner Hub QA
+on:
+  push:
+    branches: [test/partner-hub-two-app-scope-20261029]
+    paths:
+      - .github/workflows/partner-hub-two-app-scope-20261029.yml
+permissions:
+  contents: read
+jobs:
+  two-app-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/ddd-revenue-os
+          ref: 0023288d0e0e605d969c23c1a7502a9231c48a31
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: hub
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run full Hub security suite including exclusive two-merchant gates
+        working-directory: hub/partner-hub
+        run: npm run check
+      - name: Check all referral, payout and email launch switches remain OFF
+        working-directory: hub/partner-hub
+        run: |
+          grep -Fx 'PARTNER_REFERRALS_ENABLED=NO' .env.example
+          grep -Fx 'PARTNER_TERMS_APPROVED=NO' .env.example
+          grep -Fx 'ALLOW_MANUAL_PAYOUT=NO' .env.example
+          grep -Fx 'PARTNER_REFERRAL_APPS=saju,fortune' .env.example
