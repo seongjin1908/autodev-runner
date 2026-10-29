@@ -307,7 +307,7 @@
       "repository": "seongjin1908/creative-growth-studio",
       "work_branch": "autodev/creative-studio/run-scoped",
       "base_branch": "main",
-      "validation": "python - <<'PY'\nfrom pathlib import Path\nassert Path('README.md').exists()\nassert Path('AUTODEV_POLICY.md').exists()\nassert Path('autodev/QUEUE.md').exists()\nPY",
+      "validation": "test -f README.md && test -f AUTODEV_POLICY.md && test -f autodev/QUEUE.md && node --test tests/studio-core.test.mjs",
       "prompt_file": "prompts/creative-studio.md",
       "recent_change_guard_minutes": 5,
       "max_changed_files": 30,
@@ -321,7 +321,7 @@
       "source_branch": "main",
       "rea_codex_workspace": "configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "Owner requested low-cost scheduled advertising/video-production code development. No paid video generation, ad spend, live posting or production deployment. Respect single-writer and existing PR #32."
+      "release_focus_note": "Owner enabled scheduled low-cost development; PR #32 merged after node:test routing/paid-generation gate and overlap CI success. Require offline studio tests for future batches. No paid rendering, posting, ads, deploy, auto-merge."
     },
     {
       "alias": "saju-core",
