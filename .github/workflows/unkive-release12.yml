@@ -182,7 +182,8 @@ jobs:
           node --experimental-strip-types scripts/p002-causal-writing-contract.mjs
           node scripts/p002-cross-profile-chapter-contract.mjs
           node --experimental-strip-types scripts/p002-ten-god-guard-contract.mjs
-          node --experimental-strip-types scripts/p002-semantic-evidence-fallback-contract.mjs
+          npx --no-install esbuild scripts/p002-semantic-evidence-fallback-contract.mjs --bundle --platform=node --format=esm --outfile=release-test-results/p002-semantic-evidence-fallback-contract.mjs
+          node release-test-results/p002-semantic-evidence-fallback-contract.mjs
           node --experimental-strip-types scripts/p002-timing-evidence-contract.mjs
           node --experimental-strip-types scripts/p002-promotion-contract.mjs
           node --experimental-strip-types scripts/p002-orphan-payapp-guard.mjs
