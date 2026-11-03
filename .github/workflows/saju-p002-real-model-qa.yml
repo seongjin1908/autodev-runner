@@ -1,0 +1,41 @@
+name: Saju P002 Real Model Access Probe
+on:
+  push:
+    branches: [test/p002-real-model-github-20261103]
+    paths:
+      - '.github/workflows/saju-p002-real-model-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  models: read
+concurrency:
+  group: p002-real-model-qa-single
+  cancel-in-progress: false
+jobs:
+  provider-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Verify single model inference without additional secrets
+        env:
+          MODELS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --input-type=module <<'NODE'
+          if (!process.env.MODELS_TOKEN) throw new Error('GITHUB_TOKEN unavailable');
+          const controller = AbortSignal.timeout(30000);
+          const response = await fetch('https://models.github.ai/inference/chat/completions', {
+            method: 'POST',
+            signal: controller,
+            headers: { Authorization: 'Bearer ' + process.env.MODELS_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json' },
+            body: JSON.stringify({
+              model: 'openai/gpt-4.1-mini',
+              messages: [{role:'system',content:'Answer in Korean, one word only.'},{role:'user',content:'숫자 1을 한글로 적어 주세요.'}],
+              temperature: 0,
+              max_tokens: 24
+            })
+          });
+          const data = await response.json().catch(() => ({}));
+          const output = data.choices?.[0]?.message?.content;
+          console.log(JSON.stringify({status:response.status,provider:'github-models',model:'openai/gpt-4.1-mini',success:response.ok&&Boolean(output),outputCharacters:output?.length??0,usage:data.usage??null,error:data.error?.code??data.error?.message?.slice(0,160)??null}));
+          if (!response.ok || !output) process.exitCode=1;
+          NODE
