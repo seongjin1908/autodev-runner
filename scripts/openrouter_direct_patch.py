@@ -174,9 +174,15 @@ def run():
     # explicitly vetted model IDs and recheck zero input/output cost for each.
     # Do not silently fall back to a paid endpoint.
     selected = None
-    preferred = (["openrouter/qwen/qwen3-coder:free",
+    # Coston's compact exact-patch output often exhausts reasoning-only tokens
+    # on a free thinking model. Prefer the approved code model for this lane;
+    # every candidate is still independently checked for zero catalog price.
+    preferred = (["openrouter/cohere/north-mini-code:free",
+                  "openrouter/qwen/qwen3-coder:free",
+                  model] if alias == "coston-partner-hub" else
+                 ["openrouter/qwen/qwen3-coder:free",
                   "openrouter/cohere/north-mini-code:free",
-                  model] if alias in {"fastbrowse","coston-partner-hub"} else [model])
+                  model] if alias == "fastbrowse" else [model])
     for candidate in dict.fromkeys([*preferred, *APPROVED]):
         try:
             zero_priced(catalog, APPROVED[candidate])
