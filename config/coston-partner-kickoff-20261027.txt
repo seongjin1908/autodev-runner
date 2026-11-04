@@ -12,3 +12,5 @@ Release: do NOT merge to main, deploy, or enable payout.
 Retry 2: source picker can now reach nested partner-hub/integrations and partner-hub/src; local scope tests must pass before free AI dispatch.
 
 Retry 3 (final): prefer catalog-verified zero-priced coding models, compact exact replacement, and sufficient bounded completion tokens; no further automatic retry if this produces no validated source edit.
+
+Explicit user-requested kickoff, 2026-11-04: use review-only latest Coston Draft PR #105; KR fortune+saju P002 only, no payout, no auto-merge. Zero-budget coding and source tests only.
