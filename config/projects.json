@@ -4,8 +4,8 @@
       "alias": "coston-partner-hub",
       "repository": "seongjin1908/ddd-revenue-os",
       "work_branch": "autodev/coston-partner-hub/run-scoped",
-      "base_branch": "feat/coston-partner-hub-20261027",
-      "source_branch": "feat/coston-partner-hub-20261027",
+      "base_branch": "test/p002-appdeploy-sdk-types-20261029",
+      "source_branch": "test/p002-appdeploy-sdk-types-20261029",
       "validation": "cd partner-hub && npm run check",
       "prompt_file": "prompts/coston-partner-hub.md",
       "recent_change_guard_minutes": 15,
@@ -19,7 +19,7 @@
       "branch_mode": "run_scoped",
       "rea_codex_workspace": "not-configured",
       "rea_autodev_runtime": "not-used-by-opencode-worker",
-      "release_focus_note": "GitHub-only Partner Hub source; no production deploy, no live payouts, reviewed PR to existing feature branch, no new schedules"
+      "release_focus_note": "Latest Coston Partner Hub Draft PR #105 HEAD; reviewed run-scoped PRs target its head branch only. Allowed KR merchants fortune and saju P002, USD Destiny separate and gated. Never auto-merge, deploy, release or pay."
     },
     {
       "alias": "fortune",
