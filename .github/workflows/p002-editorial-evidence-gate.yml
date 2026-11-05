@@ -1,0 +1,72 @@
+name: P002 release editorial evidence and anti-fake quality gate
+on:
+  pull_request:
+    paths:
+      - .github/workflows/p002-editorial-evidence-gate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  editorial-benchmark:
+    name: 80 synthetic reports and 24 Premium repeats / 9.5 evidence gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact deployable P002 source for zero-cost editorial QA
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 94344a38165af1484b6a82aa3f1c0f62910bfe0f
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install project build tooling without paid services
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Strict 80-report multi-chart offline personalization and question benchmark
+        id: eighty
+        continue-on-error: true
+        working-directory: target
+        run: node scripts/check-unkive-offline-editorial-benchmark.mjs
+      - name: Synthetic paid-question audits and finding code regressions
+        working-directory: target
+        run: node scripts/check-unkive-paid-quality.mjs
+      - name: 24 Premium repeat sentences across natal charts (NOT real AI)
+        working-directory: target
+        run: |
+          npx --no-install esbuild scripts/unkive-premium-repetition-recheck.ts --bundle --platform=node --format=cjs --alias:@appdeploy/sdk=./scripts/test-backend-sdk.ts --outfile=release-test-results/premium-repetition-recheck.cjs
+          node release-test-results/premium-repetition-recheck.cjs
+      - name: Live-provider proof parser self-test (fictional negative cases only)
+        working-directory: target
+        run: |
+          node scripts/unkive-real-ai-output-audit.mjs --self-test
+          node scripts/unkive-real-ai-output-audit.mjs --status
+      - name: 9 real reports and 3 blind reviewers rubric self-test only
+        working-directory: target
+        run: |
+          node scripts/sajumyeongkwae-premium-blind-review.mjs --self-test
+          node scripts/sajumyeongkwae-premium-blind-review.mjs --status
+      - name: Keep editorial release gate red if any answer regressed against baseline
+        if: always()
+        run: |
+          if [ "${{ steps.eighty.outcome }}" != "success" ]; then
+            echo "P002_EDITORIAL_LENGTH_BASELINE_FAIL: review real shortening, do not inflate quality score or deploy" >&2
+            exit 1
+          fi
+      - name: Retain synthetic-only repetition metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p002-synthetic-editorial-evidence-ONLY
+          path: |
+            target/release-test-results/premium-repetition-recheck.json
+          if-no-files-found: ignore
+          retention-days: 2
