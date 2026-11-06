@@ -1,0 +1,608 @@
+name: Independent WORKLINK PR11 REA feature gate
+
+# Private product repo Actions jobs terminate before runner assignment.
+# Use owner-controlled PUBLIC control plane but keep private source + REA output PRIVATE.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/worklink-pr11-rea-feature-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: independent-worklink-pr11-rea
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require private repository checkout access
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Missing private source access token"; exit 10; }
+
+      - name: Checkout WORKLINK PR11 immutable first-party source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 72559fe75937f918ac9a1630cf34cd377cc2036c
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target
+
+      - name: Set up Node 24 for REA
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify exact reviewed source and presence of deterministic tests
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "72559fe75937f918ac9a1630cf34cd377cc2036c"
+          test -f src/lib/quick-phrases.mjs
+          test -f tests/quick-phrases.test.mjs
+          echo 'WORKLINK PR11 immutable source verified.'
+
+      - name: Install dependencies with no lifecycle scripts
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm install --no-package-lock --no-audit --no-fund --ignore-scripts >/tmp/wl11-deps.log 2>&1; then
+            echo '::error::WORKLINK dependency bootstrap failed (private details not published).'
+            exit 11
+          fi
+          echo 'WORKLINK bootstrap PASS'
+
+      - name: Source feature tests
+        shell: bash
+        working-directory: target
+        run: |
+          if ! node --test tests/quick-phrases.test.mjs >/tmp/wl11-quick.log 2>&1; then
+            echo '::error::WORKLINK quick-chat tests failed (private details not published).'
+            exit 12
+          fi
+          echo 'WORKLINK quick-chat tests PASS'
+
+      - name: Existing contract tests
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm test >/tmp/wl11-tests.log 2>&1; then
+            echo '::error::WORKLINK existing tests failed (private details not published).'
+            exit 13
+          fi
+          echo 'WORKLINK tests PASS'
+
+      - name: Typecheck
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm run typecheck >/tmp/wl11-ts.log 2>&1; then
+            echo '::error::WORKLINK TypeScript failed (private details not published).'
+            exit 14
+          fi
+          echo 'WORKLINK typecheck PASS'
+
+      - name: Production bundle build
+        shell: bash
+        working-directory: target
+        run: |
+          if ! npm run build >/tmp/wl11-build.log 2>&1; then
+            echo '::error::WORKLINK build failed (private details not published).'
+            exit 15
+          fi
+          echo 'WORKLINK build PASS'
+
+      - name: Install pinned REA in temporary isolated path
+        shell: bash
+        run: |
+          if ! npm install --prefix "$RUNNER_TEMP/wl11-rea" --no-save --no-package-lock --ignore-scripts rea-agents@6.5.0 >/tmp/wl11-rea-install.log 2>&1; then
+            echo '::error::REA installation failed; no source details shared.'
+            exit 16
+          fi
+          echo 'Pinned REA installed'
+
+      - name: REA analyze authorized owned JavaScript (never competitor binaries)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/wl11-owned" "$RUNNER_TEMP/wl11-analysis"
+          cp target/src/lib/quick-phrases.mjs target/src/lib/validation.mjs "$RUNNER_TEMP/wl11-owned/"
+          if ! "$RUNNER_TEMP/wl11-rea/node_modules/.bin/rea" analyze-javascript-application "$RUNNER_TEMP/wl11-owned" --json >"$RUNNER_TEMP/wl11-analysis/analysis.json" 2>/tmp/wl11-rea-error.log; then
+            echo '::error::REA owned-source analysis failed. No raw analysis exposed.'
+            exit 17
+          fi
+          if ! node -e 'const f=require("fs");const s=f.readFileSync(process.argv[1],"utf8");const d=JSON.parse(s);if(s.length<20 || !d || typeof d!=="object")process.exit(1);' "$RUNNER_TEMP/wl11-analysis/analysis.json"; then
+            echo '::error::REA output invalid or incomplete.'
+            exit 18
+          fi
+          echo 'REA first-party static analysis PASS; evidence retained only in temporary runner.'
+          echo 'No private analysis artifact is uploaded to this public repository.'
+
+      - name: Independent result
+        run: |
+          echo '### WORKLINK PR11 independent source-gate result' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Pinned source 72559fe75937f918ac9a1630cf34cd377cc2036c' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Product tests, typecheck, build and REA owned-source analysis completed only if preceding steps passed.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- External REA competitor decompilation: NOT performed. No payment, launch, or merge.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  # Separate optional gate for WORKLINK's existing Draft PR13 at an immutable
+  # reviewed SHA. This does not rewrite the already-proven PR11 REA result.
+  # No runner secret is exposed to executed product tests.
+  verify-pr13:
+    name: WORKLINK PR13 pinned tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require private checkout token
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Private checkout permission not configured"; exit 20; }
+
+      - name: Checkout private WORKLINK PR13 reviewed source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target-pr13
+
+      - name: Set up Node for deterministic local-only tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify immutable source and required tests
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "6bab5e9c7cf331438076ed515ae4287d4b45a7db"
+          test -f tests/pilot-cross-account-security.test.mjs
+          test -f tests/pilot-static-server.test.mjs
+          test -f src/lib/pilot-api.mjs
+          echo "WORKLINK PR13 source pin and test paths: PASS"
+
+      - name: Install without lifecycle scripts or tracked lockfile modifications
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm install --no-package-lock --ignore-scripts --no-audit --no-fund >/tmp/wl13-install.log 2>&1; then
+            echo "::error::WORKLINK PR13 dependency bootstrap failed; private logs withheld"
+            exit 21
+          fi
+          echo "WORKLINK PR13 dependency bootstrap: PASS"
+
+      - name: Four synthetic actors and origin isolation
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! node --test tests/pilot-cross-account-security.test.mjs >/tmp/wl13-actors.log 2>&1; then
+            echo "::error::WORKLINK PR13 cross-account tests failed; private logs withheld"
+            exit 22
+          fi
+          echo "WORKLINK PR13 four-actor authorization: PASS"
+
+      - name: Original Linux file symlink and SPA fallback security
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! node --test tests/pilot-static-server.test.mjs >/tmp/wl13-symlink.log 2>&1; then
+            echo "::error::WORKLINK PR13 static-server symlink tests failed; private logs withheld"
+            exit 23
+          fi
+          if grep -Eq '(^|[[:space:]])# skipped [1-9]' /tmp/wl13-symlink.log; then
+            echo "::error::WORKLINK PR13 symlink test skipped; cannot call it verified"
+            exit 24
+          fi
+          echo "WORKLINK PR13 Linux static containment: PASS, no SKIP"
+
+      - name: All existing domain tests
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm test >/tmp/wl13-suite.log 2>&1; then
+            echo "::error::WORKLINK PR13 full npm tests failed; private logs withheld"
+            exit 25
+          fi
+          if grep -Eq '(^|[[:space:]])# skipped [1-9]' /tmp/wl13-suite.log; then
+            echo "::error::WORKLINK PR13 full npm tests contain skipped checks"
+            exit 26
+          fi
+          echo "WORKLINK PR13 Linux full npm suite: PASS, no SKIP"
+
+      - name: TypeScript check
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm run typecheck >/tmp/wl13-typecheck.log 2>&1; then
+            echo "::error::WORKLINK PR13 typecheck failed; private logs withheld"
+            exit 27
+          fi
+          echo "WORKLINK PR13 TypeScript: PASS"
+
+      - name: Build browser bundle
+        shell: bash
+        working-directory: target-pr13
+        run: |
+          if ! npm run build >/tmp/wl13-build.log 2>&1; then
+            echo "::error::WORKLINK PR13 Vite build failed; private logs withheld"
+            exit 28
+          fi
+          echo "WORKLINK PR13 Vite build: PASS"
+
+      - name: Record constrained gate result
+        shell: bash
+        run: |
+          echo '### WORKLINK PR13 Linux independent gate' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Immutable private source: 6bab5e9c7cf331438076ed515ae4287d4b45a7db' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No-skip local authorization/static security tests, npm suite, TS, Vite: PASS only if prior steps succeeded.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Does not test Playwright on runner, live hiring/auth/payment or close 7 dev advisories.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No PR merge, deployment, production auth, source artifact or private logs shared.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  # Opt-in evaluation, not a production dependency change or vulnerability waiver.
+  audit-probe-pr13:
+    name: WORKLINK development-advisory compatibility probe
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require token for private source checkout
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Private checkout not configured"; exit 30; }
+
+      - name: Checkout immutable private WORKLINK source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target-advisory
+
+      - name: Set up Node 24 for throwaway npm resolution
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Check source SHA and create temp-only baseline and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C target-advisory rev-parse HEAD)" = 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          mkdir -p "$RUNNER_TEMP/wl-audit-baseline" "$RUNNER_TEMP/wl-audit-candidate"
+          cp -a target-advisory/. "$RUNNER_TEMP/wl-audit-baseline/"
+          cp -a target-advisory/. "$RUNNER_TEMP/wl-audit-candidate/"
+          echo "Original source untouched; two independent copies created in runner temp."
+
+      - name: Resolve and audit unmodified baseline tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-baseline"
+          if ! npm install --package-lock-only --ignore-scripts --no-audit --no-fund >/tmp/wl-baseline-install.log 2>&1; then
+            echo "::error::Unable to resolve baseline dependency tree; details withheld"; exit 31
+          fi
+          npm audit --json >"$RUNNER_TEMP/wl-baseline-audit.json" 2>/tmp/wl-baseline-audit.err || :
+          npm audit --omit=dev --json >"$RUNNER_TEMP/wl-runtime-audit.json" 2>/tmp/wl-runtime-audit.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs'),p=process.env.RUNNER_TEMP;
+          for(const [name,file] of [['baseline','wl-baseline-audit.json'],['runtime-only','wl-runtime-audit.json']]){
+            let v;try{v=JSON.parse(fs.readFileSync(p+'/'+file,'utf8'))}catch{process.exit(32)}
+            if(!v.metadata?.vulnerabilities || !v.vulnerabilities)process.exit(33)
+            const m=v.metadata.vulnerabilities;
+            console.log(name+': '+JSON.stringify({total:m.total,high:m.high,moderate:m.moderate,critical:m.critical,
+              braces:Boolean(v.vulnerabilities.braces),parser:Boolean(v.vulnerabilities['postcss-selector-parser'])}))
+          }
+          NODE
+
+      - name: Try PostCSS selector parser 7.1.6 ONLY in candidate copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-candidate"
+          npm pkg set "overrides.postcss-selector-parser=7.1.6"
+          if ! npm install --ignore-scripts --no-audit --no-fund >/tmp/wl-candidate-install.log 2>&1; then
+            echo "PATCH_PROBE=RESOLUTION_FAILED" >> "$GITHUB_ENV"
+            echo "NO-GO: Candidate dependency graph could not resolve."
+            exit 0
+          fi
+          echo "PATCH_PROBE=RESOLVED" >> "$GITHUB_ENV"
+          npm audit --json >"$RUNNER_TEMP/wl-candidate-audit.json" 2>/tmp/wl-candidate-audit.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs'),p=process.env.RUNNER_TEMP;
+          const v=JSON.parse(fs.readFileSync(p+'/wl-candidate-audit.json','utf8'));
+          if(!v.metadata?.vulnerabilities || !v.vulnerabilities)process.exit(34);
+          const m=v.metadata.vulnerabilities;
+          console.log('candidate: '+JSON.stringify({total:m.total,high:m.high,moderate:m.moderate,critical:m.critical,
+            braces:Boolean(v.vulnerabilities.braces),parser:Boolean(v.vulnerabilities['postcss-selector-parser'])}));
+          NODE
+
+      - name: Test candidate compatibility without suppressing failures
+        if: env.PATCH_PROBE == 'RESOLVED'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-candidate"
+          if ! npm test >/tmp/wl-candidate-test.log 2>&1; then
+            echo "PATCH_COMPATIBILITY=FAILED_TESTS" >> "$GITHUB_ENV"
+            echo "NO-GO: candidate fails existing tests."
+            exit 0
+          fi
+          if ! npm run typecheck >/tmp/wl-candidate-ts.log 2>&1; then
+            echo "PATCH_COMPATIBILITY=FAILED_TYPECHECK" >> "$GITHUB_ENV"
+            echo "NO-GO: candidate fails TypeScript."
+            exit 0
+          fi
+          if ! npm run build >/tmp/wl-candidate-build.log 2>&1; then
+            echo "PATCH_COMPATIBILITY=FAILED_BUILD" >> "$GITHUB_ENV"
+            echo "NO-GO: candidate fails Vite build."
+            exit 0
+          fi
+          echo "PATCH_COMPATIBILITY=PASS" >> "$GITHUB_ENV"
+          echo "Candidate full test/typecheck/build: PASS; NOT approved for installation."
+
+      - name: Configure Python for isolated candidate demo browser check
+        if: env.PATCH_COMPATIBILITY == 'PASS'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Playwright mobile demo compatibility on parser candidate
+        if: env.PATCH_COMPATIBILITY == 'PASS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wl-audit-candidate"
+          python -m venv "$RUNNER_TEMP/wl-preview-venv"
+          PY="$RUNNER_TEMP/wl-preview-venv/bin/python"
+          if ! "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.57.0 >/tmp/wl-preview-pip.log 2>&1; then
+            echo "VISUAL_COMPATIBILITY=NOT_RUN_PYPI" >> "$GITHUB_ENV"
+            echo "Isolated Playwright install unavailable; browser compatibility not evaluated."
+            exit 0
+          fi
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || true)
+          if test -n "$CHROME" && test -x "$CHROME"; then
+            export WORKLINK_BROWSER_EXECUTABLE="$CHROME"
+            echo "Using preinstalled GitHub runner Chrome; no browser download."
+          elif ! "$PY" -m playwright install chromium >/tmp/wl-preview-browser.log 2>&1; then
+            echo "VISUAL_COMPATIBILITY=NOT_RUN_BROWSER" >> "$GITHUB_ENV"
+            echo "Chrome unavailable and Chromium download failed; browser compatibility not evaluated."
+            exit 0
+          fi
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort >/tmp/wl-preview-server.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then ready=1; break; fi
+            sleep 1
+          done
+          if test "$ready" != 1; then
+            echo "VISUAL_COMPATIBILITY=NOT_RUN_SERVER" >> "$GITHUB_ENV"
+            echo "Vite local preview not ready; browser comparison not evaluated."
+            exit 0
+          fi
+          for n in 1 2; do
+            if ! "$PY" scripts/worklink_browser_smoke.py >/tmp/wl-preview-smoke.log 2>&1; then
+              echo "VISUAL_COMPATIBILITY=FAILED_UI" >> "$GITHUB_ENV"
+              echo "NO-GO: patched candidate mobile UI smoke failed (test logs withheld)."
+              exit 0
+            fi
+          done
+          echo "VISUAL_COMPATIBILITY=PASS" >> "$GITHUB_ENV"
+          echo "Patched candidate: 5/5 local demo Playwright cases PASS twice."
+
+      - name: Report temporary evaluation without source uploads
+        shell: bash
+        run: |
+          echo '### WORKLINK dev advisory temporary parser patch' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Source: immutable 6bab5e9c7cf331438076ed515ae4287d4b45a7db' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Candidate installation: ${PATCH_PROBE:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test/typecheck/build: ${PATCH_COMPATIBILITY:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mobile Playwright candidate twice: ${VISUAL_COMPATIBILITY:-NOT_EVALUATED}" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Audit aggregate counts appear in step log; no raw audit files or source artifacts uploaded.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Existing WORKLINK repo, PRs, package files, CI and deployment unchanged.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- braces has no official fix as of this check; retain its separate risk gate.' >> "$GITHUB_STEP_SUMMARY"
+
+
+  # Dedicated private WORKLINK dependency patch branch, separate from test-only
+  # PR13 and feature PR11. Exactly one package.json change; no merge/deploy.
+  verify-postcss-pr14:
+    name: WORKLINK PR14 parser patch actual-commit gate
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      npm_config_ignore_scripts: 'true'
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+    steps:
+      - name: Require private repository checkout access
+        env:
+          TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Private checkout token absent"; exit 41; }
+
+      - name: Checkout actual WORKLINK PR14 dependency patch
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: b8fa5a76cc7ea6cff95a13093d09c18cedb53381
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: target-pr14
+
+      - name: Checkout independently reviewed PR13 test files
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/worklink
+          ref: 6bab5e9c7cf331438076ed515ae4287d4b45a7db
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: tests-pr13
+
+      - name: Set up pinned Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+
+      - name: Verify exact original commit and overlay tests (not product)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C target-pr14 rev-parse HEAD)" = "b8fa5a76cc7ea6cff95a13093d09c18cedb53381"
+          test "$(git -C tests-pr13 rev-parse HEAD)" = "6bab5e9c7cf331438076ed515ae4287d4b45a7db"
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs');
+          const p=JSON.parse(fs.readFileSync('target-pr14/package.json','utf8'));
+          if(p.overrides?.['postcss-selector-parser']!=='7.1.6'||Object.keys(p.overrides).length!==1) process.exit(42);
+          console.log('Only intended parser 7.1.6 override confirmed');
+          NODE
+          mkdir -p target-pr14/scripts
+          cp tests-pr13/tests/pilot-cross-account-security.test.mjs target-pr14/tests/
+          cp tests-pr13/tests/pilot-static-server.test.mjs target-pr14/tests/
+          cp tests-pr13/scripts/worklink_browser_smoke.py target-pr14/scripts/
+          echo "Test files overlaid in throwaway runner checkout only"
+
+      - name: Install actual PR14 dependency graph without install scripts
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          if ! npm install --no-package-lock --ignore-scripts --no-audit --no-fund >/tmp/wl14-install.log 2>&1; then
+            echo "::error::Patch dependency resolution failed (private logs withheld)"; exit 43
+          fi
+          echo "Actual PR14 dependency install: PASS"
+
+      - name: Audit actual PR14 installed dependency tree
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          # WORKLINK has no committed lock; npm audit requires a local lock for
+          # resolving the dependency tree. The runner checkout is disposable.
+          if ! npm install --package-lock-only --ignore-scripts --no-audit --no-fund >/tmp/wl14-lock.log 2>&1; then
+            echo "::error::Temporary audit lock resolution failed"; exit 44
+          fi
+          npm audit --json >/tmp/wl14-audit.json 2>/tmp/wl14-audit.err || :
+          npm audit --omit=dev --json >/tmp/wl14-runtime.json 2>/tmp/wl14-runtime.err || :
+          node --input-type=commonjs - <<'NODE'
+          const fs=require('node:fs');
+          for(const [name,file] of [['patched','/tmp/wl14-audit.json'],['runtime','/tmp/wl14-runtime.json']]){
+            let d;try{d=JSON.parse(fs.readFileSync(file,'utf8'))}catch{process.exit(44)}
+            if(!d.metadata?.vulnerabilities||!d.vulnerabilities)process.exit(45);
+            const v=d.metadata.vulnerabilities;
+            console.log(name+' '+JSON.stringify({total:v.total,high:v.high,moderate:v.moderate,critical:v.critical,braces:!!d.vulnerabilities.braces,parser:!!d.vulnerabilities['postcss-selector-parser']}));
+            if(name==='patched'&&(v.moderate>0||v.critical>0||!!d.vulnerabilities['postcss-selector-parser']))process.exit(46);
+          }
+          NODE
+
+      - name: Full original plus PR13 actor and symlink tests
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          if ! npm test >/tmp/wl14-test.log 2>&1; then
+            echo "::error::Full test suite failed (details withheld)"; exit 47
+          fi
+          if grep -Eq '(^|[[:space:]])# skipped [1-9]' /tmp/wl14-test.log; then
+            echo "::error::Security test skipped, cannot pass"; exit 48
+          fi
+          echo "Full tests including PR13 actor/symlink tests: PASS without skips"
+
+      - name: TypeScript and Vite build for real patched SHA
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          npm run typecheck >/tmp/wl14-ts.log 2>&1 || { echo "::error::TypeScript failed"; exit 49; }
+          npm run build >/tmp/wl14-build.log 2>&1 || { echo "::error::Vite build failed"; exit 50; }
+          echo "PR14 typecheck and build: PASS"
+
+      - name: Set up isolated Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Actual patched mobile demo browser twice
+        shell: bash
+        working-directory: target-pr14
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/wl14-venv"
+          PY="$RUNNER_TEMP/wl14-venv/bin/python"
+          "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.57.0 >/tmp/wl14-pip.log 2>&1 || {
+            echo "::error::Local Playwright not available"; exit 51;
+          }
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || true)
+          if test -z "$CHROME"; then
+            echo "::error::Local Chrome missing, cannot claim browser verification"; exit 52
+          fi
+          export WORKLINK_BROWSER_EXECUTABLE="$CHROME"
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort >/tmp/wl14-preview.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then ready=1; break; fi
+            sleep 1
+          done
+          if test "$ready" != 1; then echo "::error::Local preview unavailable"; exit 53; fi
+          for iteration in 1 2; do
+            if ! "$PY" scripts/worklink_browser_smoke.py >/tmp/wl14-smoke.log 2>&1; then
+              echo "::error::Patched browser smoke failed, private logs withheld"; exit 54
+            fi
+          done
+          echo "Actual PR14 local Chrome Playwright mobile smoke: 5/5 twice PASS"
+
+      - name: Minimal public summary, no private source artifacts
+        shell: bash
+        run: |
+          echo '### WORKLINK PR14 exact source patch check' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Source: b8fa5a76cc7ea6cff95a13093d09c18cedb53381' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Override: postcss-selector-parser@7.1.6' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Full tests, types, build and mobile demo twice: PASS (only if every preceding step passed)' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Residual braces findings NOT patched; private Actions startup remains separate.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- No merge, deployment, payments or public source artifacts.' >> "$GITHUB_STEP_SUMMARY"
