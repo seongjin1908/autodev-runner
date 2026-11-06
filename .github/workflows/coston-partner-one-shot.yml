@@ -36,7 +36,8 @@ jobs:
           gh workflow run autodev.yml \
             --repo "$GITHUB_REPOSITORY" \
             --ref main \
-            -f target=coston-partner-hub
+            -f target=coston-partner-hub \
+            -f openrouter_free_once=true
           echo "Coston Partner Hub workflow dispatch requested."
           echo "The dispatch alone is NOT proof of code creation."
           echo "Required evidence: fresh validated commit and review PR; no auto-merge or deploy."
