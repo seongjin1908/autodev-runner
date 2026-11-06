@@ -14,3 +14,5 @@ Retry 2: source picker can now reach nested partner-hub/integrations and partner
 Retry 3 (final): prefer catalog-verified zero-priced coding models, compact exact replacement, and sufficient bounded completion tokens; no further automatic retry if this produces no validated source edit.
 
 Explicit user-requested kickoff, 2026-11-04: use review-only latest Coston Draft PR #105; KR fortune+saju P002 only, no payout, no auto-merge. Zero-budget coding and source tests only.
+
+Explicit user-requested kickoff, 2026-11-06 17:07 KST: existing guarded Coston Partner Hub GitHub AutoDev one-shot, PR #105 latest head 9003a5bd3b4dbfedfb8b007121ae635efbe1159f; free models only, source changes must pass tests; no merge, deploy, payment, secrets change or public QA unlock.
