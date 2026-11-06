@@ -16,3 +16,5 @@ Retry 3 (final): prefer catalog-verified zero-priced coding models, compact exac
 Explicit user-requested kickoff, 2026-11-04: use review-only latest Coston Draft PR #105; KR fortune+saju P002 only, no payout, no auto-merge. Zero-budget coding and source tests only.
 
 Explicit user-requested kickoff, 2026-11-06 17:07 KST: existing guarded Coston Partner Hub GitHub AutoDev one-shot, PR #105 latest head 9003a5bd3b4dbfedfb8b007121ae635efbe1159f; free models only, source changes must pass tests; no merge, deploy, payment, secrets change or public QA unlock.
+
+Explicit one-shot retry after verified 2026-11-06 17:10 KST failure patch_anchor_not_unique; run only zero-priced model, one corrective prompt on duplicate exact anchor, never choose ambiguous source replacement, keep Hub launch disabled.
