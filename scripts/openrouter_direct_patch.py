@@ -280,6 +280,27 @@ def run():
                 "patch_schema_rejected","patch_anchor_not_unique",
             }:
                 raise
+            # Do not guess which occurrence to edit. Ask the same verified
+            # zero-priced model for a NEW unique exact anchor, keeping all
+            # existing application-file, payment and diff safety gates.
+            if compact_patch and str(exc) == "patch_anchor_not_unique":
+                duplicate_count = 0
+                try:
+                    rejected = parse_model_object(response)
+                    rejected_anchor = rejected.get("find")
+                    if isinstance(rejected_anchor, str) and rejected_anchor:
+                        duplicate_count = source.count(rejected_anchor)
+                except SafeBlock:
+                    pass
+                task += (
+                    "\nRETRY AFTER REJECTED PATCH: your prior 'find' substring "
+                    f"occurred {duplicate_count} times in the unchanged SOURCE DATA. "
+                    "Return a NEW exact contiguous 'find' (20-1500 chars) that "
+                    "occurs precisely ONCE; include the unique enclosing function "
+                    "header and relevant neighboring statements as needed. "
+                    "Do not choose an occurrence by position, replace all matches, "
+                    "or alter unrelated code. Keep the same one-file security scope."
+                )
     if replacement is None:
         raise SafeBlock("no_valid_candidate")
     target=root/name
