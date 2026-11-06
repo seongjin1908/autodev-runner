@@ -1,0 +1,106 @@
+name: Portfolio three immutable no-cost PR probes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/portfolio-three-small-pr-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    name: SECOND, FACE LAB and PriceCam offline unit guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout SECOND candidate
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/second-work
+          ref: 6f1a62d2ab4fc260767ade20d0e6915ae27c8c04
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: second
+      - name: Checkout FACE LAB candidate
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/face-lab-global
+          ref: dfe2c9cd85cf50a4d3b1b949b821688d4ed0c4d6
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: face
+      - name: Checkout PriceCam candidate
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/pricecam-autodev
+          ref: b39560fa6d8f9017086b35aa997537cce601223e
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+          path: pricecam
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - name: SECOND preserves explicit null and defaults omitted payload
+        working-directory: second
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "6f1a62d2ab4fc260767ade20d0e6915ae27c8c04"
+          node --experimental-strip-types --input-type=module - <<'NODE'
+          import assert from 'node:assert/strict';
+          import { api } from './src/appdeploy-client.ts';
+          const sent=[];
+          globalThis.fetch=async (url,opts)=>{sent.push(opts.body);return new Response('{"data":{"ok":true}}',{status:200,headers:{'content-type':'application/json'}});};
+          await api.post('/synthetic',null);
+          await api.put('/synthetic');
+          await api.delete('/synthetic',false);
+          assert.deepEqual(sent,['null','{}','false']);
+          console.log('SECOND PR8 no-network explicit JSON body regression: 3/3 PASS');
+          NODE
+      - name: FACE LAB handles prototype-looking aggregate keys without contaminating objects
+        working-directory: face
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "dfe2c9cd85cf50a4d3b1b949b821688d4ed0c4d6"
+          node --experimental-strip-types --input-type=module - <<'NODE'
+          import assert from 'node:assert/strict';
+          import { buildCountryAwareModuleRanking } from './backend/countryModuleRanking.ts';
+          const output=buildCountryAwareModuleRanking({
+            '__proto__|en|mobile':{result_viewed:30,share_clicked:3},
+            'constructor|en|mobile':{result_viewed:25,share_clicked:2},
+            'normal|en|mobile':{result_viewed:2,share_clicked:0},
+            'x|__proto__|mobile':{result_viewed:30,share_clicked:0}
+          });
+          assert.equal(Object.getPrototypeOf(output),null);
+          assert.equal(Array.isArray(output['__proto__']),true);
+          assert(output.en.some(x=>x.feature==='__proto__'&&x.views===30));
+          assert(output.en.some(x=>x.feature==='constructor'&&x.views===25));
+          assert(output.en.some(x=>x.feature==='normal'&&x.score===null));
+          assert.equal(({}).polluted,undefined);
+          console.log('FACE LAB PR57 synthetic prototype/low-volume privacy rollup: 6/6 PASS');
+          NODE
+      - name: PriceCam rejects link credentials, cleartext and nonweb schemes
+        working-directory: pricecam
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "b39560fa6d8f9017086b35aa997537cce601223e"
+          node --experimental-strip-types --input-type=module - <<'NODE'
+          import assert from 'node:assert/strict';
+          import { preparePurchaseHits } from './backend/affiliate.ts';
+          const links=[
+            'https://user:password@example.org/product',
+            'https://user@example.org/product',
+            'http://example.org/product',
+            'javascript:alert(1)',
+            'https://example.org/product'
+          ];
+          const hits=preparePurchaseHits(links.map(url=>({source:'쿠팡',url,linkExact:true})));
+          assert.deepEqual(hits.map(x=>x.linkSafe),[false,false,false,false,true]);
+          assert.equal(hits[4].purchaseUrl,'https://example.org/product');
+          assert(hits.every(x=>x.affiliate.active===false));
+          console.log('PriceCam PR14 synthetic link safety: 7/7 PASS');
+          NODE
+      - name: Scope
+        run: |
+          echo 'Only three pinned, synthetic, pure first-party module probes. No package install, paid AI, network target, customer images, payments, merge or deployment.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No typecheck/build or full application regression is claimed for these three project PRs.' >> "$GITHUB_STEP_SUMMARY"
