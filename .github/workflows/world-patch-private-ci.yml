@@ -1,0 +1,104 @@
+name: WORLD PATCH private source & animatic CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/world-patch-private-ci.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '23 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: world-patch-private-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check private source token available
+        env:
+          TARGET_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -z "$TARGET_TOKEN" ]]; then
+            echo "::error::No private checkout token available."
+            exit 1
+          fi
+
+      - name: Checkout reviewed WORLD PATCH source
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/world-patch-studio
+          ref: ${{ github.event_name == 'pull_request' && '0746bb0f1f7a6afc1c0af9f285c777f71ac5082d' || 'main' }}
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up free Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate source and offline dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f brands/world-patch/renderer.py
+          test -f brands/world-patch/tests/test_world_patch.py
+          test -f brands/world-patch/requirements.txt
+          if ! python -m pip install --no-cache-dir -r brands/world-patch/requirements.txt >/tmp/worldpatch-install.log 2>&1; then
+            echo "::error::World Patch Pillow setup unavailable (private diagnostics withheld)."
+            exit 1
+          fi
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            if ! (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg) >/tmp/worldpatch-ffmpeg.log 2>&1; then
+              echo "::error::Free FFmpeg binary unavailable; no render attempted."
+              exit 1
+            fi
+          fi
+          echo "Pillow and FFmpeg dependencies available."
+
+      - name: Run character, rights and scene regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python -m unittest discover -s brands/world-patch/tests -v >/tmp/worldpatch-tests.log 2>&1; then
+            echo "::error::WORLD PATCH source tests failed. No private test data printed."
+            exit 1
+          fi
+          echo "PASS: deterministic WORLD PATCH character and scene tests."
+
+      - name: Produce real six-second local MP4 preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=/tmp/world-patch-private-preview.mp4
+          if ! python brands/world-patch/renderer.py --preview --output "$file" >/tmp/worldpatch-render.log 2>&1; then
+            echo "::error::WORLD PATCH isolated FFmpeg render failed. No private render log published."
+            exit 1
+          fi
+          test -s "$file"
+          if ! ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+            -of csv=p=0 "$file" >/tmp/worldpatch-ffprobe.log 2>&1; then
+            echo "::error::Preview output is not a valid video stream."
+            exit 1
+          fi
+          echo "PASS: non-published six-second MP4 animatic rendered."
+
+      - name: Report actual review scope
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## WORLD PATCH independent source validation"
+            echo "Verified source SHA: $(git rev-parse HEAD)"
+            echo "Scope: unit tests, free Pillow/FFmpeg, local MP4 preview, FFprobe."
+            echo "No video upload, social publishing, paid AI generation, production deployment or auto merge."
+            echo "A technical animatic is not proof of a finished commercial film."
+          } >> "$GITHUB_STEP_SUMMARY"
