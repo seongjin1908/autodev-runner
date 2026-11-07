@@ -229,6 +229,61 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # READ-ONLY diagnostics: run post-freeze checks independently while
+  # immutable production source hash validation stays a release blocker.
+  # Never authorizes a merge, deployment, model call or payment.
+  nonrelease-closure-diagnostics:
+    name: DIAGNOSTIC ONLY - isolated source closure and evidence self-tests (NOT release approval)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact candidate read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 3536d45e006e95e87ad3ad946f62a4574f86b304
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Inspect post-freeze parity and evidence without changing release gate
+        working-directory: target
+        shell: bash
+        run: |
+          mkdir -p release-test-results
+          failures=0
+          node scripts/check-appdeploy-release-parity.mjs || failures=$((failures + 1))
+          node scripts/check-unkive-paid-quality.mjs || failures=$((failures + 1))
+          node scripts/unkive-real-ai-output-audit.mjs --self-test || failures=$((failures + 1))
+          node scripts/sajumyeongkwae-premium-blind-review.mjs --self-test || failures=$((failures + 1))
+          node scripts/unkive-competitor-blind-gate.mjs --self-test || failures=$((failures + 1))
+          node scripts/unkive-real-ai-output-audit.mjs --status > release-test-results/real-ai-evidence-status.json || failures=$((failures + 1))
+          node scripts/unkive-competitor-blind-gate.mjs --status > release-test-results/competitor-evidence-status.json || failures=$((failures + 1))
+          echo "NONRELEASE_DIAGNOSTIC_FAILURE_COUNT=$failures"
+          test "$failures" -eq 0
+      - name: Retain diagnostic evidence without customer data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saju-nonrelease-closure-diagnostic
+          path: |
+            target/release-test-results/real-ai-evidence-status.json
+            target/release-test-results/competitor-evidence-status.json
+            target/release-test-results/appdeploy-release-parity.json
+            target/release-test-results/appdeploy-isolated-manifest.json
+          if-no-files-found: ignore
+          retention-days: 7
+
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
     # The 96-render test passed at parent source 73579b3; only a read-only QA checker was added.
