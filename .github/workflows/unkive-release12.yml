@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 9e9415e2039acb85919f4d754a6db5edcc42e222
+            ref: bf755dccbcf1539fd3145f9a97282a4339ee6cee
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 9e9415e2039acb85919f4d754a6db5edcc42e222
+          ref: bf755dccbcf1539fd3145f9a97282a4339ee6cee
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 9e9415e2039acb85919f4d754a6db5edcc42e222
+          ref: bf755dccbcf1539fd3145f9a97282a4339ee6cee
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -244,7 +244,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 9e9415e2039acb85919f4d754a6db5edcc42e222
+          ref: bf755dccbcf1539fd3145f9a97282a4339ee6cee
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -269,6 +269,7 @@ jobs:
           node scripts/p002-anthropic-batch-qa-orchestrator-check.mjs
           node scripts/p002-anthropic-batch-db-check.mjs
           node scripts/p002-anthropic-batch-qa-transport-check.mjs
+          node scripts/p002-paid-flow-readability-check.mjs
           failures=0
           node scripts/check-appdeploy-release-parity.mjs || failures=$((failures + 1))
           node scripts/check-unkive-paid-quality.mjs || failures=$((failures + 1))
@@ -307,7 +308,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 9e9415e2039acb85919f4d754a6db5edcc42e222
+          ref: bf755dccbcf1539fd3145f9a97282a4339ee6cee
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
