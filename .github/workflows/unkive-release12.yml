@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 10c518d6ed25b52805a84e394aa2895922c2bb92
+            ref: 0f78f9418b7f8d39ede1794fea2ff21ff1c68bf8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 10c518d6ed25b52805a84e394aa2895922c2bb92
+          ref: 0f78f9418b7f8d39ede1794fea2ff21ff1c68bf8
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 10c518d6ed25b52805a84e394aa2895922c2bb92
+          ref: 0f78f9418b7f8d39ede1794fea2ff21ff1c68bf8
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -244,7 +244,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 10c518d6ed25b52805a84e394aa2895922c2bb92
+          ref: 0f78f9418b7f8d39ede1794fea2ff21ff1c68bf8
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -264,6 +264,7 @@ jobs:
           node scripts/p002-protected-source-drift-audit.mjs
           # No provider, secret, payment, grant seeding or deployment.
           node scripts/p002-durable-claude-stage-check.mjs
+          node scripts/p002-durable-claude-db-check.mjs
           failures=0
           node scripts/check-appdeploy-release-parity.mjs || failures=$((failures + 1))
           node scripts/check-unkive-paid-quality.mjs || failures=$((failures + 1))
@@ -302,7 +303,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 10c518d6ed25b52805a84e394aa2895922c2bb92
+          ref: 0f78f9418b7f8d39ede1794fea2ff21ff1c68bf8
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
