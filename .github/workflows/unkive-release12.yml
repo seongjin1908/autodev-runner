@@ -18,7 +18,7 @@ jobs:
           - label: baseline
             ref: da9cf033eee27db3b2c32c1587df063f23a63717
           - label: candidate
-            ref: 2e8ffff00a7b3555b8393030b64464ef862bfec2
+            ref: 950682670da00597516f61bbeac5b6be1218594b
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 2e8ffff00a7b3555b8393030b64464ef862bfec2
+          ref: 950682670da00597516f61bbeac5b6be1218594b
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           persist-credentials: false
           path: target
@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 2e8ffff00a7b3555b8393030b64464ef862bfec2
+          ref: 950682670da00597516f61bbeac5b6be1218594b
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
@@ -229,6 +229,98 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # READ-ONLY diagnostics: run post-freeze checks independently while
+  # immutable production source hash validation stays a release blocker.
+  # Never authorizes a merge, deployment, model call or payment.
+  nonrelease-closure-diagnostics:
+    name: DIAGNOSTIC ONLY - isolated source closure and evidence self-tests (NOT release approval)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact candidate read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 950682670da00597516f61bbeac5b6be1218594b
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: target
+          persist-credentials: false
+      - name: Checkout pinned pre-P002 analysis baseline read-only
+        uses: actions/checkout@v4
+        with:
+          repository: seongjin1908/daangn-saju-autodev
+          ref: 3d8fdecdf8a27bab47876e5a65d960eccef46fe7
+          token: ${{ secrets.AUTODEV_REPO_TOKEN }}
+          path: baseline-target
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: target/package.json
+      - name: Install dependencies without lifecycle scripts
+        working-directory: target
+        run: npm install --no-package-lock --no-audit --no-fund --ignore-scripts
+      - name: Inspect post-freeze parity and evidence without changing release gate
+        working-directory: target
+        shell: bash
+        run: |
+          mkdir -p release-test-results
+          node scripts/p002-protected-source-drift-audit.mjs
+          node scripts/p002-analysis-source-delta-review.mjs --self-test
+          node scripts/p002-analysis-source-delta-review.mjs --baseline ../baseline-target/backend/analysis.ts
+          node scripts/p002-independent-source-review-packet-check.mjs --baseline ../baseline-target/backend/analysis.ts
+          node scripts/p002-github-independent-review-check.test.mjs
+          node scripts/p002-real-paid-failclosed-release-check.mjs
+          node scripts/p002-actual-paid-four-writer-fullpath-check.mjs
+          node scripts/p002-screen-readable-report-check.mjs
+          node scripts/p002-anthropic-batch-qa-report-check.mjs
+          node scripts/p002-production-prompt-parity-capture.mjs
+          node scripts/p002-direct-claude-schema-compat-check.mjs
+          # No provider, secret, payment, grant seeding or deployment.
+          node scripts/p002-durable-claude-stage-check.mjs
+          node scripts/p002-durable-claude-db-check.mjs
+          node scripts/p002-anthropic-batch-qa-safety-check.mjs
+          node scripts/p002-anthropic-batch-qa-orchestrator-check.mjs
+          node scripts/p002-anthropic-batch-db-check.mjs
+          node scripts/p002-anthropic-batch-qa-transport-check.mjs
+          node scripts/p002-paid-flow-readability-check.mjs
+          node scripts/p002-reader-clarity-audit-check.mjs
+          failures=0
+          node scripts/check-appdeploy-release-parity.mjs || failures=$((failures + 1))
+          node scripts/check-unkive-paid-quality.mjs || failures=$((failures + 1))
+          node scripts/unkive-real-ai-output-audit.mjs --self-test || failures=$((failures + 1))
+          node scripts/sajumyeongkwae-premium-blind-review.mjs --self-test || failures=$((failures + 1))
+          node scripts/unkive-competitor-blind-gate.mjs --self-test || failures=$((failures + 1))
+          node scripts/unkive-real-ai-output-audit.mjs --status > release-test-results/real-ai-evidence-status.json || failures=$((failures + 1))
+          node scripts/unkive-competitor-blind-gate.mjs --status > release-test-results/competitor-evidence-status.json || failures=$((failures + 1))
+          echo "NONRELEASE_DIAGNOSTIC_FAILURE_COUNT=$failures"
+          test "$failures" -eq 0
+      - name: Check real GitHub independent PR approval at pinned HEAD (read only; NO release override)
+        working-directory: target
+        env:
+          P002_REVIEW_GITHUB_TOKEN: ${{ secrets.AUTODEV_REPO_TOKEN }}
+        run: |
+          export P002_REVIEW_EXPECTED_SOURCE_SHA="$(git rev-parse HEAD)"
+          node scripts/p002-github-independent-review-check.mjs
+      - name: Retain diagnostic evidence without customer data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saju-nonrelease-closure-diagnostic
+          path: |
+            target/release-test-results/p002-protected-source-drift-audit.json
+            target/release-test-results/p002-analysis-source-delta-review.json
+            target/release-test-results/real-ai-evidence-status.json
+            target/release-test-results/competitor-evidence-status.json
+            target/release-test-results/appdeploy-release-parity.json
+            target/release-test-results/appdeploy-isolated-manifest.json
+          if-no-files-found: ignore
+          retention-days: 7
+
   release-candidate-96-pdf:
     name: Frozen candidate 24 charts x 4 actual PDF render and inspection
     # The 96-render test passed at parent source 73579b3; only a read-only QA checker was added.
@@ -243,7 +335,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: seongjin1908/daangn-saju-autodev
-          ref: 2e8ffff00a7b3555b8393030b64464ef862bfec2
+          ref: 950682670da00597516f61bbeac5b6be1218594b
           token: ${{ secrets.AUTODEV_REPO_TOKEN }}
           path: target
           persist-credentials: false
