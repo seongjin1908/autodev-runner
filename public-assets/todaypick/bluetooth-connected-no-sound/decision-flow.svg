@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="970" viewBox="0 0 1120 970" role="img" aria-labelledby="title desc">
+<title id="title">Connected Bluetooth headphones with no sound: diagnostic decision flow</title>
+<desc id="desc">Four symptom branches and first checks for Windows 11 Bluetooth headphones: all apps silent, one app silent, low quality, and device missing.</desc>
+<defs><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a1b33"/><stop offset="1" stop-color="#164966"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#072031" flood-opacity=".16"/></filter></defs>
+<rect width="1120" height="970" fill="#f3f8fc"/><rect x="0" y="0" width="1120" height="204" fill="url(#f)"/>
+<text x="60" y="64" font-size="24" fill="#76dce9" font-family="Arial,sans-serif" letter-spacing="2" font-weight="700">DEVICE FIX LAB  •  AUDIO TROUBLESHOOTER</text>
+<text x="60" y="129" font-size="52" fill="#ffffff" font-family="Arial,sans-serif" font-weight="800">Connected, but silent?</text>
+<text x="62" y="175" font-size="25" fill="#c6d9e8" font-family="Arial,sans-serif">Follow the symptom — change one setting, then retest.</text>
+<g font-family="Arial,sans-serif" filter="url(#shadow)">
+<rect x="58" y="254" width="474" height="252" rx="22" fill="#ffffff"/>
+<rect x="58" y="254" width="474" height="66" rx="22" fill="#0d8ea7"/><rect x="58" y="295" width="474" height="25" fill="#0d8ea7"/>
+<text x="85" y="296" font-size="27" font-weight="800" fill="#fff">A  •  No sound in any app</text>
+<text x="86" y="355" font-size="24" fill="#173349" font-weight="700">First: check Windows output</text>
+<text x="86" y="395" font-size="21" fill="#33566a">Settings → System → Sound</text>
+<text x="86" y="427" font-size="21" fill="#33566a">Choose your Bluetooth headset</text>
+<text x="86" y="459" font-size="21" fill="#33566a">Unmute and test playback</text>
+<rect x="586" y="254" width="474" height="252" rx="22" fill="#ffffff"/>
+<rect x="586" y="254" width="474" height="66" rx="22" fill="#2563bb"/><rect x="586" y="295" width="474" height="25" fill="#2563bb"/>
+<text x="613" y="296" font-size="27" font-weight="800" fill="#fff">B  •  One app is silent</text>
+<text x="614" y="355" font-size="24" fill="#173349" font-weight="700">First: check Volume mixer</text>
+<text x="614" y="395" font-size="21" fill="#33566a">Open Sound → Volume mixer</text>
+<text x="614" y="427" font-size="21" fill="#33566a">Check that app's output device</text>
+<text x="614" y="459" font-size="21" fill="#33566a">Unmute the app, then retest</text>
+<rect x="58" y="546" width="474" height="252" rx="22" fill="#ffffff"/>
+<rect x="58" y="546" width="474" height="66" rx="22" fill="#7a57b4"/><rect x="58" y="587" width="474" height="25" fill="#7a57b4"/>
+<text x="85" y="588" font-size="27" font-weight="800" fill="#fff">C  •  Sound is distorted</text>
+<text x="86" y="647" font-size="24" fill="#173349" font-weight="700">First: check audio effects</text>
+<text x="86" y="687" font-size="21" fill="#33566a">Try Audio enhancements: Off</text>
+<text x="86" y="719" font-size="21" fill="#33566a">Try supported audio format</text>
+<text x="86" y="751" font-size="21" fill="#33566a">Rerun Bluetooth troubleshooting</text>
+<rect x="586" y="546" width="474" height="252" rx="22" fill="#ffffff"/>
+<rect x="586" y="546" width="474" height="66" rx="22" fill="#a35469"/><rect x="586" y="587" width="474" height="25" fill="#a35469"/>
+<text x="613" y="588" font-size="27" font-weight="800" fill="#fff">D  •  Device disappears</text>
+<text x="614" y="647" font-size="24" fill="#173349" font-weight="700">First: fix connection</text>
+<text x="614" y="687" font-size="21" fill="#33566a">Check Bluetooth and headset power</text>
+<text x="614" y="719" font-size="21" fill="#33566a">Reconnect / re-pair if needed</text>
+<text x="614" y="751" font-size="21" fill="#33566a">Check manufacturer drivers later</text>
+</g>
+<rect x="58" y="834" width="1002" height="74" rx="17" fill="#dceff4" stroke="#b2d4e3"/>
+<text x="88" y="879" font-size="27" font-family="Arial,sans-serif" font-weight="700" fill="#12405a">After every change: play audio again and record the result.</text>
+<text x="560" y="945" text-anchor="middle" font-size="18" fill="#587487" font-family="Arial,sans-serif">Editorial decision aid based on Microsoft Support • Not a live device test or official UI capture</text>
+</svg>
